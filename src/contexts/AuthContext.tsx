@@ -12,6 +12,7 @@ export interface AuthState {
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  loginWithOAuth: (provider: 'google' | 'github') => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);
@@ -92,9 +93,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const loginWithOAuth = useCallback(async (provider: 'google' | 'github') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) throw error;
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, initialized, login, signup, logout, resetPassword }}
+      value={{ user, session, loading, initialized, login, signup, logout, resetPassword, loginWithOAuth }}
     >
       {children}
     </AuthContext.Provider>

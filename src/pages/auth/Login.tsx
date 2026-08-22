@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -22,7 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, loading: isLoading } = useAuth();
+  const { login, loginWithOAuth, loading: isLoading } = useAuth();
 
   const {
     register,
@@ -44,13 +43,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setError(null);
     try {
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-      if (oauthError) throw oauthError;
+      await loginWithOAuth('google');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google.');
     }
