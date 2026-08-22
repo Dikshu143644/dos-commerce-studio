@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: #0a0a0a;
+  --color-foreground: #f4f4f4;
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-card-foreground: #f4f4f4;
+  --color-primary: #10b981;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: rgba(255, 255, 255, 0.06);
+  --color-secondary-foreground: #a1a1aa;
+  --color-muted: rgba(255, 255, 255, 0.04);
+  --color-muted-foreground: #71717a;
+  --color-accent: #10b981;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-input: rgba(255, 255, 255, 0.06);
+  --color-ring: #10b981;
+  --color-sidebar-background: rgba(0, 0, 0, 0.8);
+  --color-sidebar-foreground: #f4f4f4;
+  --color-sidebar-border: rgba(255, 255, 255, 0.06);
+  --color-chart-1: #10b981;
+  --color-chart-2: #14b8a6;
+  --color-chart-3: #06d6a0;
+  --color-chart-4: #0d9488;
+  --color-chart-5: #047857;
+  --radius: 1.5rem;
+}
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #f4f4f4;
+  --card: rgba(255, 255, 255, 0.03);
+  --card-foreground: #f4f4f4;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #a1a1aa;
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: #71717a;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: #10b981;
+  --radius: 1.5rem;
+  --sidebar-background: rgba(0, 0, 0, 0.8);
+  --sidebar-foreground: #f4f4f4;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --chart-1: #10b981;
+  --chart-2: #14b8a6;
+  --chart-3: #06d6a0;
+  --chart-4: #0d9488;
+  --chart-5: #047857;
+}
+
+/* Global styles */
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Utility classes */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  background: radial-gradient(circle, #10b981, #14b8a6);
+  pointer-events: none;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

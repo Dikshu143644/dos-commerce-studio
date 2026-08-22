@@ -1,0 +1,40 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Project scaffolding - Initialize the Vite+React+TypeScript project with pnpm, install all dependencies, configure build tooling (Vite, TypeScript, ESLint, Prettier), set up Tailwind CSS 4 with design tokens, create the complete CSS variable system for dark spatial glassmorphism, configure path aliases, and create all deployment/CI config files.",
+  "status": "completed",
+  "steps": [
+    "Create project at /projects/sandbox/stockflow-inventory-crm using pnpm create vite with react-ts template, then immediately update package.json name to stockflow-inventory-crm",
+    "Install all production dependencies: react@18, react-dom@18, react-router-dom@7, @supabase/supabase-js, lucide-react, recharts, react-hook-form, @hookform/resolvers, zod, @tanstack/react-query, xlsx (sheetjs), motion (framer-motion), date-fns, sonner (toasts), cmdk (command palette), clsx, tailwind-merge, class-variance-authority",
+    "Install all dev dependencies: typescript, @types/react, @types/react-dom, @vitejs/plugin-react, vite, tailwindcss@4, @tailwindcss/vite, eslint, @typescript-eslint/eslint-plugin, @typescript-eslint/parser, eslint-plugin-react-hooks, eslint-plugin-react-refresh, prettier, prettier-plugin-tailwindcss",
+    "Create vite.config.ts with @vitejs/plugin-react and @tailwindcss/vite plugins, path alias @ -> ./src",
+    "Create tsconfig.json with strict mode, paths alias @/* -> ./src/*, module ESNext, moduleResolution bundler, jsx react-jsx",
+    "Create tsconfig.app.json extending tsconfig.json for src files and tsconfig.node.json for config files",
+    "Create .eslintrc.cjs with TypeScript + React + React Hooks rules",
+    "Create .prettierrc with singleQuote, semi, trailingComma, printWidth 100",
+    "Create src/index.css with @import 'tailwindcss' and complete CSS variable design system: --background: #0a0a0a, --foreground: #f4f4f4, --card: rgba(255,255,255,0.03), --card-foreground: #f4f4f4, --primary: #10b981, --primary-foreground: #ffffff, --secondary: rgba(255,255,255,0.06), --secondary-foreground: #a1a1aa, --muted: rgba(255,255,255,0.04), --muted-foreground: #71717a, --accent: #10b981, --accent-foreground: #ffffff, --destructive: #ef4444, --border: rgba(255,255,255,0.06), --input: rgba(255,255,255,0.06), --ring: #10b981, --radius: 1.5rem (24px), --sidebar-background: rgba(0,0,0,0.8), --sidebar-foreground: #f4f4f4, --sidebar-border: rgba(255,255,255,0.06), --chart-1 through --chart-5 in emerald/teal spectrum. Add @theme inline block for Tailwind 4 to pick up custom values. Add utility classes for glassmorphism, gradient-orb backgrounds, and bento-grid layouts",
+    "Create src/lib/utils.ts with cn() helper using clsx + tailwind-merge",
+    "Create .env.example with VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_AI_PROVIDER, VITE_OPENAI_API_KEY, VITE_GEMINI_API_KEY, VITE_ANTHROPIC_API_KEY",
+    "Create .gitignore for Node/React/Vite projects (node_modules, dist, .env, etc.)",
+    "Create netlify.toml with build command pnpm build, publish dist, redirects for SPA",
+    "Create Dockerfile (multi-stage: node:22-alpine build then nginx:alpine serve)",
+    "Create docker-compose.yml with app service",
+    "Create .github/workflows/ci.yml with pnpm install, type-check, lint, build steps on push/PR",
+    "Create package.json scripts: dev, build, preview, lint, type-check, format",
+    "Create a minimal src/main.tsx and src/App.tsx that render successfully to verify the build works"
+  ],
+  "acceptance_criteria": [
+    "pnpm install completes without errors",
+    "pnpm build produces a dist/ folder without TypeScript or build errors",
+    "pnpm type-check (tsc --noEmit) passes",
+    "pnpm lint passes without errors",
+    "All CSS variables for the design system are defined in src/index.css",
+    ".env.example contains all required environment variable placeholders",
+    "Dockerfile, docker-compose.yml, netlify.toml, and .github/workflows/ci.yml all exist"
+  ],
+  "verification": [
+    "source $HOME/.nvm/nvm.sh && cd /projects/sandbox/stockflow-inventory-crm && pnpm install && pnpm build && pnpm type-check"
+  ],
+  "blocked_reason": null,
+  "findings": "Used Vite 6 (not 8) to ensure compatibility with @vitejs/plugin-react v4 and @tailwindcss/vite v4. Used fileURLToPath for path alias in vite.config.ts to avoid __dirname issues with ESM. Added @types/node as dev dependency for node:url imports in vite.config.ts. Also added pnpm.onlyBuiltDependencies to package.json for esbuild postinstall script."
+}
