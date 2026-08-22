@@ -1,0 +1,20 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Core UI components, layout system, and routing - Complete UI component library, layout shell, auth context, routing, and stub pages",
+  "status": "in_progress",
+  "steps": [],
+  "acceptance_criteria": [
+    "All UI components in src/components/ui/ compile without errors",
+    "Layout components (AppShell, Sidebar, TopNav) render correctly",
+    "All routes defined and accessible",
+    "Auth context and Supabase client configured",
+    "pnpm build succeeds",
+    "pnpm type-check passes"
+  ],
+  "verification": [
+    "source $HOME/.nvm/nvm.sh && cd /projects/sandbox/stockflow-inventory-crm && pnpm build && pnpm type-check"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}
