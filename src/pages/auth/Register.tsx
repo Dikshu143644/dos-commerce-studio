@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/hooks/useAuth';
 
 const step1Schema = z
   .object({
@@ -33,8 +34,9 @@ type Step2Data = z.infer<typeof step2Schema>;
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState('');
+  const { signup, loading: isLoading } = useAuth();
 
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
@@ -49,10 +51,17 @@ export default function RegisterPage() {
   };
 
   const handleStep2 = async (data: Step2Data) => {
-    setIsLoading(true);
-    console.log('Register:', { ...step1Form.getValues(), ...data });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    setError(null);
+    try {
+      const credentials = step1Form.getValues();
+      await signup(credentials.email, credentials.password, {
+        full_name: data.fullName,
+        phone: data.phone,
+        role: data.role,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
+    }
   };
 
   return (
@@ -84,6 +93,13 @@ export default function RegisterPage() {
             {step === 1 ? 'Set up your login credentials' : 'Tell us about yourself'}
           </p>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         {/* Step 1: Credentials */}
         {step === 1 && (

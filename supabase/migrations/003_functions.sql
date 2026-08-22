@@ -57,15 +57,19 @@ CREATE TRIGGER trigger_update_stock_quantity
 AFTER INSERT ON stock_movements
 FOR EACH ROW EXECUTE FUNCTION update_stock_quantity();
 
+-- Sequences for generating unique, gap-free document numbers
+-- Using PostgreSQL SEQUENCE objects ensures uniqueness under concurrent inserts
+CREATE SEQUENCE po_number_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE order_number_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE invoice_number_seq START WITH 1 INCREMENT BY 1;
+
 -- Function to generate sequential PO numbers
 CREATE OR REPLACE FUNCTION generate_po_number()
 RETURNS TEXT AS $$
 DECLARE
-    v_count INTEGER;
     v_number TEXT;
 BEGIN
-    SELECT COUNT(*) + 1 INTO v_count FROM purchase_orders;
-    v_number := 'PO-' || LPAD(v_count::TEXT, 6, '0');
+    v_number := 'PO-' || LPAD(nextval('po_number_seq')::TEXT, 6, '0');
     RETURN v_number;
 END;
 $$ LANGUAGE plpgsql;
@@ -74,11 +78,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION generate_order_number()
 RETURNS TEXT AS $$
 DECLARE
-    v_count INTEGER;
     v_number TEXT;
 BEGIN
-    SELECT COUNT(*) + 1 INTO v_count FROM sales_orders;
-    v_number := 'SO-' || LPAD(v_count::TEXT, 6, '0');
+    v_number := 'SO-' || LPAD(nextval('order_number_seq')::TEXT, 6, '0');
     RETURN v_number;
 END;
 $$ LANGUAGE plpgsql;
@@ -87,11 +89,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION generate_invoice_number()
 RETURNS TEXT AS $$
 DECLARE
-    v_count INTEGER;
     v_number TEXT;
 BEGIN
-    SELECT COUNT(*) + 1 INTO v_count FROM invoices;
-    v_number := 'INV-' || LPAD(v_count::TEXT, 6, '0');
+    v_number := 'INV-' || LPAD(nextval('invoice_number_seq')::TEXT, 6, '0');
     RETURN v_number;
 END;
 $$ LANGUAGE plpgsql;

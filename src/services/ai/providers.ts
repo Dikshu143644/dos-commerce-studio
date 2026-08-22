@@ -1,13 +1,89 @@
+/**
+ * AI Provider Layer - Proxy Architecture
+ *
+ * ARCHITECTURE DECISION: In production, all AI API calls are routed through a server-side
+ * proxy endpoint (e.g., /api/ai/chat) rather than calling provider APIs directly from the
+ * browser. This prevents API key exposure in the client bundle.
+ *
+ * The VITE_AI_PROXY_URL environment variable should point to your backend proxy endpoint.
+ * When no proxy is configured, the system automatically falls back to intelligent mock
+ * responses for development and demo purposes.
+ *
+ * Production setup:
+ *   1. Deploy a backend service (Edge Function, Express, etc.) that holds API keys securely
+ *   2. Set VITE_AI_PROXY_URL=https://your-domain.com/api/ai/chat
+ *   3. The proxy validates auth tokens and forwards requests to OpenAI/Anthropic/Gemini
+ *
+ * The individual provider classes below are retained for reference and can be used
+ * server-side in a Node.js backend. They should NEVER be called directly from the browser
+ * with real API keys.
+ */
+
 import type { AIProvider, Message } from './types';
 
+// The proxy URL for production AI calls - set this in your .env file
+const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
+
+/**
+ * ProxyProvider routes all AI requests through a secure backend endpoint.
+ * This is the only provider that should be used in production browser environments.
+ */
+class ProxyProvider implements AIProvider {
+  name = 'proxy';
+
+  isConfigured(): boolean {
+    return !!AI_PROXY_URL;
+  }
+
+  async chat(messages: Message[], systemPrompt: string): Promise<string> {
+    if (!AI_PROXY_URL) {
+      throw new Error('AI proxy URL not configured (VITE_AI_PROXY_URL)');
+    }
+
+    const response = await fetch(AI_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        systemPrompt,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI proxy error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content || data.message || 'No response generated.';
+  }
+}
+
+/**
+ * Server-side only provider reference implementations.
+ * These classes document the expected API integration patterns for the backend proxy.
+ * They are NOT intended for direct browser use - API keys must never be in the client bundle.
+ */
 class OpenAIProvider implements AIProvider {
   name = 'openai';
 
   isConfigured(): boolean {
+    // In a browser environment, this provider should not be used directly.
+    // The proxy handles API key management server-side.
+    if (typeof window !== 'undefined') {
+      console.warn('[AI] OpenAI provider should not be called directly from the browser. Use the proxy provider.');
+      return false;
+    }
     return !!import.meta.env.VITE_OPENAI_API_KEY;
   }
 
   async chat(messages: Message[], systemPrompt: string): Promise<string> {
+    if (typeof window !== 'undefined') {
+      throw new Error('OpenAI provider cannot be used directly in the browser. Configure VITE_AI_PROXY_URL instead.');
+    }
+
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     if (!apiKey) throw new Error('OpenAI API key not configured');
 
@@ -41,10 +117,18 @@ class GeminiProvider implements AIProvider {
   name = 'gemini';
 
   isConfigured(): boolean {
+    if (typeof window !== 'undefined') {
+      console.warn('[AI] Gemini provider should not be called directly from the browser. Use the proxy provider.');
+      return false;
+    }
     return !!import.meta.env.VITE_GEMINI_API_KEY;
   }
 
   async chat(messages: Message[], systemPrompt: string): Promise<string> {
+    if (typeof window !== 'undefined') {
+      throw new Error('Gemini provider cannot be used directly in the browser. Configure VITE_AI_PROXY_URL instead.');
+    }
+
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) throw new Error('Gemini API key not configured');
 
@@ -54,10 +138,13 @@ class GeminiProvider implements AIProvider {
     }));
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents,
@@ -82,10 +169,20 @@ class AnthropicProvider implements AIProvider {
   name = 'anthropic';
 
   isConfigured(): boolean {
+    // Anthropic API does not support CORS - it will always fail from browser contexts.
+    // This provider must be used through a server-side proxy only.
+    if (typeof window !== 'undefined') {
+      console.warn('[AI] Anthropic provider cannot work in the browser (no CORS support). Use the proxy provider.');
+      return false;
+    }
     return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
   }
 
   async chat(messages: Message[], systemPrompt: string): Promise<string> {
+    if (typeof window !== 'undefined') {
+      throw new Error('Anthropic provider cannot be used in the browser (no CORS). Configure VITE_AI_PROXY_URL instead.');
+    }
+
     const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
     if (!apiKey) throw new Error('Anthropic API key not configured');
 
@@ -115,7 +212,11 @@ class AnthropicProvider implements AIProvider {
   }
 }
 
+// The proxy provider is the primary provider for browser environments.
+// Server-side provider references are kept for backend proxy implementation guidance.
+const proxyProvider = new ProxyProvider();
 const providers: AIProvider[] = [
+  proxyProvider,
   new OpenAIProvider(),
   new GeminiProvider(),
   new AnthropicProvider(),
@@ -125,6 +226,7 @@ export async function chatWithFallback(messages: Message[], systemPrompt: string
   const configuredProviders = providers.filter((p) => p.isConfigured());
 
   if (configuredProviders.length === 0) {
+    // No proxy configured and direct providers blocked in browser - use mock responses
     return generateMockResponse(messages);
   }
 
@@ -163,4 +265,4 @@ function generateMockResponse(messages: Message[]): string {
   return "I'm here to help you manage your inventory, track sales, monitor procurement, and analyze finances. You can ask me about stock levels, customer data, deal pipelines, purchase orders, revenue trends, or have me generate reports. What would you like to know?";
 }
 
-export { providers, OpenAIProvider, GeminiProvider, AnthropicProvider };
+export { providers, ProxyProvider, OpenAIProvider, GeminiProvider, AnthropicProvider };

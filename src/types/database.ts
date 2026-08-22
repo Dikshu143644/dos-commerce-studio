@@ -1,14 +1,14 @@
-// Enums matching Supabase database schema
-export type MovementType = 'in' | 'out' | 'transfer' | 'adjustment';
+// Enums matching Supabase database schema (source of truth: supabase/migrations/001_initial_schema.sql)
+export type MovementType = 'in' | 'out' | 'transfer' | 'adjustment' | 'return';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
-export type LeadSource = 'website' | 'referral' | 'cold_call' | 'social_media' | 'trade_show' | 'email' | 'other';
-export type DealStage = 'discovery' | 'proposal' | 'negotiation' | 'contract' | 'closed_won' | 'closed_lost';
+export type LeadSource = 'website' | 'referral' | 'cold_call' | 'trade_show' | 'social_media' | 'advertisement' | 'other';
+export type DealStage = 'qualification' | 'needs_analysis' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
 export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'follow_up';
-export type OrderStatus = 'draft' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
-export type POStatus = 'draft' | 'submitted' | 'approved' | 'received' | 'partially_received' | 'cancelled';
-export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'stock_alert' | 'order_update' | 'crm_activity';
-export type CustomerType = 'individual' | 'business';
-export type AgentType = 'demand_forecast' | 'inventory_optimizer' | 'crm_analyzer' | 'general';
+export type OrderStatus = 'draft' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+export type POStatus = 'draft' | 'sent' | 'confirmed' | 'partially_received' | 'received' | 'cancelled';
+export type NotificationType = 'info' | 'warning' | 'success' | 'error' | 'reminder';
+export type CustomerType = 'regular' | 'wholesale' | 'retail' | 'distributor';
+export type AgentType = 'inventory' | 'sales' | 'procurement' | 'finance' | 'excel' | 'general';
 
 // Database table types
 export interface Profile {

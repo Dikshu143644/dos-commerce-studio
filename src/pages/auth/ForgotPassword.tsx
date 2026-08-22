@@ -8,6 +8,7 @@ import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 
 const forgotSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -17,7 +18,8 @@ type ForgotFormData = z.infer<typeof forgotSchema>;
 
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { resetPassword, loading: isLoading } = useAuth();
 
   const {
     register,
@@ -28,11 +30,14 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(forgotSchema),
   });
 
-  const onSubmit = async (_data: ForgotFormData) => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setIsSubmitted(true);
+  const onSubmit = async (data: ForgotFormData) => {
+    setError(null);
+    try {
+      await resetPassword(data.email);
+      setIsSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send reset email. Please try again.');
+    }
   };
 
   return (
@@ -57,6 +62,12 @@ export default function ForgotPasswordPage() {
                 No worries, we&apos;ll send you reset instructions.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
