@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Create the RAG service layer (src/services/ai/rag/) with context builders, knowledge base, embeddings, query engine, tools executor, and types. Also create the database migration at supabase/migrations/007_ai_rag.sql.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/services/ai/rag/types.ts with all RAG-specific types: KnowledgeEntry, ToolExecution, ContextCache, RAGContext, ToolDefinition, ToolResult, QueryResult, EmbeddingResult",
     "Create src/services/ai/rag/embeddings.ts with generateEmbedding (OpenAI text-embedding-3-small via Edge Function or direct), batchEmbeddings, cosineSimilarity helper",
