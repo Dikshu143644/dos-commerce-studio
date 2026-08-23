@@ -7,6 +7,29 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ============================================================================
+-- AI Conversations Table (required by tool executions and Edge Function)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS ai_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  agent_type agent_type NOT NULL DEFAULT 'general',
+  title TEXT NOT NULL DEFAULT 'New Conversation',
+  messages JSONB NOT NULL DEFAULT '[]',
+  total_tokens INTEGER DEFAULT 0,
+  provider TEXT,
+  model TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_ai_conversations_user ON ai_conversations(user_id);
+ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users view own conversations" ON ai_conversations FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own conversations" ON ai_conversations FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own conversations" ON ai_conversations FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users delete own conversations" ON ai_conversations FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================================================
 -- Knowledge Base Table
 -- Stores FAQ, SOPs, product info, policies, and guides for RAG retrieval
 -- ============================================================================
@@ -55,12 +78,7 @@ CREATE TABLE IF NOT EXISTS ai_context_cache (
 );
 
 -- ============================================================================
--- Alter ai_conversations to track token usage and provider info
--- ============================================================================
-ALTER TABLE ai_conversations
-  ADD COLUMN IF NOT EXISTS total_tokens INTEGER DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS provider TEXT,
-  ADD COLUMN IF NOT EXISTS model TEXT;
+-- (token tracking columns already added in CREATE TABLE above)
 
 -- ============================================================================
 -- Vector Similarity Search Function
