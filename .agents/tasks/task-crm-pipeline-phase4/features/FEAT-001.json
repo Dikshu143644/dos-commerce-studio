@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create CRM database migration, update TypeScript types, and build complete CRM workflow service layer (src/services/crm/) with lead lifecycle, deal pipeline, conversion workflows, activities, follow-ups, and lead scoring.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create supabase/migrations/005_crm_workflows.sql with: lead_scores table, followup_rules table, email_sequences table, email_sequence_steps table, ALTER leads to add score + last_scored_at columns, ALTER deals to add converted_from_lead_id + sales_order_id columns, seed default followup rules, all indexes, and RLS policies as specified in the requirements.",
     "Update src/types/database.ts: Add LeadScore, FollowUpRule, EmailSequence, EmailSequenceStep interfaces. Update Lead interface to include score (number|null) and last_scored_at (string|null). Update Deal interface to include converted_from_lead_id (string|null) and sales_order_id (string|null).",
@@ -26,5 +26,5 @@
     "Run 'cd /projects/sandbox/stockflow-inventory-crm && bun run build' and confirm successful build with no TypeScript errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build passes with zero TypeScript errors. All 8 files created in src/services/crm/ (index.ts, types.ts, leads.ts, deals.ts, conversion.ts, activities.ts, followups.ts, scoring.ts). Migration file 005_crm_workflows.sql created. Lead and Deal interfaces updated in database.ts with new fields. The barrel index.ts exports convertLeadToCustomer from leads.ts and convertLeadToCustomerWorkflow from conversion.ts to avoid naming conflicts."
 }
