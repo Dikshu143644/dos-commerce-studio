@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, ScanLine } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
+import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
+import type { ScanResult } from '@/services/barcode/types';
 
 const mockProducts = [
   { id: '1', sku: 'SKU-1001', name: 'Circuit Board Pro X1', category: 'Electronics', stock: 145, price: 89.99, status: 'active' },
@@ -47,6 +49,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 export default function ProductsPage() {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -54,6 +57,17 @@ export default function ProductsPage() {
     resolver: zodResolver(productSchema),
     defaultValues: { unit: 'pcs', taxRate: '18' },
   });
+
+  const handleBarcodeScan = (result: ScanResult) => {
+    // Look up product by barcode value, navigate to detail
+    const product = mockProducts.find(
+      (p) => p.sku === result.value || p.name.toLowerCase().includes(result.value.toLowerCase())
+    );
+    setScannerOpen(false);
+    if (product) {
+      navigate(`/inventory/products/${product.id}`);
+    }
+  };
 
   const filteredProducts = mockProducts.filter((p) => {
     if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
@@ -112,9 +126,14 @@ export default function ProductsPage() {
         title="Products"
         description="Manage your product catalog and inventory"
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setScannerOpen(true)}>
+              <ScanLine className="mr-2 h-4 w-4" /> Scan Barcode
+            </Button>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Product
+            </Button>
+          </div>
         }
       />
 
@@ -225,6 +244,15 @@ export default function ProductsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleBarcodeScan}
+        title="Scan Product Barcode"
+        description="Scan a barcode to quickly find and navigate to a product"
+      />
     </motion.div>
   );
 }

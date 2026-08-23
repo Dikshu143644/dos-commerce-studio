@@ -95,6 +95,7 @@ export interface Product {
   reorder_point: number;
   image_url: string | null;
   barcode: string | null;
+  barcode_format: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

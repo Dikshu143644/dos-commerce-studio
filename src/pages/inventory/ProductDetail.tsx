@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Edit, Package, AlertTriangle, Warehouse, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, Repeat2, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Edit, Package, AlertTriangle, Warehouse, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, Repeat2, SlidersHorizontal, Printer, QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip, Cell } from 'recharts';
 import { format } from 'date-fns';
+import { generateBarcode, generateQRCode } from '@/services/barcode/generator';
+import type { BarcodeFormat } from '@/services/barcode/types';
 
 const mockProduct = {
   id: '1',
@@ -23,6 +26,8 @@ const mockProduct = {
   maxStockLevel: 500,
   reorderPoint: 50,
   isActive: true,
+  barcode: '4901234567890',
+  barcodeFormat: 'EAN_13' as BarcodeFormat,
   createdAt: '2024-01-15T10:30:00Z',
 };
 
@@ -78,9 +83,26 @@ const warehouseChartData = warehouseStock.map((ws) => ({
 
 export default function ProductDetailPage() {
   const navigate = useNavigate();
+  const [showPrintView, setShowPrintView] = useState(false);
   const totalStock = warehouseStock.reduce((sum, w) => sum + w.quantity, 0);
   const totalReserved = warehouseStock.reduce((sum, w) => sum + w.reserved, 0);
   const margin = ((mockProduct.sellingPrice - mockProduct.purchasePrice) / mockProduct.sellingPrice * 100).toFixed(1);
+
+  const barcodeImage = generateBarcode(mockProduct.barcode, mockProduct.barcodeFormat);
+  const qrCodeImage = generateQRCode({
+    sku: mockProduct.sku,
+    name: mockProduct.name,
+    price: mockProduct.sellingPrice,
+    warehouse: warehouseStock[0]?.warehouse,
+  });
+
+  const handlePrintBarcode = () => {
+    setShowPrintView(true);
+    setTimeout(() => {
+      window.print();
+      setShowPrintView(false);
+    }, 300);
+  };
 
   return (
     <motion.div
@@ -191,6 +213,46 @@ export default function ProductDetailPage() {
                 <span className="text-muted-foreground">Margin</span>
                 <span className="text-primary font-medium">{margin}%</span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Barcode & QR Code */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="h-4 w-4 text-primary" /> Barcode & QR Code
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {mockProduct.barcode && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Product Barcode</p>
+                  <div className="flex items-center justify-center rounded-[12px] bg-secondary/50 p-3">
+                    <img
+                      src={barcodeImage}
+                      alt={`Barcode: ${mockProduct.barcode}`}
+                      className="max-w-full h-auto"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Product QR Code</p>
+                <div className="flex items-center justify-center rounded-[12px] bg-secondary/50 p-3">
+                  <img
+                    src={qrCodeImage}
+                    alt={`QR Code for ${mockProduct.sku}`}
+                    className="w-32 h-32"
+                  />
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handlePrintBarcode}
+              >
+                <Printer className="mr-2 h-4 w-4" /> Print Barcode Label
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -350,6 +412,19 @@ export default function ProductDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Print-friendly barcode label (hidden, shown only when printing) */}
+      {showPrintView && (
+        <div className="fixed inset-0 z-[9999] bg-white p-8 print:block hidden" id="print-barcode-label">
+          <div className="flex flex-col items-center gap-4 text-black">
+            <h2 className="text-lg font-bold">{mockProduct.name}</h2>
+            <p className="text-sm">{mockProduct.sku}</p>
+            <img src={barcodeImage} alt="Barcode" className="w-64" />
+            <p className="text-xs font-mono">{mockProduct.barcode}</p>
+            <img src={qrCodeImage} alt="QR Code" className="w-32 h-32" />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

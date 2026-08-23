@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, ScanLine } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
+import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
+import type { ScanResult } from '@/services/barcode/types';
 
 const mockMovements = [
   { id: '1', date: '2024-12-18T14:30:00Z', product: 'Circuit Board Pro X1', warehouse: 'WH-MUM', type: 'in', quantity: 50, reference: 'PO-000089', createdBy: 'Rajesh Kumar' },
@@ -30,6 +34,14 @@ const typeConfig: Record<string, { color: string; icon: typeof ArrowDownLeft; la
 export default function StockMovementsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [warehouseFilter, setWarehouseFilter] = useState('all');
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleBarcodeScan = (result: ScanResult) => {
+    setScannerOpen(false);
+    toast.success(`Product scanned: ${result.value}`, {
+      description: 'Product added to movement',
+    });
+  };
 
   const filtered = mockMovements.filter((m) => {
     if (typeFilter !== 'all' && m.type !== typeFilter) return false;
@@ -88,6 +100,11 @@ export default function StockMovementsPage() {
       <PageHeader
         title="Stock Movements"
         description="Track all inventory movements across warehouses"
+        actions={
+          <Button variant="outline" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="mr-2 h-4 w-4" /> Scan Product
+          </Button>
+        }
       />
 
       {/* Filters */}
@@ -124,6 +141,15 @@ export default function StockMovementsPage() {
         columns={columns}
         data={filtered as unknown as Record<string, unknown>[]}
         searchPlaceholder="Search movements..."
+      />
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleBarcodeScan}
+        title="Scan Product for Movement"
+        description="Scan a barcode to quickly add a product to a stock movement"
       />
     </motion.div>
   );

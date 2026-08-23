@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Package, ClipboardList, FileText, Inbox } from 'lucide-react';
+import { Package, ClipboardList, FileText, Inbox, ScanLine } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,9 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
 import { useReceiveItems } from '@/hooks/useReceiving';
+import type { ScanResult } from '@/services/barcode/types';
 
 // Mock POs awaiting receiving
 const mockPendingPOs = [
@@ -145,7 +147,15 @@ interface ReceiveLineItem {
 
 export default function ReceivingPage() {
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<typeof mockPendingPOs[0] | null>(null);
+
+  const handleBarcodeScan = (result: ScanResult) => {
+    setScannerOpen(false);
+    toast.success(`Item scanned: ${result.value}`, {
+      description: 'Verifying against purchase order',
+    });
+  };
   const [lineItems, setLineItems] = useState<ReceiveLineItem[]>([]);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [receiveNotes, setReceiveNotes] = useState('');
@@ -278,6 +288,11 @@ export default function ReceivingPage() {
       <PageHeader
         title="Receiving"
         description="Receive goods against purchase orders and generate GRNs"
+        actions={
+          <Button variant="outline" onClick={() => setScannerOpen(true)}>
+            <ScanLine className="mr-2 h-4 w-4" /> Scan to Verify
+          </Button>
+        }
       />
 
       <Tabs defaultValue="pending" className="w-full">
@@ -484,6 +499,15 @@ export default function ReceivingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleBarcodeScan}
+        title="Verify Received Item"
+        description="Scan a barcode to verify received items against the purchase order"
+      />
     </motion.div>
   );
 }

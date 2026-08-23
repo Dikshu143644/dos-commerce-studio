@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import {
   Plus, ShoppingCart, Package, Check, X, Truck, CheckCircle2,
-  CircleDot, Search, Trash2,
+  CircleDot, Search, Trash2, ScanLine,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -26,6 +26,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
+import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
+import type { ScanResult } from '@/services/barcode/types';
 import { useSalesOrders, useSalesOrder, useCreateSalesOrder } from '@/hooks/useSalesOrders';
 import { useConfirmOrder, useProcessOrder, useShipOrder, useDeliverOrder, useCancelOrder } from '@/hooks/useSalesWorkflow';
 import { useInvoice } from '@/hooks/useInvoices';
@@ -75,6 +77,14 @@ export default function SalesOrdersPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [paymentRef, setPaymentRef] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleBarcodeScan = (result: ScanResult) => {
+    setScannerOpen(false);
+    toast.success(`Product scanned: ${result.value}`, {
+      description: 'Product added to order',
+    });
+  };
 
   // Data hooks
   const statusFilter = activeTab === 'all' ? undefined : (activeTab as OrderStatus);
@@ -344,9 +354,14 @@ export default function SalesOrdersPage() {
         title="Sales Orders"
         description="Manage customer orders and track fulfillment"
         actions={
-          <Button onClick={() => { setDialogOpen(true); resetForm(); }}>
-            <Plus className="mr-2 h-4 w-4" /> New Order
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setScannerOpen(true)}>
+              <ScanLine className="mr-2 h-4 w-4" /> Scan Product
+            </Button>
+            <Button onClick={() => { setDialogOpen(true); resetForm(); }}>
+              <Plus className="mr-2 h-4 w-4" /> New Order
+            </Button>
+          </div>
         }
       />
 
@@ -953,6 +968,15 @@ export default function SalesOrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleBarcodeScan}
+        title="Scan Product for Order"
+        description="Scan a barcode to quickly add a product to the sales order"
+      />
     </motion.div>
   );
 }
