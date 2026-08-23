@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Create all TanStack Query data hooks in src/hooks/ to wire Supabase to the frontend. Create src/services/php.ts as the PHP API client. Update the AI service providers.ts to call the Supabase Edge Function. Create the Supabase Edge Function at supabase/functions/ai-chat/index.ts.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/hooks/useProducts.ts - CRUD operations on products table using TanStack Query (useQuery for list with pagination/filters, useMutation for create/update/delete, optimistic updates on mutations). Query keys: ['products'], ['products', id]. Supabase queries on 'products' table.",
     "Create src/hooks/useWarehouses.ts - warehouse CRUD + stock summary. Joins with inventory table to get total quantity per warehouse.",
@@ -39,5 +39,5 @@
     "Verify supabase/functions/ai-chat/index.ts contains JWT validation, provider routing, and conversation storage logic"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "1. pnpm is not available in this sandbox - used bun as the runtime for type-check, lint, and build commands. 2. The database.ts types work as the source of truth for the hooks - they define the shapes that get returned from Supabase queries. 3. The ProxyProvider now constructs the Edge Function URL from VITE_SUPABASE_URL and includes the user's access_token. It also accepts agentType and conversationId context. 4. The dashboard hook uses a client-side join of inventory + products tables to detect low stock items rather than an RPC call, since the RPC may not exist. 5. All 14 hooks, PHP service client, updated AI providers, and Edge Function pass type-check, lint, and build with zero errors."
 }
