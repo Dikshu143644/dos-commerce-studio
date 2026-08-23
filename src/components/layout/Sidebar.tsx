@@ -25,6 +25,8 @@ import {
   PackageCheck,
   SlidersHorizontal,
   AlertTriangle,
+  Bell,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -61,6 +63,8 @@ const navSections: NavSection[] = [
       { title: 'Leads', href: '/crm/leads', icon: UserPlus },
       { title: 'Deals', href: '/crm/deals', icon: Handshake },
       { title: 'Activities', href: '/crm/activities', icon: Activity },
+      { title: 'Follow-ups', href: '/crm/follow-ups', icon: Bell },
+      { title: 'Funnel', href: '/crm/funnel', icon: TrendingUp },
     ],
   },
   {

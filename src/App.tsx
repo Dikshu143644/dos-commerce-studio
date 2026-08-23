@@ -19,6 +19,8 @@ const Customers = lazy(() => import('@/pages/crm/Customers'));
 const Leads = lazy(() => import('@/pages/crm/Leads'));
 const Deals = lazy(() => import('@/pages/crm/Deals'));
 const Activities = lazy(() => import('@/pages/crm/Activities'));
+const FollowUps = lazy(() => import('@/pages/crm/FollowUps'));
+const ConversionFunnel = lazy(() => import('@/pages/crm/ConversionFunnel'));
 const Suppliers = lazy(() => import('@/pages/procurement/Suppliers'));
 const PurchaseOrders = lazy(() => import('@/pages/procurement/PurchaseOrders'));
 const SalesOrders = lazy(() => import('@/pages/sales/SalesOrders'));
@@ -66,6 +68,8 @@ function App() {
           <Route path="crm/leads" element={<Leads />} />
           <Route path="crm/deals" element={<Deals />} />
           <Route path="crm/activities" element={<Activities />} />
+          <Route path="crm/follow-ups" element={<FollowUps />} />
+          <Route path="crm/funnel" element={<ConversionFunnel />} />
           <Route path="procurement/suppliers" element={<Suppliers />} />
           <Route path="procurement/orders" element={<PurchaseOrders />} />
           <Route path="sales/orders" element={<SalesOrders />} />

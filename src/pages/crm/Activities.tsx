@@ -1,15 +1,53 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Phone, Mail, Video, Pencil, Clock, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import {
+  Plus,
+  Phone,
+  Mail,
+  Video,
+  Pencil,
+  Clock,
+  Calendar,
+  CheckCircle2,
+  Filter,
+  AlertCircle,
+} from 'lucide-react';
+import { format, isPast } from 'date-fns';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { EmptyState } from '@/components/shared/EmptyState';
+import {
+  useActivityFeed,
+  useCreateActivity as useCreateActivityFeed,
+  useCompleteActivity as useCompleteActivityFeed,
+  useTodayActivities,
+} from '@/hooks/useActivityFeed';
+import type { ActivityType } from '@/types/database';
 
 const activityIcons: Record<string, typeof Phone> = {
   call: Phone,
@@ -29,25 +67,78 @@ const activityColors: Record<string, string> = {
   follow_up: 'bg-orange-500/20 text-orange-400',
 };
 
-const mockActivities = [
-  { id: '1', type: 'call', subject: 'Discovery call with Nexus Technologies', description: 'Discussed their inventory management needs. They are looking for a solution to manage 3 warehouses.', relatedType: 'Lead', relatedName: 'Nexus Technologies', date: '2024-12-18T14:00:00Z', assignedTo: 'Priya Singh', completed: false },
-  { id: '2', type: 'email', subject: 'Proposal sent to GlobalTech Solutions', description: 'Sent the revised proposal with updated pricing for the hardware procurement deal.', relatedType: 'Deal', relatedName: 'Bulk Hardware Procurement', date: '2024-12-18T11:30:00Z', assignedTo: 'Amit Patel', completed: true },
-  { id: '3', type: 'meeting', subject: 'Quarterly review with Pinnacle Manufacturing', description: 'Annual maintenance contract renewal discussion. They want to expand coverage to 2 more locations.', relatedType: 'Customer', relatedName: 'Pinnacle Manufacturing', date: '2024-12-17T15:00:00Z', assignedTo: 'Vikram Singh', completed: true },
-  { id: '4', type: 'note', subject: 'Pricing update for industrial motors', description: 'Updated pricing from supplier. New bulk rates available for orders above 50 units.', relatedType: 'Customer', relatedName: 'MetroWorks Industrial', date: '2024-12-17T10:00:00Z', assignedTo: 'Priya Singh', completed: true },
-  { id: '5', type: 'follow_up', subject: 'Follow up with BrightEdge on proposal', description: 'Need to check if they reviewed the proposal and address any concerns.', relatedType: 'Lead', relatedName: 'BrightEdge Corp', date: '2024-12-19T09:00:00Z', assignedTo: 'Vikram Singh', completed: false },
-  { id: '6', type: 'task', subject: 'Prepare demo environment for CoreBuild', description: 'Set up the demo account with sample data for their use case.', relatedType: 'Lead', relatedName: 'CoreBuild Systems', date: '2024-12-19T16:00:00Z', assignedTo: 'Amit Patel', completed: false },
-  { id: '7', type: 'call', subject: 'Support call with AutoParts Direct', description: 'Resolved their order tracking issue. They need to update their integration settings.', relatedType: 'Customer', relatedName: 'AutoParts Direct', date: '2024-12-16T13:00:00Z', assignedTo: 'Priya Singh', completed: true },
-  { id: '8', type: 'email', subject: 'Invoice reminder to SmartBuild Contractors', description: 'Sent payment reminder for INV-000234 due in 5 days.', relatedType: 'Customer', relatedName: 'SmartBuild Contractors', date: '2024-12-16T09:00:00Z', assignedTo: 'Amit Patel', completed: true },
-];
+const activitySchema = z.object({
+  activity_type: z.enum(['call', 'email', 'meeting', 'note', 'task', 'follow_up'] as const),
+  title: z.string().min(2, 'Title is required'),
+  description: z.string().optional(),
+  scheduled_at: z.string().optional(),
+  performed_by: z.string().optional(),
+});
+
+type ActivityFormData = z.infer<typeof activitySchema>;
 
 export default function ActivitiesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
 
-  const filtered = mockActivities.filter((a) => {
-    if (typeFilter === 'all') return true;
-    return a.type === typeFilter;
+  const { data: todayTasks, isLoading: todayLoading } = useTodayActivities();
+  const { data: feedData, isLoading: feedLoading } = useActivityFeed(undefined, undefined, page, 20);
+  const createActivity = useCreateActivityFeed();
+  const completeActivity = useCompleteActivityFeed();
+
+  const form = useForm<ActivityFormData>({
+    resolver: zodResolver(activitySchema),
+    defaultValues: { activity_type: 'call', title: '', description: '' },
   });
+
+  const isLoading = todayLoading || feedLoading;
+
+  const handleCreateActivity = (data: ActivityFormData) => {
+    createActivity.mutate(
+      {
+        activity_type: data.activity_type,
+        title: data.title,
+        description: data.description || undefined,
+        scheduled_at: data.scheduled_at || undefined,
+        performed_by: data.performed_by || 'current-user',
+      },
+      {
+        onSuccess: () => {
+          toast.success('Activity created successfully');
+          setDialogOpen(false);
+          form.reset();
+        },
+        onError: (error) => toast.error(`Failed to create activity: ${error.message}`),
+      }
+    );
+  };
+
+  const handleCompleteActivity = (activityId: string) => {
+    completeActivity.mutate(
+      { activity_id: activityId, performed_by: 'current-user' },
+      {
+        onSuccess: () => {
+          toast.success('Activity completed', {
+            action: {
+              label: 'Schedule follow-up?',
+              onClick: () => {
+                form.setValue('activity_type', 'follow_up');
+                form.setValue('title', 'Follow-up');
+                setDialogOpen(true);
+              },
+            },
+          });
+        },
+        onError: (error) => toast.error(`Failed to complete activity: ${error.message}`),
+      }
+    );
+  };
+
+  const feedActivities = feedData?.data ?? [];
+  const filteredFeed = typeFilter === 'all'
+    ? feedActivities
+    : feedActivities.filter((a) => a.activity_type === typeFilter);
 
   return (
     <motion.div
@@ -68,6 +159,9 @@ export default function ActivitiesPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+        </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Type" />
@@ -84,45 +178,172 @@ export default function ActivitiesPage() {
         </Select>
       </div>
 
-      {/* Activity Timeline */}
-      <div className="space-y-4">
-        {filtered.map((activity) => {
-          const Icon = activityIcons[activity.type] || Clock;
-          return (
-            <motion.div
-              key={activity.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <Card className="hover:border-primary/20 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${activityColors[activity.type]}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="text-sm font-medium text-foreground">{activity.subject}</h4>
-                          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{activity.description}</p>
-                        </div>
-                        <Badge variant={activity.completed ? 'default' : 'warning'} className="text-xs flex-shrink-0 ml-2">
-                          {activity.completed ? 'Done' : 'Pending'}
-                        </Badge>
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-[16px]" />
+            ))}
+          </div>
+          <div className="lg:col-span-2 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-[16px]" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Today's Tasks - Left Panel */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Today&apos;s Tasks</h3>
+              <Badge variant="secondary">{todayTasks?.length ?? 0}</Badge>
+            </div>
+            {!todayTasks || todayTasks.length === 0 ? (
+              <div className="rounded-[16px] border border-dashed border-border p-6 text-center">
+                <CheckCircle2 className="h-8 w-8 text-primary/50 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No tasks for today</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {todayTasks.map((task) => {
+                  const Icon = activityIcons[task.activity_type] || Clock;
+                  const isOverdue = task.scheduled_at && isPast(new Date(task.scheduled_at)) && !task.completed_at;
+                  return (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      <Card className={`${isOverdue ? 'border-red-500/30' : ''}`}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={!!task.completed_at}
+                              onCheckedChange={() => handleCompleteActivity(task.id)}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <div className={`flex h-5 w-5 items-center justify-center rounded-full ${activityColors[task.activity_type]}`}>
+                                  <Icon className="h-3 w-3" />
+                                </div>
+                                <p className={`text-xs font-medium truncate ${isOverdue ? 'text-red-400' : 'text-foreground'}`}>
+                                  {task.title}
+                                </p>
+                              </div>
+                              {task.scheduled_at && (
+                                <p className={`text-[10px] mt-1 ${isOverdue ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                  {isOverdue && <AlertCircle className="inline h-3 w-3 mr-1" />}
+                                  {format(new Date(task.scheduled_at), 'HH:mm')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Activity Feed - Right Panel */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Activity Feed</h3>
+              <span className="text-xs text-muted-foreground">{feedData?.count ?? 0} total</span>
+            </div>
+
+            {filteredFeed.length === 0 ? (
+              <EmptyState
+                icon={Clock}
+                title="No activities yet"
+                description="Create your first activity to start tracking interactions."
+                actionLabel="Log Activity"
+                onAction={() => setDialogOpen(true)}
+              />
+            ) : (
+              <div className="space-y-3 relative">
+                {/* Timeline line */}
+                <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+
+                {filteredFeed.map((activity) => {
+                  const Icon = activityIcons[activity.activity_type] || Clock;
+                  return (
+                    <motion.div
+                      key={activity.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative pl-12"
+                    >
+                      {/* Timeline dot */}
+                      <div className={`absolute left-3 top-3 flex h-5 w-5 items-center justify-center rounded-full ${activityColors[activity.activity_type]} ring-2 ring-background`}>
+                        <Icon className="h-3 w-3" />
                       </div>
-                      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{activity.relatedType}: <span className="text-foreground">{activity.relatedName}</span></span>
-                        <span>{format(new Date(activity.date), 'MMM d, yyyy HH:mm')}</span>
-                        <span>{activity.assignedTo}</span>
-                      </div>
-                    </div>
+
+                      <Card className="hover:border-primary/20 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-foreground">{activity.title}</h4>
+                              {activity.description && (
+                                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                  {activity.description}
+                                </p>
+                              )}
+                              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                                <span>{format(new Date(activity.created_at), 'MMM d, HH:mm')}</span>
+                                <span>{activity.performed_by}</span>
+                              </div>
+                            </div>
+                            <Badge
+                              variant={activity.completed_at ? 'default' : 'warning'}
+                              className="text-xs flex-shrink-0 ml-2"
+                            >
+                              {activity.completed_at ? 'Done' : 'Pending'}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Load More */}
+                {feedData && feedData.page < feedData.totalPages && (
+                  <div className="pl-12 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => p + 1)}
+                      className="w-full"
+                    >
+                      Load More
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Action Button */}
+      <motion.div
+        className="fixed bottom-6 right-6 z-50 lg:hidden"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <Button
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => setDialogOpen(true)}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </motion.div>
 
       {/* Log Activity Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -131,11 +352,16 @@ export default function ActivitiesPage() {
             <DialogTitle>Log Activity</DialogTitle>
             <DialogDescription>Record an interaction or task.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleCreateActivity)} className="space-y-4">
             <div className="space-y-2">
-              <Label>Activity Type</Label>
-              <Select>
-                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <Label>Activity Type *</Label>
+              <Select
+                defaultValue="call"
+                onValueChange={(v) => form.setValue('activity_type', v as ActivityType)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="call">Call</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
@@ -147,28 +373,29 @@ export default function ActivitiesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Subject</Label>
-              <Input placeholder="Activity subject" />
+              <Label>Title *</Label>
+              <Input placeholder="Activity subject" {...form.register('title')} />
+              {form.formState.errors.title && (
+                <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Input placeholder="Activity details" />
+              <Input placeholder="Activity details" {...form.register('description')} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Related To</Label>
-                <Input placeholder="Customer or Lead name" />
-              </div>
-              <div className="space-y-2">
-                <Label>Due Date</Label>
-                <Input type="datetime-local" />
-              </div>
+            <div className="space-y-2">
+              <Label>Scheduled At</Label>
+              <Input type="datetime-local" {...form.register('scheduled_at')} />
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => setDialogOpen(false)}>Log Activity</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createActivity.isPending}>
+                {createActivity.isPending ? 'Creating...' : 'Log Activity'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </motion.div>
