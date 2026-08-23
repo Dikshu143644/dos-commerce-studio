@@ -11,6 +11,10 @@ const ProductDetail = lazy(() => import('@/pages/inventory/ProductDetail'));
 const Warehouses = lazy(() => import('@/pages/inventory/Warehouses'));
 const StockMovements = lazy(() => import('@/pages/inventory/StockMovements'));
 const Categories = lazy(() => import('@/pages/inventory/Categories'));
+const Transfers = lazy(() => import('@/pages/inventory/Transfers'));
+const Receiving = lazy(() => import('@/pages/inventory/Receiving'));
+const Adjustments = lazy(() => import('@/pages/inventory/Adjustments'));
+const LowStock = lazy(() => import('@/pages/inventory/LowStock'));
 const Customers = lazy(() => import('@/pages/crm/Customers'));
 const Leads = lazy(() => import('@/pages/crm/Leads'));
 const Deals = lazy(() => import('@/pages/crm/Deals'));
@@ -54,6 +58,10 @@ function App() {
           <Route path="inventory/warehouses" element={<Warehouses />} />
           <Route path="inventory/movements" element={<StockMovements />} />
           <Route path="inventory/categories" element={<Categories />} />
+          <Route path="inventory/transfers" element={<Transfers />} />
+          <Route path="inventory/receiving" element={<Receiving />} />
+          <Route path="inventory/adjustments" element={<Adjustments />} />
+          <Route path="inventory/low-stock" element={<LowStock />} />
           <Route path="crm/customers" element={<Customers />} />
           <Route path="crm/leads" element={<Leads />} />
           <Route path="crm/deals" element={<Deals />} />

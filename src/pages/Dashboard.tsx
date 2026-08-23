@@ -1,7 +1,8 @@
 import { motion } from 'motion/react';
 import {
   Package, AlertTriangle, Handshake, DollarSign, ShoppingCart,
-  Plus, ArrowRight, TrendingUp, Users, FileText, BarChart3
+  Plus, ArrowRight, TrendingUp, Users, FileText, BarChart3,
+  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, PackageCheck, Repeat2
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,6 +60,26 @@ const quickActions = [
   { label: 'Generate Report', icon: BarChart3, href: '/reports/export' },
 ];
 
+const recentStockMovements = [
+  { type: 'in', product: 'Circuit Board Pro X1', quantity: 50, warehouse: 'WH-MUM', time: '5 min ago' },
+  { type: 'out', product: 'Industrial Servo Motor', quantity: 12, warehouse: 'WH-DEL', time: '18 min ago' },
+  { type: 'transfer', product: 'LED Panel 60W', quantity: 30, warehouse: 'WH-BLR', time: '32 min ago' },
+  { type: 'adjustment', product: 'Steel Bearings Set', quantity: -3, warehouse: 'WH-MUM', time: '1 hr ago' },
+  { type: 'in', product: 'Copper Wire 2.5mm', quantity: 200, warehouse: 'WH-KOL', time: '1.5 hrs ago' },
+  { type: 'out', product: 'Thermal Paste TG-7', quantity: 25, warehouse: 'WH-MUM', time: '2 hrs ago' },
+  { type: 'transfer', product: 'PCB Connector Set', quantity: 100, warehouse: 'WH-DEL', time: '2.5 hrs ago' },
+  { type: 'in', product: 'Aluminum Sheet 3mm', quantity: 80, warehouse: 'WH-BLR', time: '3 hrs ago' },
+  { type: 'out', product: 'Circuit Board Pro X1', quantity: 8, warehouse: 'WH-DEL', time: '3.5 hrs ago' },
+  { type: 'adjustment', product: 'Resistor Pack 10K', quantity: 15, warehouse: 'WH-MUM', time: '4 hrs ago' },
+];
+
+const movementTypeConfig: Record<string, { icon: typeof ArrowDownLeft; color: string; bg: string }> = {
+  in: { icon: ArrowDownLeft, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  out: { icon: ArrowUpRight, color: 'text-red-400', bg: 'bg-red-500/10' },
+  transfer: { icon: ArrowLeftRight, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  adjustment: { icon: Pencil, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+};
+
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) => {
   if (active && payload && payload.length) {
     return (
@@ -97,15 +118,22 @@ export default function Dashboard() {
           value="23"
           icon={AlertTriangle}
           trend={{ value: 8, isPositive: false }}
-          description="needs attention"
+          description="critical"
           className="border-amber-500/20"
         />
         <KPICard
-          label="Active Deals"
-          value="156"
-          icon={Handshake}
-          trend={{ value: 24, isPositive: true }}
-          description="vs last month"
+          label="Pending Transfers"
+          value="7"
+          icon={Repeat2}
+          trend={{ value: 3, isPositive: false }}
+          description="awaiting action"
+        />
+        <KPICard
+          label="POs to Receive"
+          value="14"
+          icon={PackageCheck}
+          trend={{ value: 5, isPositive: false }}
+          description="in transit"
         />
         <KPICard
           label="Revenue This Month"
@@ -113,13 +141,6 @@ export default function Dashboard() {
           icon={DollarSign}
           trend={{ value: 18, isPositive: true }}
           description="vs last month"
-        />
-        <KPICard
-          label="Pending Orders"
-          value="42"
-          icon={ShoppingCart}
-          trend={{ value: 5, isPositive: false }}
-          description="awaiting action"
         />
       </motion.div>
 
@@ -256,6 +277,58 @@ export default function Dashboard() {
                   {action.label}
                 </Button>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Recent Stock Movements Feed */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.25 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Recent Stock Movements</span>
+              <Button variant="ghost" size="sm" className="text-xs">
+                View all <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentStockMovements.map((movement, index) => {
+                const config = movementTypeConfig[movement.type];
+                const MovementIcon = config.icon;
+                return (
+                  <div key={index} className="flex items-center justify-between rounded-[12px] bg-secondary/30 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full ${config.bg}`}>
+                        <MovementIcon className={`h-4 w-4 ${config.color}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-foreground">{movement.product}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {movement.type === 'in' ? '+' : movement.type === 'out' ? '-' : ''}{Math.abs(movement.quantity)} units &middot; {movement.warehouse}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        movement.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' :
+                        movement.type === 'out' ? 'bg-red-500/20 text-red-400' :
+                        movement.type === 'transfer' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {movement.type.toUpperCase()}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">{movement.time}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

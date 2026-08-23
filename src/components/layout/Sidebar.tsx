@@ -21,6 +21,10 @@ import {
   ScrollText,
   PanelLeftClose,
   PanelLeftOpen,
+  Repeat2,
+  PackageCheck,
+  SlidersHorizontal,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -44,6 +48,10 @@ const navSections: NavSection[] = [
       { title: 'Warehouses', href: '/inventory/warehouses', icon: Warehouse },
       { title: 'Stock Movements', href: '/inventory/movements', icon: ArrowRightLeft },
       { title: 'Categories', href: '/inventory/categories', icon: FolderTree },
+      { title: 'Transfers', href: '/inventory/transfers', icon: Repeat2 },
+      { title: 'Receiving', href: '/inventory/receiving', icon: PackageCheck },
+      { title: 'Adjustments', href: '/inventory/adjustments', icon: SlidersHorizontal },
+      { title: 'Low Stock', href: '/inventory/low-stock', icon: AlertTriangle },
     ],
   },
   {
