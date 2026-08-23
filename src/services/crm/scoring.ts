@@ -90,24 +90,111 @@ export async function calculateLeadScore(leadId: string): Promise<LeadScore> {
 
 /**
  * Bulk recalculates scores for all active leads (not won/lost).
+ * Optimized: batch-fetches activity counts in a single query grouped by lead_id,
+ * then computes scores in memory rather than N sequential DB calls.
  */
 export async function scoreAllLeads(): Promise<LeadScore[]> {
+  // Fetch all active leads
   const { data: leads, error } = await supabase
     .from('leads')
-    .select('id')
+    .select('*')
     .not('status', 'in', '("won","lost")');
 
   if (error) {
     throw new Error(`Failed to fetch leads for scoring: ${error.message}`);
   }
 
-  const scores: LeadScore[] = [];
-  for (const lead of leads ?? []) {
-    const score = await calculateLeadScore(lead.id);
-    scores.push(score);
+  if (!leads || leads.length === 0) return [];
+
+  const leadIds = leads.map((l) => l.id);
+
+  // Batch-fetch activity counts grouped by lead_id
+  const { data: activityCounts, error: countError } = await supabase
+    .from('crm_activities')
+    .select('lead_id')
+    .in('lead_id', leadIds);
+
+  if (countError) {
+    throw new Error(`Failed to batch-fetch activity counts: ${countError.message}`);
   }
 
-  return scores;
+  // Build a map of lead_id -> activity count
+  const countMap: Record<string, number> = {};
+  for (const row of activityCounts ?? []) {
+    if (row.lead_id) {
+      countMap[row.lead_id] = (countMap[row.lead_id] ?? 0) + 1;
+    }
+  }
+
+  // Batch-fetch the most recent activity date per lead
+  const { data: recentActivities, error: recentError } = await supabase
+    .from('crm_activities')
+    .select('lead_id, created_at')
+    .in('lead_id', leadIds)
+    .order('created_at', { ascending: false });
+
+  if (recentError) {
+    throw new Error(`Failed to batch-fetch recent activities: ${recentError.message}`);
+  }
+
+  // Build a map of lead_id -> most recent activity date
+  const recentMap: Record<string, string> = {};
+  for (const row of recentActivities ?? []) {
+    if (row.lead_id && !recentMap[row.lead_id]) {
+      recentMap[row.lead_id] = row.created_at;
+    }
+  }
+
+  // Compute all scores in memory and batch-insert
+  const scoreInserts: { lead_id: string; score: number; breakdown: LeadScoreBreakdown; calculated_at: string }[] = [];
+  const leadUpdates: { id: string; score: number; last_scored_at: string }[] = [];
+
+  for (const lead of leads) {
+    const activityCount = countMap[lead.id] ?? 0;
+    const lastActivityDate = recentMap[lead.id] ?? null;
+
+    const breakdown = computeScoreBreakdown(
+      lead as Lead,
+      activityCount,
+      lastActivityDate
+    );
+
+    const totalScore = Math.min(
+      100,
+      breakdown.source + breakdown.value + breakdown.engagement + breakdown.recency + breakdown.size
+    );
+
+    const now = new Date().toISOString();
+    scoreInserts.push({
+      lead_id: lead.id,
+      score: totalScore,
+      breakdown: breakdown as unknown as LeadScoreBreakdown,
+      calculated_at: now,
+    });
+    leadUpdates.push({ id: lead.id, score: totalScore, last_scored_at: now });
+  }
+
+  // Batch-insert all scores
+  const { data: insertedScores, error: insertError } = await supabase
+    .from('lead_scores')
+    .insert(scoreInserts)
+    .select();
+
+  if (insertError) {
+    throw new Error(`Failed to batch-insert lead scores: ${insertError.message}`);
+  }
+
+  // Batch-update leads with their new scores (using parallel updates)
+  await Promise.all(
+    leadUpdates.map(({ id, score, last_scored_at }) =>
+      supabase
+        .from('leads')
+        .update({ score, last_scored_at })
+        .eq('id', id)
+    )
+  );
+
+  return (insertedScores ?? []) as LeadScore[];
 }
 
 /**

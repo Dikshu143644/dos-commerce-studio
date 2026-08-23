@@ -47,6 +47,7 @@ import {
   useCompleteActivity as useCompleteActivityFeed,
   useTodayActivities,
 } from '@/hooks/useActivityFeed';
+import { useAuth } from '@/hooks/useAuth';
 import type { ActivityType } from '@/types/database';
 
 const activityIcons: Record<string, typeof Phone> = {
@@ -82,6 +83,7 @@ export default function ActivitiesPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
 
+  const { user } = useAuth();
   const { data: todayTasks, isLoading: todayLoading } = useTodayActivities();
   const { data: feedData, isLoading: feedLoading } = useActivityFeed(undefined, undefined, page, 20);
   const createActivity = useCreateActivityFeed();
@@ -101,7 +103,7 @@ export default function ActivitiesPage() {
         title: data.title,
         description: data.description || undefined,
         scheduled_at: data.scheduled_at || undefined,
-        performed_by: data.performed_by || 'current-user',
+        performed_by: data.performed_by || user?.id || 'unknown',
       },
       {
         onSuccess: () => {
@@ -116,7 +118,7 @@ export default function ActivitiesPage() {
 
   const handleCompleteActivity = (activityId: string) => {
     completeActivity.mutate(
-      { activity_id: activityId, performed_by: 'current-user' },
+      { activity_id: activityId, performed_by: user?.id || 'unknown' },
       {
         onSuccess: () => {
           toast.success('Activity completed', {

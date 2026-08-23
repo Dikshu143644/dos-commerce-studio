@@ -50,6 +50,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDeals, useCreateDeal, useUpdateDealStage } from '@/hooks/useDeals';
 import { useDealsByStage, usePipelineValue, useCloseDeal, useConvertDealToOrder } from '@/hooks/useDealPipeline';
+import { useAuth } from '@/hooks/useAuth';
 import type { Deal, DealStage } from '@/types/database';
 
 const stageOrder: DealStage[] = ['qualification', 'needs_analysis', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
@@ -86,6 +87,7 @@ const dealSchema = z.object({
 type DealFormData = z.infer<typeof dealSchema>;
 
 function DealDetailPanel({ deal, onClose }: { deal: Deal; onClose: () => void }) {
+  const { user } = useAuth();
   const closeDeal = useCloseDeal();
   const convertToOrder = useConvertDealToOrder();
 
@@ -96,7 +98,7 @@ function DealDetailPanel({ deal, onClose }: { deal: Deal; onClose: () => void })
 
   const handleCloseWon = () => {
     closeDeal.mutate(
-      { deal_id: deal.id, outcome: 'won', performed_by: 'current-user' },
+      { deal_id: deal.id, outcome: 'won', performed_by: user?.id ?? 'unknown' },
       {
         onSuccess: () => {
           toast.success('Deal closed as Won!');
@@ -109,7 +111,7 @@ function DealDetailPanel({ deal, onClose }: { deal: Deal; onClose: () => void })
 
   const handleCloseLost = () => {
     closeDeal.mutate(
-      { deal_id: deal.id, outcome: 'lost', performed_by: 'current-user' },
+      { deal_id: deal.id, outcome: 'lost', performed_by: user?.id ?? 'unknown' },
       {
         onSuccess: () => {
           toast.info('Deal marked as Lost');
@@ -122,7 +124,7 @@ function DealDetailPanel({ deal, onClose }: { deal: Deal; onClose: () => void })
 
   const handleCreateOrder = () => {
     convertToOrder.mutate(
-      { dealId: deal.id, performedBy: 'current-user' },
+      { dealId: deal.id, performedBy: user?.id ?? 'unknown' },
       {
         onSuccess: () => {
           toast.success('Sales order created from deal');

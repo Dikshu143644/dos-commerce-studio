@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useLeadsByStage, useHotLeads, useConvertLead } from '@/hooks/useLeadPipeline';
+import { useAuth } from '@/hooks/useAuth';
 import type { Lead } from '@/types/database';
 
 const FUNNEL_COLORS = ['#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1'];
@@ -49,6 +50,7 @@ export default function ConversionFunnelPage() {
   const { data: leadsByStage, isLoading: stagesLoading } = useLeadsByStage();
   const { data: hotLeads, isLoading: hotLeadsLoading } = useHotLeads();
   const convertLead = useConvertLead();
+  const { user } = useAuth();
 
   const isLoading = stagesLoading;
 
@@ -120,7 +122,7 @@ export default function ConversionFunnelPage() {
 
   const handleConvert = (lead: Lead) => {
     convertLead.mutate(
-      { lead_id: lead.id, performed_by: 'current-user' },
+      { lead_id: lead.id, performed_by: user?.id ?? 'unknown' },
       {
         onSuccess: () => toast.success(`${lead.name} converted to customer`),
         onError: (error) => toast.error(`Failed to convert: ${error.message}`),

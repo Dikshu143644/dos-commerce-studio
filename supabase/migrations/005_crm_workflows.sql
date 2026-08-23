@@ -1,5 +1,20 @@
 -- CRM Workflows Migration
--- Lead scoring, follow-up rules, email sequences
+-- Lead scoring, follow-up rules, email sequences, CRM activities
+
+-- CRM Activities table (used by CRM service layer for pipeline activity tracking)
+CREATE TABLE crm_activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    activity_type activity_type NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+    deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
+    performed_by UUID REFERENCES auth.users(id),
+    scheduled_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- Lead scoring history
 CREATE TABLE lead_scores (
@@ -46,9 +61,13 @@ CREATE TABLE email_sequence_steps (
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_scored_at TIMESTAMPTZ;
 
+-- Add conversion tracking columns to leads
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS converted_customer_id UUID REFERENCES customers(id);
+
 -- Add conversion tracking to deals
 ALTER TABLE deals ADD COLUMN IF NOT EXISTS converted_from_lead_id UUID REFERENCES leads(id);
 ALTER TABLE deals ADD COLUMN IF NOT EXISTS sales_order_id UUID;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS lost_at TIMESTAMPTZ;
 
 -- Seed default follow-up rules
 INSERT INTO followup_rules (name, trigger_event, trigger_condition, action_config) VALUES
@@ -59,6 +78,12 @@ INSERT INTO followup_rules (name, trigger_event, trigger_condition, action_confi
 ('Won Deal - Create Order', 'deal_stage_change', '{"new_stage": "closed_won"}', '{"delay_days": 0, "activity_type": "task", "subject_template": "Create sales order for {{deal.title}}"}');
 
 -- Indexes
+CREATE INDEX idx_crm_activities_lead ON crm_activities(lead_id);
+CREATE INDEX idx_crm_activities_deal ON crm_activities(deal_id);
+CREATE INDEX idx_crm_activities_customer ON crm_activities(customer_id);
+CREATE INDEX idx_crm_activities_performed_by ON crm_activities(performed_by);
+CREATE INDEX idx_crm_activities_scheduled ON crm_activities(scheduled_at);
+CREATE INDEX idx_crm_activities_type ON crm_activities(activity_type);
 CREATE INDEX idx_lead_scores_lead ON lead_scores(lead_id);
 CREATE INDEX idx_lead_scores_date ON lead_scores(calculated_at DESC);
 CREATE INDEX idx_followup_rules_trigger ON followup_rules(trigger_event);
@@ -66,13 +91,20 @@ CREATE INDEX idx_email_sequences_trigger ON email_sequences(trigger);
 CREATE INDEX idx_leads_score ON leads(score DESC);
 
 -- RLS
+ALTER TABLE crm_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lead_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE followup_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_sequences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_sequence_steps ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Authenticated can view crm activities" ON crm_activities FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can insert crm activities" ON crm_activities FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can update crm activities" ON crm_activities FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can delete crm activities" ON crm_activities FOR DELETE USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can view lead scores" ON lead_scores FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can insert lead scores" ON lead_scores FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can update lead scores" ON lead_scores FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can delete lead scores" ON lead_scores FOR DELETE USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can view followup rules" ON followup_rules FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can manage followup rules" ON followup_rules FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can view email sequences" ON email_sequences FOR SELECT USING (auth.role() = 'authenticated');

@@ -32,6 +32,7 @@ import {
   useSnoozeFollowUp,
   useFollowUpRules,
   useToggleRule,
+  useCompletedFollowUpsCount,
 } from '@/hooks/useFollowUps';
 import { useCompleteActivity } from '@/hooks/useActivities';
 import type { CrmActivity, FollowUpRule } from '@/types/database';
@@ -159,6 +160,7 @@ export default function FollowUpsPage() {
   const { data: upcoming, isLoading: upcomingLoading } = useUpcomingFollowUps();
   const { data: overdue, isLoading: overdueLoading } = useOverdueFollowUps();
   const { data: rules, isLoading: rulesLoading } = useFollowUpRules();
+  const { data: completedCount } = useCompletedFollowUpsCount();
 
   const isLoading = upcomingLoading || overdueLoading;
 
@@ -182,7 +184,10 @@ export default function FollowUpsPage() {
 
   const overdueItems = overdue ?? [];
   const totalCount = overdueItems.length + dueToday.length + upcomingThisWeek.length + later.length;
-  const completionRate = totalCount > 0 ? Math.round(((totalCount - overdueItems.length) / totalCount) * 100) : 100;
+  const totalWithCompleted = totalCount + (completedCount ?? 0);
+  const completionRate = totalWithCompleted > 0
+    ? Math.round(((completedCount ?? 0) / totalWithCompleted) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -229,7 +234,7 @@ export default function FollowUpsPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-foreground">{completionRate}%</p>
-              <p className="text-xs text-muted-foreground">On Track</p>
+              <p className="text-xs text-muted-foreground">Completion Rate</p>
             </div>
           </CardContent>
         </Card>

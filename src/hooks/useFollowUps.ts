@@ -121,3 +121,22 @@ export function useToggleRule() {
     },
   });
 }
+
+/**
+ * Fetches the count of completed follow-up activities for calculating completion rate.
+ */
+export function useCompletedFollowUpsCount() {
+  return useQuery({
+    queryKey: ['follow-ups', 'completed-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('crm_activities')
+        .select('*', { count: 'exact', head: true })
+        .eq('activity_type', 'follow_up')
+        .not('completed_at', 'is', null);
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}

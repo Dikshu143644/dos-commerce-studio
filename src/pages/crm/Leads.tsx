@@ -46,6 +46,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useLeads, useCreateLead, useUpdateLeadStatus } from '@/hooks/useLeads';
 import { useLeadsByStage, useConvertLead, useLeadScore } from '@/hooks/useLeadPipeline';
+import { useAuth } from '@/hooks/useAuth';
 import type { Lead, LeadStatus, LeadSource } from '@/types/database';
 
 const statusColumns: LeadStatus[] = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'];
@@ -112,12 +113,13 @@ function LeadDetailPanel({ lead, onClose }: { lead: Lead; onClose: () => void })
   const { data: scoreData } = useLeadScore(lead.id);
   const convertLead = useConvertLead();
   const updateStatus = useUpdateLeadStatus();
+  const { user } = useAuth();
 
   const canConvert = ['qualified', 'proposal', 'negotiation', 'won'].includes(lead.status);
 
   const handleConvertToCustomer = () => {
     convertLead.mutate(
-      { lead_id: lead.id, performed_by: 'current-user' },
+      { lead_id: lead.id, performed_by: user?.id ?? 'unknown' },
       {
         onSuccess: () => {
           toast.success('Lead converted to customer successfully');
