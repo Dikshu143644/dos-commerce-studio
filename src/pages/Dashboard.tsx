@@ -3,7 +3,7 @@ import {
   Package, AlertTriangle, Handshake, DollarSign, ShoppingCart,
   Plus, ArrowRight, TrendingUp, Users, FileText, BarChart3,
   ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, PackageCheck, Repeat2,
-  UserPlus, CalendarClock,
+  UserPlus, CalendarClock, CreditCard, Truck,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -196,6 +196,42 @@ export default function Dashboard() {
           value={dealsClosingThisWeek.length}
           icon={Handshake}
           description="this week"
+        />
+      </motion.div>
+
+      {/* Sales Widgets */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.07 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <KPICard
+          label="Revenue This Month"
+          value="$92,400"
+          icon={DollarSign}
+          trend={{ value: 14, isPositive: true }}
+          description="from paid invoices"
+        />
+        <KPICard
+          label="Outstanding Payments"
+          value="$34,200"
+          icon={CreditCard}
+          description="needs collection"
+          className="border-amber-500/20"
+        />
+        <KPICard
+          label="Orders to Ship"
+          value="8"
+          icon={Truck}
+          description="processing status"
+        />
+        <KPICard
+          label="Monthly Trend"
+          value="+18%"
+          icon={TrendingUp}
+          trend={{ value: 18, isPositive: true }}
+          description="vs last month"
         />
       </motion.div>
 

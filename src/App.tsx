@@ -25,6 +25,8 @@ const Suppliers = lazy(() => import('@/pages/procurement/Suppliers'));
 const PurchaseOrders = lazy(() => import('@/pages/procurement/PurchaseOrders'));
 const SalesOrders = lazy(() => import('@/pages/sales/SalesOrders'));
 const Invoices = lazy(() => import('@/pages/sales/Invoices'));
+const Returns = lazy(() => import('@/pages/sales/Returns'));
+const Payments = lazy(() => import('@/pages/sales/Payments'));
 const Analytics = lazy(() => import('@/pages/reports/Analytics'));
 const ExcelExport = lazy(() => import('@/pages/reports/ExcelExport'));
 const AIAssistant = lazy(() => import('@/pages/ai/AIAssistant'));
@@ -74,6 +76,8 @@ function App() {
           <Route path="procurement/orders" element={<PurchaseOrders />} />
           <Route path="sales/orders" element={<SalesOrders />} />
           <Route path="sales/invoices" element={<Invoices />} />
+          <Route path="sales/returns" element={<Returns />} />
+          <Route path="sales/payments" element={<Payments />} />
           <Route path="reports/analytics" element={<Analytics />} />
           <Route path="reports/export" element={<ExcelExport />} />
           <Route path="ai" element={<AIAssistant />} />

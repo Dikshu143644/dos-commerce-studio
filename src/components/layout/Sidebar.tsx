@@ -27,6 +27,8 @@ import {
   AlertTriangle,
   CalendarClock,
   Filter,
+  RotateCcw,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -79,6 +81,8 @@ const navSections: NavSection[] = [
     items: [
       { title: 'Sales Orders', href: '/sales/orders', icon: ShoppingCart },
       { title: 'Invoices', href: '/sales/invoices', icon: FileText },
+      { title: 'Returns', href: '/sales/returns', icon: RotateCcw },
+      { title: 'Payments', href: '/sales/payments', icon: CreditCard },
     ],
   },
   {
