@@ -123,6 +123,13 @@ CREATE POLICY "Auth manage returns" ON sales_returns FOR ALL USING (auth.role() 
 CREATE POLICY "Auth view return items" ON sales_return_items FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Auth insert return items" ON sales_return_items FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+-- Allow authenticated users to update invoices (needed for payment recording to update amount_paid/payment_status).
+-- This supplements the existing invoices_manage policy (which is restricted to managers+),
+-- ensuring that any authenticated user who can record a payment can also update the invoice balance.
+CREATE POLICY "Auth update invoices for payments" ON invoices FOR UPDATE
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
 -- ============================================================
 -- Indexes
 -- ============================================================

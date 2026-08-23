@@ -23,6 +23,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { useInvoices, useEmailInvoice } from '@/hooks/useInvoices';
 import { usePayments, useRecordPayment } from '@/hooks/usePayments';
+import { useAuth } from '@/hooks/useAuth';
 import type { Invoice, PaymentStatus, PaymentMethod } from '@/types/database';
 import type { InvoiceFilters } from '@/services/sales';
 
@@ -35,6 +36,8 @@ const paymentStatusVariants: Record<string, 'default' | 'warning' | 'destructive
 };
 
 export default function InvoicesPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | ''>('');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -71,7 +74,7 @@ export default function InvoicesPage() {
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
         reference_number: paymentRef || undefined,
-        received_by: 'current_user',
+        received_by: userId,
       },
       {
         onSuccess: () => {

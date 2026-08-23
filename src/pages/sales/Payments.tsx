@@ -23,6 +23,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { KPICard } from '@/components/shared/KPICard';
 import { useInvoices, useOutstandingInvoices } from '@/hooks/useInvoices';
 import { useRecordPayment } from '@/hooks/usePayments';
+import { useAuth } from '@/hooks/useAuth';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -48,6 +49,8 @@ const paymentMethodBreakdown = [
 ];
 
 export default function PaymentsPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -100,7 +103,7 @@ export default function PaymentsPage() {
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
         reference_number: paymentRef || undefined,
-        received_by: 'current_user',
+        received_by: userId,
       },
       {
         onSuccess: () => {

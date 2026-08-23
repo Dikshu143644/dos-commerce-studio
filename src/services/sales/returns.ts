@@ -100,6 +100,7 @@ export async function initiateReturn(input: InitiateReturnInput): Promise<SalesR
 /**
  * Approves a return, creates stock_movements (type 'return') for each returned item,
  * and updates inventory via the database trigger.
+ * Stock is always restored to the warehouse from which the original order was shipped.
  */
 export async function approveReturn(input: ApproveReturnInput): Promise<SalesReturn> {
   // Fetch the return with items
@@ -119,28 +120,45 @@ export async function approveReturn(input: ApproveReturnInput): Promise<SalesRet
     );
   }
 
+  // Look up the original sales order to get the warehouse_id
+  // This ensures stock is returned to the same warehouse it was shipped from.
+  const { data: originalOrder, error: orderError } = await supabase
+    .from('sales_orders')
+    .select('warehouse_id')
+    .eq('id', salesReturn.sales_order_id)
+    .single();
+
+  if (orderError || !originalOrder) {
+    throw new Error(`Original sales order not found: ${orderError?.message ?? 'Unknown error'}`);
+  }
+
+  const warehouseId = originalOrder.warehouse_id ?? input.warehouse_id;
+  if (!warehouseId) {
+    throw new Error('Cannot determine warehouse for stock restoration. Original order has no warehouse assigned.');
+  }
+
   const returnItems = salesReturn.sales_return_items as SalesReturnItem[];
 
-  // Create stock movements (type 'return') for each item to restore stock
-  for (const item of returnItems) {
-    const { error: movementError } = await supabase
-      .from('stock_movements')
-      .insert({
-        product_id: item.product_id,
-        warehouse_id: input.warehouse_id,
-        type: 'return',
-        quantity: item.quantity,
-        reference_type: 'sales_return',
-        reference_id: salesReturn.id,
-        notes: `Return for order - ${salesReturn.return_number}`,
-        created_by: input.approved_by,
-      });
+  // Create stock movements (type 'return') as a single batch insert
+  const movements = returnItems.map((item) => ({
+    product_id: item.product_id,
+    warehouse_id: warehouseId,
+    type: 'return' as const,
+    quantity: item.quantity,
+    reference_type: 'sales_return',
+    reference_id: salesReturn.id,
+    notes: `Return for order - ${salesReturn.return_number}`,
+    created_by: input.approved_by,
+  }));
 
-    if (movementError) {
-      throw new Error(
-        `Failed to create return stock movement for product ${item.product_id}: ${movementError.message}`
-      );
-    }
+  const { error: movementError } = await supabase
+    .from('stock_movements')
+    .insert(movements);
+
+  if (movementError) {
+    throw new Error(
+      `Failed to create return stock movements: ${movementError.message}`
+    );
   }
 
   // Update return status to approved

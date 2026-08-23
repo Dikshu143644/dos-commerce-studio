@@ -33,6 +33,7 @@ import { usePayments, useRecordPayment } from '@/hooks/usePayments';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
 import { useWarehouses } from '@/hooks/useWarehouses';
+import { useAuth } from '@/hooks/useAuth';
 import type { OrderStatus, PaymentMethod } from '@/types/database';
 import type { SalesOrderWithItems } from '@/hooks/useSalesOrders';
 
@@ -57,6 +58,8 @@ interface OrderLineItem {
 }
 
 export default function SalesOrdersPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
   const [activeTab, setActiveTab] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -179,7 +182,7 @@ export default function SalesOrdersPage() {
           discount_amount: orderTotals.discount,
           shipping_address: null,
           notes: null,
-          created_by: 'current_user',
+          created_by: userId,
           shipped_at: null,
           delivered_at: null,
           invoice_id: null,
@@ -216,7 +219,7 @@ export default function SalesOrdersPage() {
   const handleConfirmOrder = () => {
     if (!selectedOrderId || !selectedOrder?.warehouse_id) return;
     confirmOrder.mutate(
-      { order_id: selectedOrderId, confirmed_by: 'current_user' },
+      { order_id: selectedOrderId, confirmed_by: userId },
       {
         onSuccess: () => toast.success('Order confirmed'),
         onError: (e) => toast.error(`Failed: ${e.message}`),
@@ -235,7 +238,7 @@ export default function SalesOrdersPage() {
   const handleShipOrder = () => {
     if (!selectedOrderId) return;
     shipOrder.mutate(
-      { order_id: selectedOrderId, shipped_by: 'current_user' },
+      { order_id: selectedOrderId, shipped_by: userId },
       {
         onSuccess: () => toast.success('Order shipped, invoice generated'),
         onError: (e) => toast.error(`Failed: ${e.message}`),
@@ -246,7 +249,7 @@ export default function SalesOrdersPage() {
   const handleDeliverOrder = () => {
     if (!selectedOrderId) return;
     deliverOrder.mutate(
-      { order_id: selectedOrderId, delivered_by: 'current_user' },
+      { order_id: selectedOrderId, delivered_by: userId },
       {
         onSuccess: () => toast.success('Order marked as delivered'),
         onError: (e) => toast.error(`Failed: ${e.message}`),
@@ -257,7 +260,7 @@ export default function SalesOrdersPage() {
   const handleCancelOrder = () => {
     if (!selectedOrderId) return;
     cancelOrder.mutate(
-      { order_id: selectedOrderId, cancelled_by: 'current_user', reason: 'Cancelled by user' },
+      { order_id: selectedOrderId, cancelled_by: userId, reason: 'Cancelled by user' },
       {
         onSuccess: () => toast.success('Order cancelled'),
         onError: (e) => toast.error(`Failed: ${e.message}`),
@@ -273,7 +276,7 @@ export default function SalesOrdersPage() {
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
         reference_number: paymentRef || undefined,
-        received_by: 'current_user',
+        received_by: userId,
       },
       {
         onSuccess: () => {

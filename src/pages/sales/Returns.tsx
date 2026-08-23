@@ -26,6 +26,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { useReturns, useInitiateReturn, useApproveReturn } from '@/hooks/useReturns';
 import { useSalesOrders, useSalesOrder } from '@/hooks/useSalesOrders';
 import { useWarehouses } from '@/hooks/useWarehouses';
+import { useAuth } from '@/hooks/useAuth';
 import type { SalesReturn, ReturnCondition, SalesOrderItem } from '@/types/database';
 
 const returnStatusVariants: Record<string, 'default' | 'warning' | 'destructive' | 'info' | 'secondary'> = {
@@ -45,6 +46,8 @@ interface ReturnItemForm {
 }
 
 export default function ReturnsPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? '';
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<SalesReturn | null>(null);
@@ -129,7 +132,7 @@ export default function ReturnsPage() {
     approveReturn.mutate(
       {
         return_id: selectedReturn.id,
-        approved_by: 'current_user',
+        approved_by: userId,
         warehouse_id: approveWarehouseId,
       },
       {

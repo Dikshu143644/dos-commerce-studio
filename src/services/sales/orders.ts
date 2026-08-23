@@ -150,35 +150,42 @@ export async function confirmOrder(input: ConfirmOrderInput): Promise<SalesOrder
     throw new Error(`Insufficient stock for items: ${details}`);
   }
 
-  // Reserve stock for each item
+  // Reserve stock atomically for each item using optimistic concurrency control.
+  // We use the reserved_quantity value from the availability check above as a guard
+  // in the WHERE clause. If another request modified reserved_quantity between our
+  // read and this update, the update will match zero rows and we throw a conflict error.
   for (const item of items) {
-    const { error: reserveError } = await supabase.rpc('increment_reserved_quantity', {
-      p_product_id: item.product_id,
-      p_warehouse_id: warehouseId,
-      p_quantity: item.quantity,
-    });
+    const { data: inv } = await supabase
+      .from('inventory')
+      .select('reserved_quantity')
+      .eq('product_id', item.product_id)
+      .eq('warehouse_id', warehouseId)
+      .single();
 
-    // Fallback: direct update if RPC not available
+    if (!inv) {
+      throw new Error(`Inventory record not found for product ${item.product_id} in warehouse ${warehouseId}`);
+    }
+
+    const expectedReserved = inv.reserved_quantity;
+    const newReserved = expectedReserved + item.quantity;
+
+    const { data: reserveResult, error: reserveError } = await supabase
+      .from('inventory')
+      .update({ reserved_quantity: newReserved })
+      .eq('product_id', item.product_id)
+      .eq('warehouse_id', warehouseId)
+      .eq('reserved_quantity', expectedReserved)
+      .select('id');
+
     if (reserveError) {
-      // Manual increment as fallback
-      const { data: current } = await supabase
-        .from('inventory')
-        .select('reserved_quantity')
-        .eq('product_id', item.product_id)
-        .eq('warehouse_id', warehouseId)
-        .single();
+      throw new Error(`Failed to reserve stock for product ${item.product_id}: ${reserveError.message}`);
+    }
 
-      if (current) {
-        const { error: manualError } = await supabase
-          .from('inventory')
-          .update({ reserved_quantity: current.reserved_quantity + item.quantity })
-          .eq('product_id', item.product_id)
-          .eq('warehouse_id', warehouseId);
-
-        if (manualError) {
-          throw new Error(`Failed to reserve stock for product ${item.product_id}: ${manualError.message}`);
-        }
-      }
+    if (!reserveResult || reserveResult.length === 0) {
+      throw new Error(
+        `Stock reservation conflict for product ${item.product_id}. ` +
+        `Another operation modified the inventory concurrently. Please retry.`
+      );
     }
   }
 
@@ -244,12 +251,14 @@ export async function cancelOrder(input: CancelOrderInput): Promise<SalesOrder> 
         .single();
 
       if (current) {
-        const newReserved = Math.max(0, current.reserved_quantity - item.quantity);
+        const expectedReserved = current.reserved_quantity;
+        const newReserved = Math.max(0, expectedReserved - item.quantity);
         await supabase
           .from('inventory')
           .update({ reserved_quantity: newReserved })
           .eq('product_id', item.product_id)
-          .eq('warehouse_id', warehouseId);
+          .eq('warehouse_id', warehouseId)
+          .eq('reserved_quantity', expectedReserved);
       }
     }
   }

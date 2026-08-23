@@ -67,29 +67,31 @@ export async function shipOrder(input: ShipOrderInput): Promise<SalesOrder> {
 
   const items = order.sales_order_items as SalesOrderItem[];
 
-  // Create stock movements for each item and release reservations
+  // Create stock movements for all items in a single batch insert.
+  // This ensures either all movements are inserted or none (single DB call).
+  const movements = items.map((item) => ({
+    product_id: item.product_id,
+    warehouse_id: warehouseId,
+    type: 'out' as const,
+    quantity: item.quantity,
+    reference_type: 'sales_order',
+    reference_id: order.id,
+    notes: `Shipped for order ${order.order_number}`,
+    created_by: input.shipped_by,
+  }));
+
+  const { error: movementError } = await supabase
+    .from('stock_movements')
+    .insert(movements);
+
+  if (movementError) {
+    throw new Error(
+      `Failed to create stock movements for shipment: ${movementError.message}`
+    );
+  }
+
+  // Release reserved quantities using optimistic concurrency control
   for (const item of items) {
-    // Create outbound stock movement
-    const { error: movementError } = await supabase
-      .from('stock_movements')
-      .insert({
-        product_id: item.product_id,
-        warehouse_id: warehouseId,
-        type: 'out',
-        quantity: item.quantity,
-        reference_type: 'sales_order',
-        reference_id: order.id,
-        notes: `Shipped for order ${order.order_number}`,
-        created_by: input.shipped_by,
-      });
-
-    if (movementError) {
-      throw new Error(
-        `Failed to create stock movement for product ${item.product_id}: ${movementError.message}`
-      );
-    }
-
-    // Release reserved quantity
     const { data: inventory } = await supabase
       .from('inventory')
       .select('reserved_quantity')
@@ -98,12 +100,14 @@ export async function shipOrder(input: ShipOrderInput): Promise<SalesOrder> {
       .single();
 
     if (inventory) {
-      const newReserved = Math.max(0, inventory.reserved_quantity - item.quantity);
+      const expectedReserved = inventory.reserved_quantity;
+      const newReserved = Math.max(0, expectedReserved - item.quantity);
       await supabase
         .from('inventory')
         .update({ reserved_quantity: newReserved })
         .eq('product_id', item.product_id)
-        .eq('warehouse_id', warehouseId);
+        .eq('warehouse_id', warehouseId)
+        .eq('reserved_quantity', expectedReserved);
     }
   }
 
