@@ -9,6 +9,6 @@
     "tests": "skipped",
     "test_quality": "skipped",
     "docker_build": "skipped",
-    "summary": "bun run build (tsc -b && vite build) passes with zero TypeScript errors. No test framework configured in project. All mock data removed from CRM pages. Toast notifications present on all mutations. All 8 service files, 4 new hooks, 6 pages (4 rewritten + 2 new), migration, and routing/sidebar/dashboard updates verified."
+    "summary": "bun run build (tsc -b && vite build) passes with zero TypeScript errors. No test framework configured in project. All mock data removed from CRM pages. Toast notifications present on all mutations. All 8 service files, 4 new hooks, 6 pages (4 rewritten + 2 new), migration, and routing/sidebar/dashboard updates verified. Review feedback addressed: crm_activities table added to migration, auth hardcodes replaced with useAuth, scoring optimized, completion rate formula fixed, RLS policies for lead_scores updated."
   }
 }
