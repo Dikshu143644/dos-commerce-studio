@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "TanStack Query hooks for transfers, receiving, adjustments, and low stock alerts - following existing hook patterns in src/hooks/",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/hooks/useTransfers.ts: useTransfers(filters) - list transfers with status/warehouse/date filters joining stock_transfer_items and warehouse names. useTransfer(id) - single transfer with items expanded. useCreateTransfer() mutation - calls initiateTransfer service. useApproveTransfer() mutation. useRejectTransfer() mutation. useCompleteTransfer() mutation - invalidates stock_movements, inventory, transfers queries on success. Follow exact pattern from useStockMovements.ts and usePurchaseOrders.ts (useQuery with queryKey arrays, useMutation with onSuccess invalidation).",
     "Create src/hooks/useReceiving.ts: usePendingPOs() - queries purchase_orders where status IN ('confirmed', 'partially_received') with items and supplier name. useReceiveItems() mutation - calls receiving service, invalidates purchase_orders + stock_movements + inventory queries. useGRNs(poId?) - list GRNs optionally filtered by PO. useGRN(id) - single GRN with items joined to products.",
@@ -21,5 +21,5 @@
     "cd /projects/sandbox/stockflow-inventory-crm && PATH=\"$HOME/.local/share/mise/shims:$PATH\" bun run build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All hooks created following existing patterns (useStockMovements, usePurchaseOrders, useNotifications). Used service layer functions for mutations (initiateTransfer, approveTransfer, rejectTransfer, completeTransfer, receiveItems, createAdjustment) and direct supabase calls for queries. Type-check and build pass cleanly."
 }
