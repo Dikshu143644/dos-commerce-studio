@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Database migration, TypeScript types, and sales service layer - creates the foundation for the entire sales workflow including stock deduction, invoicing, returns, and payments",
+  "status": "in_progress",
+  "steps": [
+    "Create supabase/migrations/006_sales_workflows.sql that ALTERs existing invoices table (add columns: subtotal, discount_amount, amount_paid, payment_status with CHECK, pdf_url, notes, generated_at; rename 'amount' to keep backward compat; update status CHECK to include 'partial','paid','unpaid','overdue','refunded'), adds payments table, sales_returns table, sales_return_items table, ALTERs sales_orders to add shipped_at, delivered_at, warehouse_id (FK warehouses), invoice_id columns, creates sequences (return_number_seq since invoice_number_seq already exists in 003), creates generate_return_number() function, enables RLS on new tables with authenticated user policies, creates indexes on new tables",
+    "Update src/types/database.ts: Add Invoice interface (matching new invoices schema with all columns), Payment interface, SalesReturn interface, SalesReturnItem interface, PaymentStatus type, PaymentMethod type, ReturnStatus type, ReturnCondition type, ReturnReason type. Update SalesOrder to include shipped_at, delivered_at, warehouse_id, invoice_id optional fields. Confirm WarehouseStock already has reserved_quantity.",
+    "Create src/services/sales/types.ts with all input/output interfaces: CreateSalesOrderInput, ConfirmOrderInput, ShipOrderInput, InvoiceData, RecordPaymentInput, InitiateReturnInput, ApproveReturnInput, OrderTotals, StockAvailability, SalesOrderFilters, PaginatedResponse, etc.",
+    "Create src/services/sales/orders.ts with: createSalesOrder() (inserts SO with items, uses DB-generated order_number), confirmOrder() (validates stock availability across items in warehouse, reserves stock by incrementing reserved_quantity, transitions to confirmed, throws with insufficient stock details), cancelOrder() (releases reserved stock, transitions to cancelled, creates audit log), getSalesOrderWithItems() (full SO with items + product details + customer info via joins), calculateOrderTotals() (subtotal, tax, discount, grand total), duplicateOrder() (creates new draft from existing)",
+    "Create src/services/sales/fulfillment.ts with: processOrder() (confirmed -> processing), shipOrder() (creates stock_movements type 'out' for each item, releases reservation by decrementing reserved_quantity, transitions to shipped, calls PHP generateInvoice, sends email notification, creates audit log), deliverOrder() (shipped -> delivered with delivered_at timestamp), getShipmentDetails()",
+    "Create src/services/sales/invoices.ts with: generateInvoice() (calls phpApi.generateInvoice, stores invoice record in DB), getInvoice(orderId), emailInvoice() (calls phpApi.sendEmail), getInvoiceHistory(customerId?)",
+    "Create src/services/sales/returns.ts with: initiateReturn() (creates sales_return + return_items against delivered order, generates return_number), approveReturn() (approves return, creates stock_movements type 'return' for each item to restore stock, updates status), getReturnHistory()",
+    "Create src/services/sales/payments.ts with: recordPayment() (inserts payment, updates invoice amount_paid and payment_status), getPaymentHistory(orderId), getOutstandingInvoices(), calculateCustomerBalance(customerId)",
+    "Create src/services/sales/index.ts barrel export file following the pattern in src/services/inventory/index.ts"
+  ],
+  "acceptance_criteria": [
+    "Migration file 006_sales_workflows.sql is syntactically valid SQL",
+    "All TypeScript types compile without errors",
+    "Service layer follows same patterns as src/services/inventory/ (supabase queries, error handling, typed returns)",
+    "Stock deduction in shipOrder() is atomic - creates movements for all items, if any fails the operation should throw",
+    "confirmOrder() checks available quantity (quantity - reserved_quantity) and throws detailed error for insufficient stock",
+    "pnpm build passes with zero TypeScript errors"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

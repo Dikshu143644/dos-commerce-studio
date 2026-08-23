@@ -1,0 +1,39 @@
+{
+  "project_type": "React 18 + Vite 6 + TypeScript SPA with Supabase backend and PHP microservice",
+  "language": "TypeScript (strict)",
+  "build_system": "pnpm + Vite 6, tsc for type checking",
+  "test_framework": "No frontend test framework installed; validation via tsc + vite build",
+  "build_command": "pnpm build",
+  "test_command": "pnpm build (includes tsc -b && vite build)",
+  "verification_instructions": "Run pnpm build which executes tsc -b && vite build. Must produce zero errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pnpm install in project root",
+  "environment_constraints": "OPEN_INTERNET network mode. No Supabase CLI available for running migrations. PHP backend exists but no runtime needed for frontend build.",
+  "contribution_requirements": "TypeScript strict mode, dark spatial glassmorphism design, use existing patterns from inventory services",
+  "key_patterns": {
+    "service_layer": "src/services/inventory/ pattern: types.ts for interfaces, individual modules for each domain, index.ts barrel export",
+    "hooks": "TanStack React Query hooks in src/hooks/ with useQuery/useMutation, queryClient invalidation",
+    "pages": "Lazy-loaded pages in src/pages/, use motion/react for animations, Card/DataTable/PageHeader components",
+    "database": "Types in src/types/database.ts matching migration schema exactly",
+    "php_api": "src/services/php.ts PhpApiClient class with getAuthHeaders(), request() method",
+    "routing": "src/App.tsx with lazy imports and Route declarations",
+    "sidebar": "src/components/layout/Sidebar.tsx with navSections array",
+    "design_system": "glassmorphism cards, 24px radius, emerald primary (#10b981), dark bg (#0a0a0a), motion animations"
+  },
+  "relevant_files": [
+    "src/services/inventory/movements.ts",
+    "src/services/inventory/types.ts",
+    "src/services/inventory/index.ts",
+    "src/services/php.ts",
+    "src/hooks/useSalesOrders.ts",
+    "src/pages/sales/SalesOrders.tsx",
+    "src/pages/sales/Invoices.tsx",
+    "src/pages/Dashboard.tsx",
+    "src/types/database.ts",
+    "src/App.tsx",
+    "src/components/layout/Sidebar.tsx",
+    "supabase/migrations/001_initial_schema.sql",
+    "supabase/migrations/003_functions.sql"
+  ],
+  "directory_structure": "src/services/ (service layers by domain), src/hooks/ (TanStack Query hooks), src/pages/ (route pages), src/components/ (UI), src/types/ (TypeScript types), supabase/migrations/ (SQL), server/php/ (PHP backend)"
+}

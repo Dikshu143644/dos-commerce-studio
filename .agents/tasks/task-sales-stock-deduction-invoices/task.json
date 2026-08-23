@@ -1,0 +1,7 @@
+{
+  "task_id": "task-sales-stock-deduction-invoices",
+  "task_description": "Phase 5: Sales workflow with stock deduction, invoice auto-generation via PHP backend, returns, and payments. Includes service layer, database migration, hooks, complete page rewrites removing mock data, new pages, routing, and dashboard updates.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

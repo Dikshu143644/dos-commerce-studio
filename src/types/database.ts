@@ -12,6 +12,13 @@ export type AgentType = 'inventory' | 'sales' | 'procurement' | 'finance' | 'exc
 export type TransferStatus = 'pending' | 'approved' | 'in_transit' | 'completed' | 'rejected';
 export type AdjustmentReason = 'damaged' | 'expired' | 'theft' | 'count_correction' | 'quality_reject' | 'sample' | 'other';
 
+// Sales Workflow Types (Phase 5)
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'refunded';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'upi' | 'cheque' | 'credit' | 'razorpay';
+export type ReturnStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+export type ReturnCondition = 'resellable' | 'damaged' | 'defective';
+export type ReturnReason = 'damaged' | 'wrong_item' | 'quality_issue' | 'customer_request' | 'other';
+
 // Database table types
 export interface Profile {
   id: string;
@@ -238,6 +245,10 @@ export interface SalesOrder {
   discount_amount: number;
   notes: string | null;
   created_by: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  warehouse_id: string | null;
+  invoice_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -398,4 +409,64 @@ export interface EmailSequenceStep {
   email_template: string;
   subject: string;
   is_active: boolean;
+}
+
+// Sales Workflow Interfaces (Phase 5)
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  sales_order_id: string;
+  customer_id: string;
+  amount: number;
+  subtotal: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  amount_paid: number;
+  status: string;
+  payment_status: PaymentStatus;
+  due_date: string | null;
+  paid_at: string | null;
+  pdf_url: string | null;
+  notes: string | null;
+  generated_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_method: PaymentMethod;
+  reference_number: string | null;
+  payment_date: string;
+  notes: string | null;
+  received_by: string | null;
+  created_at: string;
+}
+
+export interface SalesReturn {
+  id: string;
+  return_number: string;
+  sales_order_id: string;
+  customer_id: string;
+  status: ReturnStatus;
+  reason: string;
+  total_refund_amount: number;
+  approved_by: string | null;
+  notes: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface SalesReturnItem {
+  id: string;
+  return_id: string;
+  sales_order_item_id: string;
+  product_id: string;
+  quantity: number;
+  reason: string | null;
+  condition: ReturnCondition | null;
 }
