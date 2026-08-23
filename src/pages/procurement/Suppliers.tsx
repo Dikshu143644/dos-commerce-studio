@@ -76,8 +76,7 @@ export default function SuppliersPage() {
     },
   ];
 
-  const onSubmit = (data: SupplierFormData) => {
-    console.log('New supplier:', data);
+  const onSubmit = (_data: SupplierFormData) => {
     setDialogOpen(false);
     form.reset();
   };

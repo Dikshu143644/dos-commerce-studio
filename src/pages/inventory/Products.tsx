@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { ScanResult } from '@/services/barcode/types';
 
 const mockProducts = [
@@ -47,6 +48,7 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
+  useDocumentTitle('Products');
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -109,8 +111,7 @@ export default function ProductsPage() {
     },
   ];
 
-  const onSubmit = (data: ProductFormData) => {
-    console.log('New product:', data);
+  const onSubmit = (_data: ProductFormData) => {
     setDialogOpen(false);
     form.reset();
   };

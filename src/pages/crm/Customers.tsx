@@ -37,6 +37,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useCustomers, useCreateCustomer } from '@/hooks/useCustomers';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { Customer, CustomerType } from '@/types/database';
 
 const customerSchema = z.object({
@@ -137,6 +138,7 @@ function CustomerDetailPanel({ customer }: { customer: Customer }) {
 }
 
 export default function CustomersPage() {
+  useDocumentTitle('Customers');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);

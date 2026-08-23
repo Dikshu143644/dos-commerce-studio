@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useBranches, useCreateBranch, useUpdateBranch, useDeleteBranch } from '@/hooks/useBranches';
 import type { Branch } from '@/services/branches/types';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ const emptyBranch = {
 };
 
 export default function Branches() {
+  useDocumentTitle('Branches');
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -37,8 +37,7 @@ export default function WarehousesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const form = useForm<WarehouseFormData>({ resolver: zodResolver(warehouseSchema) });
 
-  const onSubmit = (data: WarehouseFormData) => {
-    console.log('New warehouse:', data);
+  const onSubmit = (_data: WarehouseFormData) => {
     setDialogOpen(false);
     form.reset();
   };

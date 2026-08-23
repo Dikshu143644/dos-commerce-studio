@@ -41,6 +41,7 @@ export function TopNav() {
             variant="ghost"
             size="icon"
             onClick={() => setSearchOpen(false)}
+            aria-label="Close search"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -65,6 +66,7 @@ export function TopNav() {
         size="icon"
         className="md:hidden"
         onClick={() => setMobileOpen(true)}
+        aria-label="Open navigation menu"
       >
         <Menu className="h-5 w-5" />
       </Button>
@@ -85,6 +87,7 @@ export function TopNav() {
           size="icon"
           className={cn('md:hidden')}
           onClick={() => setSearchOpen(true)}
+          aria-label="Open search"
         >
           <Search className="h-5 w-5 text-muted-foreground" />
         </Button>
@@ -115,7 +118,7 @@ export function TopNav() {
           <BranchSwitcher />
         </div>
 
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
           <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
             3
@@ -124,7 +127,7 @@ export function TopNav() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="text-xs">{initials}</AvatarFallback>

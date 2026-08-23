@@ -29,6 +29,7 @@ import {
 import type { AgentType, Message } from '@/services/ai/types';
 import type { ToolCall } from '@/hooks/useAIChat';
 import { supabase } from '@/lib/supabase';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 const agents = [
   { type: 'inventory' as AgentType, name: 'Inventory', icon: Package, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
@@ -67,6 +68,7 @@ interface ChatMessage extends Message {
 }
 
 export default function AIAssistantPage() {
+  useDocumentTitle('AI Assistant');
   const [selectedAgent, setSelectedAgent] = useState<AgentType>('general');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');

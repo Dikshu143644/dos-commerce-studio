@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 // Lazy-loaded pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -58,37 +59,37 @@ function App() {
             </AuthGuard>
           }
         >
-          <Route index element={<Dashboard />} />
-          <Route path="inventory/products" element={<Products />} />
-          <Route path="inventory/products/:id" element={<ProductDetail />} />
-          <Route path="inventory/warehouses" element={<Warehouses />} />
-          <Route path="inventory/movements" element={<StockMovements />} />
-          <Route path="inventory/categories" element={<Categories />} />
-          <Route path="inventory/transfers" element={<Transfers />} />
-          <Route path="inventory/receiving" element={<Receiving />} />
-          <Route path="inventory/adjustments" element={<Adjustments />} />
-          <Route path="inventory/low-stock" element={<LowStock />} />
-          <Route path="crm/customers" element={<Customers />} />
-          <Route path="crm/leads" element={<Leads />} />
-          <Route path="crm/deals" element={<Deals />} />
-          <Route path="crm/activities" element={<Activities />} />
-          <Route path="crm/follow-ups" element={<FollowUps />} />
-          <Route path="crm/funnel" element={<ConversionFunnel />} />
-          <Route path="procurement/suppliers" element={<Suppliers />} />
-          <Route path="procurement/orders" element={<PurchaseOrders />} />
-          <Route path="sales/orders" element={<SalesOrders />} />
-          <Route path="sales/invoices" element={<Invoices />} />
-          <Route path="sales/returns" element={<Returns />} />
-          <Route path="sales/payments" element={<Payments />} />
-          <Route path="reports/analytics" element={<Analytics />} />
-          <Route path="reports/export" element={<ExcelExport />} />
-          <Route path="ai" element={<AIAssistant />} />
-          <Route path="ai/knowledge-base" element={<KnowledgeBase />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="settings/users" element={<UsersPage />} />
-          <Route path="settings/roles" element={<RolesPage />} />
-          <Route path="settings/audit-log" element={<AuditLog />} />
-          <Route path="settings/branches" element={<Branches />} />
+          <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="inventory/products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
+          <Route path="inventory/products/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />
+          <Route path="inventory/warehouses" element={<ErrorBoundary><Warehouses /></ErrorBoundary>} />
+          <Route path="inventory/movements" element={<ErrorBoundary><StockMovements /></ErrorBoundary>} />
+          <Route path="inventory/categories" element={<ErrorBoundary><Categories /></ErrorBoundary>} />
+          <Route path="inventory/transfers" element={<ErrorBoundary><Transfers /></ErrorBoundary>} />
+          <Route path="inventory/receiving" element={<ErrorBoundary><Receiving /></ErrorBoundary>} />
+          <Route path="inventory/adjustments" element={<ErrorBoundary><Adjustments /></ErrorBoundary>} />
+          <Route path="inventory/low-stock" element={<ErrorBoundary><LowStock /></ErrorBoundary>} />
+          <Route path="crm/customers" element={<ErrorBoundary><Customers /></ErrorBoundary>} />
+          <Route path="crm/leads" element={<ErrorBoundary><Leads /></ErrorBoundary>} />
+          <Route path="crm/deals" element={<ErrorBoundary><Deals /></ErrorBoundary>} />
+          <Route path="crm/activities" element={<ErrorBoundary><Activities /></ErrorBoundary>} />
+          <Route path="crm/follow-ups" element={<ErrorBoundary><FollowUps /></ErrorBoundary>} />
+          <Route path="crm/funnel" element={<ErrorBoundary><ConversionFunnel /></ErrorBoundary>} />
+          <Route path="procurement/suppliers" element={<ErrorBoundary><Suppliers /></ErrorBoundary>} />
+          <Route path="procurement/orders" element={<ErrorBoundary><PurchaseOrders /></ErrorBoundary>} />
+          <Route path="sales/orders" element={<ErrorBoundary><SalesOrders /></ErrorBoundary>} />
+          <Route path="sales/invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
+          <Route path="sales/returns" element={<ErrorBoundary><Returns /></ErrorBoundary>} />
+          <Route path="sales/payments" element={<ErrorBoundary><Payments /></ErrorBoundary>} />
+          <Route path="reports/analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
+          <Route path="reports/export" element={<ErrorBoundary><ExcelExport /></ErrorBoundary>} />
+          <Route path="ai" element={<ErrorBoundary><AIAssistant /></ErrorBoundary>} />
+          <Route path="ai/knowledge-base" element={<ErrorBoundary><KnowledgeBase /></ErrorBoundary>} />
+          <Route path="settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
+          <Route path="settings/users" element={<ErrorBoundary><UsersPage /></ErrorBoundary>} />
+          <Route path="settings/roles" element={<ErrorBoundary><RolesPage /></ErrorBoundary>} />
+          <Route path="settings/audit-log" element={<ErrorBoundary><AuditLog /></ErrorBoundary>} />
+          <Route path="settings/branches" element={<ErrorBoundary><Branches /></ErrorBoundary>} />
         </Route>
 
         {/* 404 */}

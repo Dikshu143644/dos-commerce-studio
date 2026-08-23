@@ -36,6 +36,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
 import { useWarehouses } from '@/hooks/useWarehouses';
 import { useAuth } from '@/hooks/useAuth';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { OrderStatus, PaymentMethod } from '@/types/database';
 import type { SalesOrderWithItems } from '@/hooks/useSalesOrders';
 
@@ -60,6 +61,7 @@ interface OrderLineItem {
 }
 
 export default function SalesOrdersPage() {
+  useDocumentTitle('Sales Orders');
   const { user } = useAuth();
   const userId = user?.id ?? '';
   const [activeTab, setActiveTab] = useState('all');

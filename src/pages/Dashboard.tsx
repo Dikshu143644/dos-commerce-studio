@@ -9,6 +9,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KPICard } from '@/components/shared/KPICard';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { format, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { useHotLeads } from '@/hooks/useLeadPipeline';
 import { usePipelineValue } from '@/hooks/useDealPipeline';
@@ -102,6 +103,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 };
 
 export default function Dashboard() {
+  useDocumentTitle('Dashboard');
   // CRM hooks for live data
   const { data: hotLeads } = useHotLeads();
   const { data: pipelineValue } = usePipelineValue();

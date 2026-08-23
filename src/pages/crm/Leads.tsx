@@ -47,6 +47,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { useLeads, useCreateLead, useUpdateLeadStatus } from '@/hooks/useLeads';
 import { useLeadsByStage, useConvertLead, useLeadScore } from '@/hooks/useLeadPipeline';
 import { useAuth } from '@/hooks/useAuth';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { Lead, LeadStatus, LeadSource } from '@/types/database';
 
 const statusColumns: LeadStatus[] = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'];
@@ -239,6 +240,7 @@ function LeadDetailPanel({ lead, onClose }: { lead: Lead; onClose: () => void })
 }
 
 export default function LeadsPage() {
+  useDocumentTitle('Leads');
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);

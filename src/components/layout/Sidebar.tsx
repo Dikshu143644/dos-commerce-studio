@@ -205,6 +205,7 @@ function SidebarContent() {
             size={isCollapsed ? 'icon' : 'sm'}
             className={cn('w-full', !isCollapsed && 'justify-start gap-2')}
             onClick={toggle}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
               <PanelLeftOpen className="h-4 w-4" />

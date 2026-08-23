@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { cn } from '@/lib/utils';
 
 const settingsNav = [
@@ -18,6 +19,7 @@ const settingsNav = [
 ];
 
 export default function SettingsPage() {
+  useDocumentTitle('Settings');
   const location = useLocation();
 
   return (
