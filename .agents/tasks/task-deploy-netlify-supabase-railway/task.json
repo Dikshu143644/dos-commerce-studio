@@ -10,5 +10,15 @@
     "test_quality": "pass",
     "docker_build": "pass",
     "summary": "pnpm type-check passes (0 errors). pnpm build succeeds with proper chunk splitting (vendor 180KB, ui 149KB, charts 432KB, query 42KB). Frontend Docker build (stockflow-frontend-test) succeeds. PHP Docker build (stockflow-php-test) succeeds. All deployment configs validated (TOML, YAML, JSON)."
+  },
+  "review_fixes_applied": {
+    "timestamp": "2026-08-23T10:43:00Z",
+    "issues_fixed": [
+      "render.yaml SMTP_USER/SMTP_PASS renamed to SMTP_USERNAME/SMTP_PASSWORD to match PHP app",
+      "Procfile removed - Docker CMD with supervisord handles process management",
+      "CSP connect-src dead entries (api.openai.com, generativelanguage.googleapis.com) removed",
+      "X-Frame-Options aligned to DENY in nginx.conf and server/php/nginx/default.conf",
+      "OPcache dev override added via mounted ini file in docker-compose.dev.yml"
+    ]
   }
 }
