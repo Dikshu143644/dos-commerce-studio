@@ -5,6 +5,12 @@ import { createSupabaseClient } from '../services/supabase';
 const webhooks = new Hono<{ Bindings: Env }>();
 
 /**
+ * Payment routes that require JWT authentication (client-initiated).
+ * These are mounted on protectedRoutes in index.ts so that c.get('userId') is available.
+ */
+export const paymentRoutes = new Hono<{ Bindings: Env }>();
+
+/**
  * Verify Razorpay webhook signature using HMAC-SHA256.
  * The signature header is 'X-Razorpay-Signature'.
  * The expected signature is HMAC-SHA256(request body, webhook secret).
@@ -71,8 +77,8 @@ async function verifyPaymentSignature(
   return mismatch === 0;
 }
 
-// Create Razorpay order
-webhooks.post('/payments/create-order', async (c) => {
+// Create Razorpay order (requires JWT auth - mounted on protectedRoutes)
+paymentRoutes.post('/payments/create-order', async (c) => {
   try {
     const body = await c.req.json<{ amount: number; currency?: string; receipt: string; notes?: Record<string, string> }>();
     const { amount, currency = 'INR', receipt, notes } = body;
@@ -112,8 +118,8 @@ webhooks.post('/payments/create-order', async (c) => {
   }
 });
 
-// Verify payment
-webhooks.post('/payments/verify', async (c) => {
+// Verify payment (requires JWT auth - mounted on protectedRoutes)
+paymentRoutes.post('/payments/verify', async (c) => {
   try {
     const body = await c.req.json<{
       razorpay_order_id: string;

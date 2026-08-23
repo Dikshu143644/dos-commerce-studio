@@ -191,9 +191,9 @@ export const TOOL_SCHEMAS = [
   },
 ];
 
-// Sanitize filter values to prevent PostgREST injection
+// Sanitize filter values to prevent PostgREST injection and ilike wildcard injection
 function sanitizeFilterValue(value: string): string {
-  return value.replace(/[,().*\\]/g, '').trim();
+  return value.replace(/[,().*\\%_]/g, '').trim();
 }
 
 // Tool Execution
@@ -713,10 +713,22 @@ aiChat.post('/ai/chat', async (c) => {
       let aiResponse = await callAIWithFallback(c.env, aiOptions);
 
       // Handle tool calls (loop until no more tool calls)
+      // Aggregate timeout of 25 seconds to stay within Workers wall-clock limits
       let iterations = 0;
       const maxIterations = 5;
+      const loopStartTime = Date.now();
+      const aggregateTimeoutMs = 25_000;
 
       while (aiResponse.tool_calls && aiResponse.tool_calls.length > 0 && iterations < maxIterations) {
+        // Check aggregate timeout before starting another iteration
+        if (Date.now() - loopStartTime > aggregateTimeoutMs) {
+          // Return partial response when cumulative time exceeds 25 seconds
+          if (sendEvent) {
+            sendEvent({ type: 'error', content: 'Request timed out after processing tool calls. Returning partial results.' });
+          }
+          break;
+        }
+
         iterations++;
 
         // Add assistant's tool call message

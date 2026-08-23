@@ -96,6 +96,12 @@ jobs:
       - name: Type-check workers
         run: npx tsc --noEmit
         working-directory: workers/
+      # NOTE: Before first deploy, you must create a KV namespace and update the
+      # id and preview_id fields in workers/wrangler.toml. Run:
+      #   npx wrangler kv:namespace create RATE_LIMIT
+      #   npx wrangler kv:namespace create RATE_LIMIT --preview
+      # Then paste the returned IDs into wrangler.toml. Without valid IDs,
+      # wrangler deploy will fail.
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

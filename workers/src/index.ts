@@ -7,7 +7,7 @@ import health from './routes/health';
 import invoices from './routes/invoices';
 import email from './routes/email';
 import excel from './routes/excel';
-import webhooks from './routes/webhooks';
+import webhooks, { paymentRoutes } from './routes/webhooks';
 import notifications from './routes/notifications';
 import aiChat from './routes/ai-chat';
 
@@ -33,6 +33,7 @@ protectedRoutes.route('/', email);
 protectedRoutes.route('/', excel);
 protectedRoutes.route('/', notifications);
 protectedRoutes.route('/', aiChat);
+protectedRoutes.route('/', paymentRoutes);
 
 // Mount route groups under /api
 app.route('/api', publicRoutes);
