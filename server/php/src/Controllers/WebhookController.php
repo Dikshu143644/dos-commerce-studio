@@ -14,11 +14,13 @@ class WebhookController
 {
     private PaymentService $paymentService;
     private SupabaseService $supabase;
+    private string $shippingWebhookSecret;
 
-    public function __construct(PaymentService $paymentService, SupabaseService $supabase)
+    public function __construct(PaymentService $paymentService, SupabaseService $supabase, string $shippingWebhookSecret = '')
     {
         $this->paymentService = $paymentService;
         $this->supabase = $supabase;
+        $this->shippingWebhookSecret = $shippingWebhookSecret;
     }
 
     /**
@@ -65,10 +67,29 @@ class WebhookController
     /**
      * Handle shipping status webhook.
      * POST /api/webhooks/shipping
+     *
+     * Requires HMAC-SHA256 signature verification via X-Shipping-Signature header.
      */
     public function shipping(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $body = (array) $request->getParsedBody();
+        $rawBody = (string) $request->getBody();
+
+        // Verify webhook signature (HMAC-SHA256)
+        if (!empty($this->shippingWebhookSecret)) {
+            $signature = $request->getHeaderLine('X-Shipping-Signature');
+
+            if (empty($signature)) {
+                return Response::error($response, 'Missing webhook signature', 400);
+            }
+
+            $expectedSignature = hash_hmac('sha256', $rawBody, $this->shippingWebhookSecret);
+
+            if (!hash_equals($expectedSignature, $signature)) {
+                return Response::error($response, 'Invalid webhook signature', 401);
+            }
+        }
+
+        $body = (array) json_decode($rawBody, true);
 
         $trackingNumber = $body['tracking_number'] ?? null;
         $status = $body['status'] ?? null;

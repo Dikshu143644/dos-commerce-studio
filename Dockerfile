@@ -9,6 +9,13 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+
+# Accept VITE_ env vars as build args so they are inlined during the build
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_PHP_API_URL
+ARG VITE_AI_PROXY_URL
+
 RUN pnpm build
 
 # Production stage

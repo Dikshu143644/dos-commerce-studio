@@ -34,6 +34,9 @@ return [
         'key_secret' => $_ENV['RAZORPAY_KEY_SECRET'] ?? '',
         'webhook_secret' => $_ENV['RAZORPAY_WEBHOOK_SECRET'] ?? '',
     ],
+    'shipping' => [
+        'webhook_secret' => $_ENV['SHIPPING_WEBHOOK_SECRET'] ?? '',
+    ],
     'msg91' => [
         'auth_key' => $_ENV['MSG91_AUTH_KEY'] ?? '',
         'sender_id' => $_ENV['MSG91_SENDER_ID'] ?? 'STFLOW',

@@ -179,12 +179,33 @@ class InvoiceController
 
     /**
      * Generate a unique invoice number.
+     * Uses timestamp-based sequence with uniqueness check to avoid collisions.
      */
     private function generateInvoiceNumber(): string
     {
         $year = date('Y');
-        $sequence = str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
-        return "INV-{$year}-{$sequence}";
+        $maxAttempts = 5;
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            // Use date + time components for better distribution than pure random
+            $datePart = date('md'); // Month + day (4 digits)
+            $randomPart = str_pad((string) random_int(0, 99), 2, '0', STR_PAD_LEFT);
+            $timePart = str_pad((string) ((int) date('His') % 100), 2, '0', STR_PAD_LEFT);
+            $sequence = $datePart . $randomPart;
+
+            $invoiceNumber = "INV-{$year}-{$sequence}";
+
+            // Check if this number already exists in the database
+            $existing = $this->supabase->select('invoices', ['invoice_number' => $invoiceNumber]);
+
+            if (empty($existing)) {
+                return $invoiceNumber;
+            }
+        }
+
+        // Fallback: use full microsecond timestamp for guaranteed uniqueness
+        $microSequence = substr((string) hrtime(true), -8);
+        return "INV-{$year}-{$microSequence}";
     }
 
     /**

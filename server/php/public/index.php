@@ -119,9 +119,11 @@ $containerBuilder->addDefinitions([
     },
 
     WebhookController::class => function (Container $c) {
+        $settings = $c->get('settings');
         return new WebhookController(
             $c->get(PaymentService::class),
-            $c->get(SupabaseService::class)
+            $c->get(SupabaseService::class),
+            $settings['shipping']['webhook_secret']
         );
     },
 

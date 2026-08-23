@@ -16,7 +16,14 @@ class RateLimitMiddleware implements MiddlewareInterface
     private int $maxRequests;
     private int $windowSeconds;
 
-    /** @var array<string, array{count: int, reset_at: int}> */
+    /**
+     * In-memory request counter. Note: this does not persist across PHP-FPM worker
+     * processes or container restarts, so it is only effective within a single worker's
+     * lifetime. This is acceptable for development. In production, replace with a
+     * shared store such as Redis or APCu for cross-process rate limiting.
+     *
+     * @var array<string, array{count: int, reset_at: int}>
+     */
     private static array $requestCounts = [];
 
     public function __construct(int $maxRequests = 100, int $windowSeconds = 60)
