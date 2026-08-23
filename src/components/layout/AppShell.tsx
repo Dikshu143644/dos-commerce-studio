@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { FloatingAIWidget } from '@/components/ai/FloatingAIWidget';
 
 export function AppShell() {
   return (
@@ -23,6 +24,9 @@ export function AppShell() {
           </main>
         </ScrollArea>
       </div>
+
+      {/* Floating AI Widget */}
+      <FloatingAIWidget />
     </div>
   );
 }

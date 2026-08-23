@@ -30,6 +30,7 @@ const Payments = lazy(() => import('@/pages/sales/Payments'));
 const Analytics = lazy(() => import('@/pages/reports/Analytics'));
 const ExcelExport = lazy(() => import('@/pages/reports/ExcelExport'));
 const AIAssistant = lazy(() => import('@/pages/ai/AIAssistant'));
+const KnowledgeBase = lazy(() => import('@/pages/ai/KnowledgeBase'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const UsersPage = lazy(() => import('@/pages/settings/UsersPage'));
 const RolesPage = lazy(() => import('@/pages/settings/RolesPage'));
@@ -81,6 +82,7 @@ function App() {
           <Route path="reports/analytics" element={<Analytics />} />
           <Route path="reports/export" element={<ExcelExport />} />
           <Route path="ai" element={<AIAssistant />} />
+          <Route path="ai/knowledge" element={<KnowledgeBase />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/users" element={<UsersPage />} />
           <Route path="settings/roles" element={<RolesPage />} />
