@@ -13,8 +13,8 @@ ENVIRONMENT = "production"
 # Then copy the IDs into the fields below.
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = ""
-preview_id = ""
+id = "92391f48a3e14c2fb91559e96f23b28b"
+preview_id = "92391f48a3e14c2fb91559e96f23b28b"
 
 [placement]
 mode = "smart"
