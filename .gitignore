@@ -45,3 +45,6 @@ server/php/.phpunit.cache/
 
 # Misc
 *.local
+.vercel
+supabase/.temp/
+mise.toml

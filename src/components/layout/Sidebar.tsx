@@ -119,7 +119,7 @@ const navSections: NavSection[] = [
 // Sections visible by role:
 // viewer/client: Main, Sales, AI
 // staff: Main, Inventory, CRM, Procurement, Sales, Reports, AI
-// manager: All sections
+// manager: Main, Inventory, CRM, Procurement, Sales, Reports, AI
 // admin: All sections (including Settings)
 const sectionsByRole: Record<UserRole, string[]> = {
   viewer: ['Main', 'Sales', 'AI'],
