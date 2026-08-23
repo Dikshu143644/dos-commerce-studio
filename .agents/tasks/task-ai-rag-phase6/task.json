@@ -1,7 +1,14 @@
 {
   "task_id": "task-ai-rag-phase6",
   "task_description": "Phase 6: Live AI with Real OpenAI/Gemini Calls + RAG Knowledge Base. Includes RAG service layer, database migration, Edge Function rewrite with streaming/tool-calling, rewritten AI Assistant page, new Knowledge Base page, floating widget, hooks, and routing updates.",
-  "status": "in_progress",
-  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005"],
-  "blocked_reason": null
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005", "FEAT-006-review-fixes"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "pnpm build (tsc -b && vite build) passes with zero TypeScript errors. All 9 review issues addressed: Edge Function match_knowledge fixed with embedding generation, useSearchKnowledge uses text search, IVFFlat index removed, rate limiter documented, AbortController added to streaming, tools-executor documented, filter sanitization added, embeddings.ts documented, RLS policy updated for seed rows."
+  }
 }

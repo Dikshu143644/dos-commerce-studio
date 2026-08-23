@@ -2,6 +2,23 @@ import { supabase } from '@/lib/supabase';
 import type { ToolDefinition, ToolResult } from './types';
 
 /**
+ * Client-side RAG tool implementations.
+ *
+ * These are used for the NON-STREAMING path (query-engine.ts) when the client
+ * orchestrates RAG locally. They run under the user's authenticated session and
+ * respect Row Level Security (RLS) policies.
+ *
+ * The Edge Function (supabase/functions/ai-chat/index.ts) has its OWN independent
+ * implementations of these same 10 tools that run under the service-role key,
+ * bypassing RLS. The Edge Function copy is used for the STREAMING path.
+ *
+ * Because of this dual-path architecture, the same query may return different
+ * results depending on whether it goes through client-side (RLS-filtered) or
+ * server-side (full access). The Edge Function path is authoritative for
+ * streaming chat; this client-side path is a fallback for non-streaming/offline.
+ */
+
+/**
  * Registry of all available RAG tools.
  * Each tool queries Supabase for specific business data and returns structured results.
  */

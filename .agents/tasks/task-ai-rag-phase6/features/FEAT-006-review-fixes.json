@@ -1,0 +1,18 @@
+{
+  "id": "FEAT-006-review-fixes",
+  "title": "Review fixes (iteration 1)",
+  "status": "completed",
+  "description": "Address all 9 issues identified in the code review (2025-01-15-120000-review.md)",
+  "acceptance_criteria": [
+    "match_knowledge parameter mismatch fixed in Edge Function (generates embedding via OpenAI, falls back to tag search)",
+    "useSearchKnowledge hook uses text-based ilike search instead of broken RPC call",
+    "IVFFlat index removed and replaced with comment to add after 1000+ rows",
+    "In-memory rate limiter documented with code comment about per-isolate limitation",
+    "stopStream uses AbortController to cancel fetch and stop HTTP connection",
+    "tools-executor.ts documented with comment explaining client-side vs Edge Function implementations",
+    "Filter string interpolation sanitized in Edge Function tool executor",
+    "embeddings.ts documents missing Edge Function and intentional zero-vector fallback",
+    "RLS UPDATE policy on knowledge_base updated to allow updating seed entries (created_by IS NULL)"
+  ],
+  "findings": "All 9 issues fixed. Build passes with zero TypeScript errors."
+}

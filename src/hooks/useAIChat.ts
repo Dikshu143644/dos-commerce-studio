@@ -172,10 +172,13 @@ export function useStreamMessage() {
     error: null,
   });
   const abortRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const startStream = useCallback(
     async (message: string, agentType: AgentType, conversationId?: string) => {
       abortRef.current = false;
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
       setState({
         isStreaming: true,
         streamedContent: '',
@@ -187,6 +190,7 @@ export function useStreamMessage() {
       return new Promise<{ content: string; sources: string[] }>((resolve, reject) => {
         streamChat(message, agentType, {
           conversationId,
+          signal: controller.signal,
           onChunk: (text) => {
             if (abortRef.current) return;
             setState((prev) => ({
@@ -237,6 +241,13 @@ export function useStreamMessage() {
 
   const stopStream = useCallback(() => {
     abortRef.current = true;
+    // Signal the AbortController to cancel the underlying fetch request,
+    // stopping the HTTP connection and preventing the Edge Function from
+    // continuing to execute (and billing) after the user presses stop.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setState((prev) => ({ ...prev, isStreaming: false }));
   }, []);
 

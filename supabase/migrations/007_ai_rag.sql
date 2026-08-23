@@ -187,10 +187,14 @@ INSERT INTO knowledge_base (title, content, category, tags, metadata, is_active)
 -- GIN index for tag-based filtering
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_tags ON knowledge_base USING GIN (tags);
 
--- IVFFlat index for vector similarity search (requires at least some rows)
--- Using ivfflat with lists=100 for efficient approximate nearest neighbor search
-CREATE INDEX IF NOT EXISTS idx_knowledge_base_embedding ON knowledge_base
-  USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+-- IVFFlat index for vector similarity search
+-- NOTE: IVFFlat indexes require significant row counts to be effective.
+-- With lists=N, you need at least N * 10-50 rows for reasonable recall.
+-- Do NOT create this index until the knowledge_base table has >1000 rows.
+-- Once sufficient data exists, run:
+--   CREATE INDEX idx_knowledge_base_embedding ON knowledge_base
+--     USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50);
+-- For small tables (<1000 rows), sequential scan with cosine distance is sufficient.
 
 -- Category index for filtered searches
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_category ON knowledge_base (category)
@@ -226,7 +230,7 @@ CREATE POLICY "Knowledge base entries can be created by authenticated users"
 CREATE POLICY "Knowledge base entries can be updated by their creator"
   ON knowledge_base FOR UPDATE
   TO authenticated
-  USING (auth.uid() = created_by);
+  USING (auth.uid() = created_by OR created_by IS NULL);
 
 -- AI Tool Executions RLS
 ALTER TABLE ai_tool_executions ENABLE ROW LEVEL SECURITY;

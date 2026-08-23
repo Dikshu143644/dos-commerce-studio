@@ -30,6 +30,8 @@ export interface StreamOptions {
   onToolResult: (name: string, output: object) => void;
   onComplete: (response: StreamCompleteEvent) => void;
   onError: (error: Error) => void;
+  /** Optional AbortSignal to cancel the stream and underlying fetch request. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -43,7 +45,7 @@ export async function streamChat(
   agentType: AgentType,
   options: StreamOptions
 ): Promise<void> {
-  const { conversationId, onChunk, onToolCall, onToolResult, onComplete, onError } = options;
+  const { conversationId, onChunk, onToolCall, onToolResult, onComplete, onError, signal } = options;
 
   if (!AI_EDGE_FUNCTION_URL) {
     // No Edge Function URL - fall back to non-streaming
@@ -75,6 +77,7 @@ export async function streamChat(
         enableRag: true,
         enableTools: true,
       }),
+      signal,
     });
 
     if (!response.ok) {

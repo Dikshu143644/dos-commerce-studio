@@ -39,6 +39,12 @@ interface SSEEvent {
 }
 
 // ─── Rate Limiting ───────────────────────────────────────────────────
+// NOTE: This in-memory rate limiter is per-isolate and resets on cold start.
+// Supabase Edge Functions may run multiple isolates and cold-start frequently,
+// so this does NOT enforce a global rate limit. It provides basic abuse prevention
+// against sustained rapid requests within a single warm isolate. For strict
+// rate limiting, use a durable store (e.g., Redis or a Supabase table with
+// atomic increment).
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 30;
@@ -219,6 +225,17 @@ const TOOL_SCHEMAS = [
 
 // ─── Tool Execution ──────────────────────────────────────────────────
 
+/**
+ * Sanitize a string value for use in PostgREST filter expressions.
+ * Strips characters that could manipulate the filter DSL (commas, dots used
+ * as operators, parentheses). This prevents AI-generated tool arguments from
+ * injecting additional filter clauses into .or() / .ilike() expressions.
+ */
+function sanitizeFilterValue(value: string): string {
+  // Remove PostgREST filter operators and special chars that could manipulate queries
+  return value.replace(/[,().*\\]/g, '').trim();
+}
+
 async function executeToolCall(
   supabaseClient: ReturnType<typeof createClient>,
   toolName: string,
@@ -233,7 +250,7 @@ async function executeToolCall(
 
     switch (toolName) {
       case 'check_stock': {
-        const product = String(args['product_id'] || '');
+        const product = sanitizeFilterValue(String(args['product_id'] || ''));
         const { data: products, error } = await supabaseClient
           .from('products')
           .select('id, name, sku, quantity, min_stock_level, reorder_point, warehouse_id, unit_price')
@@ -260,7 +277,7 @@ async function executeToolCall(
         break;
       }
       case 'get_customer_info': {
-        const search = String(args['customer_id'] || '');
+        const search = sanitizeFilterValue(String(args['customer_id'] || ''));
         const { data: customers, error } = await supabaseClient
           .from('customers')
           .select('id, name, email, phone, customer_type, total_orders, total_spent, created_at')
@@ -271,7 +288,7 @@ async function executeToolCall(
         break;
       }
       case 'get_order_status': {
-        const orderRef = String(args['order_number'] || '');
+        const orderRef = sanitizeFilterValue(String(args['order_number'] || ''));
         const { data: orders, error } = await supabaseClient
           .from('sales_orders')
           .select('id, order_number, customer_id, status, total_amount, created_at, updated_at')
@@ -316,7 +333,7 @@ async function executeToolCall(
         break;
       }
       case 'search_products': {
-        const searchQuery = String(args['query'] || '');
+        const searchQuery = sanitizeFilterValue(String(args['query'] || ''));
         const { data: products, error } = await supabaseClient
           .from('products')
           .select('id, name, sku, quantity, unit_price, cost_price, is_active')
@@ -342,7 +359,7 @@ async function executeToolCall(
         break;
       }
       case 'get_lead_details': {
-        const search = String(args['lead_id'] || '');
+        const search = sanitizeFilterValue(String(args['lead_id'] || ''));
         const { data: leads, error } = await supabaseClient
           .from('leads')
           .select('id, name, email, phone, status, source, score, assigned_to, created_at')
@@ -353,7 +370,7 @@ async function executeToolCall(
         break;
       }
       case 'get_supplier_performance': {
-        const supplierSearch = String(args['supplier_id'] || '');
+        const supplierSearch = sanitizeFilterValue(String(args['supplier_id'] || ''));
         const { data: suppliers, error } = await supabaseClient
           .from('suppliers')
           .select('id, name, contact_name, email, phone, rating')
@@ -419,26 +436,60 @@ async function executeToolCall(
 
 // ─── RAG: Knowledge Base Query ───────────────────────────────────────
 
+/**
+ * Generate an embedding vector for the given text using the OpenAI embeddings API.
+ * Returns null if the API key is not configured or the call fails.
+ */
+async function generateQueryEmbedding(text: string): Promise<number[] | null> {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) return null;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        input: text,
+        model: 'text-embedding-3-small',
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data.data?.[0]?.embedding || null;
+  } catch (_e) {
+    return null;
+  }
+}
+
 async function queryKnowledgeBase(
   supabaseClient: ReturnType<typeof createClient>,
   query: string,
   agentType: string
 ): Promise<Array<{ title: string; content: string; category: string }>> {
-  // Try semantic search via match_knowledge RPC if available
+  // Try semantic search via match_knowledge RPC if we can generate an embedding
   try {
-    const { data: rpcResults } = await supabaseClient.rpc('match_knowledge', {
-      query_text: query,
-      match_count: 5,
-    });
-    if (rpcResults && rpcResults.length > 0) {
-      return rpcResults.map((r: Record<string, unknown>) => ({
-        title: String(r.title || ''),
-        content: String(r.content || ''),
-        category: String(r.category || ''),
-      }));
+    const embedding = await generateQueryEmbedding(query);
+    if (embedding) {
+      const { data: rpcResults } = await supabaseClient.rpc('match_knowledge', {
+        query_embedding: embedding,
+        match_threshold: 0.7,
+        match_count: 5,
+      });
+      if (rpcResults && rpcResults.length > 0) {
+        return rpcResults.map((r: Record<string, unknown>) => ({
+          title: String(r.title || ''),
+          content: String(r.content || ''),
+          category: String(r.category || ''),
+        }));
+      }
     }
   } catch (_e) {
-    // RPC not available, fall back to tag-based search
+    // Embedding generation or RPC failed, fall back to tag-based search
   }
 
   // Fallback: tag-based search using agent type and keywords

@@ -34,15 +34,23 @@ export function useKnowledgeEntries(filters: KnowledgeFilters = {}) {
   });
 }
 
+/**
+ * Search knowledge base entries using text-based search (ilike on title/content).
+ * We cannot call match_knowledge RPC client-side because it requires a vector(1536)
+ * embedding, and generating embeddings requires a server-side API key.
+ * For semantic/vector search, use the Edge Function which has access to the OpenAI key.
+ */
 export function useSearchKnowledge(queryText: string) {
   return useQuery({
     queryKey: ['knowledge-search', queryText],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('match_knowledge', {
-        query_embedding: queryText,
-        match_threshold: 0.7,
-        match_count: 10,
-      });
+      const { data, error } = await supabase
+        .from('knowledge_base')
+        .select('*')
+        .eq('is_active', true)
+        .or(`title.ilike.%${queryText}%,content.ilike.%${queryText}%`)
+        .order('updated_at', { ascending: false })
+        .limit(10);
 
       if (error) throw error;
       return (data || []) as KnowledgeEntry[];

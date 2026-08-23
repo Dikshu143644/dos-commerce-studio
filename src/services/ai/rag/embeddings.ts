@@ -9,6 +9,16 @@ const EMBEDDING_FUNCTION_URL = SUPABASE_URL
 /**
  * Generate an embedding vector for a given text using the OpenAI text-embedding-3-small model.
  * Routes through a Supabase Edge Function to keep API keys server-side.
+ *
+ * NOTE: The /functions/v1/embeddings Edge Function must be deployed separately
+ * (e.g., supabase/functions/embeddings/index.ts). It is not included in this
+ * repository yet. Without it, EMBEDDING_FUNCTION_URL resolves but returns 404,
+ * and this function falls back to zero-vectors.
+ *
+ * The zero-vector fallback is INTENTIONAL for development environments without
+ * an embedding API key configured. Zero-vectors will never match the similarity
+ * threshold in match_knowledge(), effectively disabling semantic search and
+ * forcing the tag-based fallback path.
  */
 export async function generateEmbedding(text: string): Promise<EmbeddingResult> {
   if (!EMBEDDING_FUNCTION_URL) {
