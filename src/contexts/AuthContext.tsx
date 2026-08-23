@@ -106,13 +106,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      const currentUser = currentSession?.user ?? null;
-      setUser(currentUser);
-      await loadProfile(currentUser);
-      setInitialized(true);
-    });
+    // Handle OAuth callback - check for hash fragments first
+    const hashParams = window.location.hash;
+    if (hashParams && hashParams.includes('access_token')) {
+      // Supabase will pick up the token from the URL hash automatically
+      // via getSession, so we just need to wait for it
+      supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+        setSession(currentSession);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+        await loadProfile(currentUser);
+        setInitialized(true);
+        // Clean up the hash from URL
+        if (currentUser) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      });
+    } else {
+      supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+        setSession(currentSession);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+        await loadProfile(currentUser);
+        setInitialized(true);
+      });
+    }
 
     const {
       data: { subscription },
@@ -121,6 +139,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const newUser = newSession?.user ?? null;
       setUser(newUser);
       await loadProfile(newUser);
+      if (!initialized) setInitialized(true);
     });
 
     return () => {

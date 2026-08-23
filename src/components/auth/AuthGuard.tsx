@@ -24,6 +24,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return <LoadingSkeleton />;
   }
 
+  // Check for OAuth callback hash fragments — let auth state settle
+  if (!user && location.hash && location.hash.includes('access_token')) {
+    return <LoadingSkeleton />;
+  }
+
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
