@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Update routing (App.tsx), sidebar navigation (Sidebar.tsx), Dashboard KPIs, and enhance ProductDetail page with stock charts and movement timeline",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Update src/App.tsx: Add lazy imports for Transfers, Receiving, Adjustments, LowStock pages from src/pages/inventory/. Add routes: 'inventory/transfers' -> Transfers, 'inventory/receiving' -> Receiving, 'inventory/adjustments' -> Adjustments, 'inventory/low-stock' -> LowStock. Place within the existing protected routes section after existing inventory routes.",
     "Update src/components/layout/Sidebar.tsx: Import ArrowLeftRight (already imported), PackageCheck, SlidersHorizontal, AlertTriangle from lucide-react. Add four items to the 'Inventory' section in navSections after 'Categories': { title: 'Transfers', href: '/inventory/transfers', icon: ArrowLeftRight }, { title: 'Receiving', href: '/inventory/receiving', icon: PackageCheck }, { title: 'Adjustments', href: '/inventory/adjustments', icon: SlidersHorizontal }, { title: 'Low Stock', href: '/inventory/low-stock', icon: AlertTriangle }. Note: ArrowLeftRight is already used for Stock Movements, so use Repeat or ArrowRightLeft for Transfers instead to avoid duplication. Check existing icon usage.",
@@ -24,5 +24,5 @@
     "cd /projects/sandbox/stockflow-inventory-crm && PATH=\"$HOME/.local/share/mise/shims:$PATH\" bun run build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Used Repeat2 icon for Transfers in sidebar since ArrowRightLeft was already used for Stock Movements (ArrowLeftRight is the same icon in lucide). All type-check and build pass cleanly. The BarChart uses Cell components with conditional coloring (red for below reorder point, green for above)."
 }
