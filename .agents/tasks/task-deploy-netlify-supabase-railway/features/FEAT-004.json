@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Frontend production hardening: centralized config, monitoring, Vite optimization, and comprehensive documentation",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/config.ts - centralized configuration with runtime validation: validates VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are present, provides typed config object with supabaseUrl, supabaseAnonKey, phpApiUrl, aiProxyUrl. Throws helpful error messages if misconfigured. Use this in src/lib/supabase.ts instead of raw import.meta.env",
     "Create src/lib/monitoring.ts - error tracking utility: captureException (Sentry-ready with console.error fallback), captureMessage, performance timing helpers (startTimer/endTimer), API call duration tracking wrapper. Should be importable without Sentry installed (graceful fallback).",

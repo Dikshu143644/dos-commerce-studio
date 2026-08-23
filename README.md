@@ -362,7 +362,58 @@ To add a new cron task:
 
 ## Deployment
 
-### Docker (Recommended)
+### One-Click Deploy
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/your-org/stockflow-inventory-crm)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/stockflow?referralCode=stockflow)
+
+### Quick Start (All Services)
+
+| Service | Platform | Deploy From | URL |
+|---------|----------|-------------|-----|
+| Frontend (React SPA) | Netlify | Root directory | `https://yourdomain.com` |
+| Database + Auth | Supabase | `supabase/migrations/` | `https://project.supabase.co` |
+| PHP Backend | Railway/Render | `server/php/` | `https://api.yourdomain.com` |
+| AI Edge Functions | Supabase | `supabase/functions/` | `https://project.supabase.co/functions/v1/` |
+
+### Deployment Environment Variables
+
+| Variable | Service | Required | Description |
+|----------|---------|----------|-------------|
+| `VITE_SUPABASE_URL` | Netlify | Yes | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Netlify | Yes | Supabase public/anon API key |
+| `VITE_PHP_API_URL` | Netlify | No | PHP backend URL (default: `http://localhost:8080`) |
+| `VITE_AI_PROXY_URL` | Netlify | No | AI edge function URL |
+| `SUPABASE_URL` | Railway/Render | Yes | Supabase project URL (server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Railway/Render | Yes | Service role key for admin access |
+| `SUPABASE_JWT_SECRET` | Railway/Render | Yes | JWT secret for token verification |
+| `SMTP_HOST` | Railway/Render | Yes | SMTP server hostname |
+| `SMTP_PORT` | Railway/Render | Yes | SMTP server port |
+| `SMTP_USER` | Railway/Render | Yes | SMTP auth username |
+| `SMTP_PASS` | Railway/Render | Yes | SMTP auth password |
+
+> For the complete variable reference and step-by-step deployment instructions, see [docs/deployment.md](docs/deployment.md).
+
+### Architecture Overview
+
+```
++------------------+     +------------------+     +------------------+
+|   Netlify CDN    |     |    Supabase      |     | Railway/Render   |
+|   (React SPA)    |     | (DB + Auth + Fn) |     |   (PHP API)      |
++--------+---------+     +--------+---------+     +--------+---------+
+         |                        |                        |
+         +------------------------+------------------------+
+                                  |
+                          +-------v-------+
+                          |  PostgreSQL   |
+                          |  (20 tables   |
+                          |   with RLS)   |
+                          +---------------+
+```
+
+> For detailed architecture diagrams, data flow, and scaling considerations, see [docs/architecture.md](docs/architecture.md).
+
+### Docker (Local/Self-Hosted)
 
 Deploy all services with Docker Compose:
 
