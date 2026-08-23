@@ -3,6 +3,7 @@ import type { BarcodeConfig, BarcodeFormat, ScanResult } from './types';
 import { DEFAULT_BARCODE_CONFIG } from './types';
 
 let scannerInstance: Html5Qrcode | null = null;
+let scannerMountId = 0;
 
 const FORMAT_MAP: Record<BarcodeFormat, Html5QrcodeSupportedFormats> = {
   CODE_128: Html5QrcodeSupportedFormats.CODE_128,
@@ -19,13 +20,33 @@ function mapFormat(formatValue: number): BarcodeFormat {
   return (entry?.[0] as BarcodeFormat) ?? 'CODE_128';
 }
 
+/**
+ * Acquires a mount token to guard against concurrent scanner initialization.
+ * Only the holder of the current token can start/stop the scanner.
+ */
+export function acquireScannerToken(): number {
+  scannerMountId += 1;
+  return scannerMountId;
+}
+
 export async function startScanner(
   elementId: string,
   onResult: (result: ScanResult) => void,
-  config: BarcodeConfig = DEFAULT_BARCODE_CONFIG
+  config: BarcodeConfig = DEFAULT_BARCODE_CONFIG,
+  token?: number
 ): Promise<void> {
+  // If a token is provided, only proceed if it matches the current mount
+  if (token !== undefined && token !== scannerMountId) {
+    return;
+  }
+
   // Stop any existing scanner
   await stopScanner();
+
+  // Re-check token after async stop in case another mount took over
+  if (token !== undefined && token !== scannerMountId) {
+    return;
+  }
 
   const formats = (config.formatsToSupport ?? DEFAULT_BARCODE_CONFIG.formatsToSupport ?? []).map(
     (f) => FORMAT_MAP[f]

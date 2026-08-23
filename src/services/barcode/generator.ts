@@ -2,7 +2,9 @@ import type { BarcodeFormat, ProductQRData } from './types';
 
 /**
  * Generates an SVG barcode image as a data URL.
- * Uses a simple Code128-style rendering for display purposes.
+ * NOTE: This produces a visual placeholder for display purposes only.
+ * The output is not a valid Code 128/EAN symbology and will not scan correctly
+ * from printed labels. For scannable output, integrate a library like JsBarcode.
  */
 export function generateBarcode(value: string, format: BarcodeFormat = 'CODE_128'): string {
   const width = 200;

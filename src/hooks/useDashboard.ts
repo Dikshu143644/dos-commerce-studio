@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
 
 export interface DashboardKPIs {
   totalProducts: number;
@@ -13,9 +14,43 @@ export interface DashboardKPIs {
 }
 
 export function useDashboard() {
+  const { activeBranchId } = useBranchContext();
+
   return useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ['dashboard', { activeBranchId }],
     queryFn: async (): Promise<DashboardKPIs> => {
+      // Build queries with optional branch filter
+      let productsQuery = supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true);
+      let dealsQuery = supabase.from('deals').select('value').not('stage', 'eq', 'closed_lost');
+      let revenueQuery = supabase
+        .from('sales_orders')
+        .select('total_amount')
+        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+        .in('status', ['confirmed', 'processing', 'shipped', 'delivered']);
+      let pendingOrdersQuery = supabase
+        .from('sales_orders')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['draft', 'confirmed', 'processing']);
+      let customersQuery = supabase.from('customers').select('*', { count: 'exact', head: true }).eq('is_active', true);
+      let warehousesQuery = supabase.from('warehouses').select('*', { count: 'exact', head: true }).eq('is_active', true);
+      let leadsQuery = supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .not('status', 'in', '("won","lost")');
+      let inventoryQuery = supabase.from('inventory').select('quantity, product_id, products(min_stock_level)');
+
+      // Apply branch filter when a specific branch is selected
+      if (activeBranchId) {
+        productsQuery = productsQuery.eq('branch_id', activeBranchId);
+        dealsQuery = dealsQuery.eq('branch_id', activeBranchId);
+        revenueQuery = revenueQuery.eq('branch_id', activeBranchId);
+        pendingOrdersQuery = pendingOrdersQuery.eq('branch_id', activeBranchId);
+        customersQuery = customersQuery.eq('branch_id', activeBranchId);
+        warehousesQuery = warehousesQuery.eq('branch_id', activeBranchId);
+        leadsQuery = leadsQuery.eq('branch_id', activeBranchId);
+        inventoryQuery = inventoryQuery.eq('branch_id', activeBranchId);
+      }
+
       // Fetch all KPIs in parallel
       const [
         productsResult,
@@ -27,37 +62,14 @@ export function useDashboard() {
         leadsResult,
         inventoryResult,
       ] = await Promise.all([
-        // Total products count
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        // Active deals value (not closed_lost)
-        supabase
-          .from('deals')
-          .select('value')
-          .not('stage', 'eq', 'closed_lost'),
-        // Monthly revenue from sales orders (current month)
-        supabase
-          .from('sales_orders')
-          .select('total_amount')
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-          .in('status', ['confirmed', 'processing', 'shipped', 'delivered']),
-        // Pending orders count
-        supabase
-          .from('sales_orders')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['draft', 'confirmed', 'processing']),
-        // Total customers
-        supabase.from('customers').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        // Total active warehouses
-        supabase.from('warehouses').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        // Open leads count
-        supabase
-          .from('leads')
-          .select('*', { count: 'exact', head: true })
-          .not('status', 'in', '("won","lost")'),
-        // Inventory with product join for low stock detection
-        supabase
-          .from('inventory')
-          .select('quantity, product_id, products(min_stock_level)'),
+        productsQuery,
+        dealsQuery,
+        revenueQuery,
+        pendingOrdersQuery,
+        customersQuery,
+        warehousesQuery,
+        leadsQuery,
+        inventoryQuery,
       ]);
 
       const activeDealsValue = (dealsResult.data ?? []).reduce(

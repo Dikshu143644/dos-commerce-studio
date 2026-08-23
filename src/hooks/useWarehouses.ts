@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
+import { applyBranchFilter } from '@/services/branches/context';
 import type { Warehouse } from '@/types/database';
 
 export interface WarehouseFilters {
@@ -16,13 +18,16 @@ export interface WarehouseWithStock extends Warehouse {
 
 export function useWarehouses(filters: WarehouseFilters = {}) {
   const { page = 1, pageSize = 20, search, is_active } = filters;
+  const { activeBranchId } = useBranchContext();
 
   return useQuery({
-    queryKey: ['warehouses', { page, pageSize, search, is_active }],
+    queryKey: ['warehouses', { page, pageSize, search, is_active, activeBranchId }],
     queryFn: async () => {
       let query = supabase
         .from('warehouses')
         .select('*', { count: 'exact' });
+
+      query = applyBranchFilter(query, activeBranchId);
 
       if (search) {
         query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);

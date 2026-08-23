@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
+import { applyBranchFilter } from '@/services/branches/context';
 import type { StockMovement, MovementType } from '@/types/database';
 
 export interface StockMovementFilters {
@@ -14,13 +16,16 @@ export interface StockMovementFilters {
 
 export function useStockMovements(filters: StockMovementFilters = {}) {
   const { page = 1, pageSize = 20, product_id, warehouse_id, movement_type, date_from, date_to } = filters;
+  const { activeBranchId } = useBranchContext();
 
   return useQuery({
-    queryKey: ['stock_movements', filters],
+    queryKey: ['stock_movements', { ...filters, activeBranchId }],
     queryFn: async () => {
       let query = supabase
         .from('stock_movements')
         .select('*', { count: 'exact' });
+
+      query = applyBranchFilter(query, activeBranchId);
 
       if (product_id) {
         query = query.eq('product_id', product_id);

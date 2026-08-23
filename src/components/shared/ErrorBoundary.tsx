@@ -47,7 +47,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               Something went wrong
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              {this.state.error?.message || 'An unexpected error occurred while rendering this page.'}
+              {import.meta.env.DEV
+                ? (this.state.error?.message || 'An unexpected error occurred while rendering this page.')
+                : 'An unexpected error occurred while rendering this page.'}
             </p>
             <div className="flex items-center justify-center gap-3">
               <button

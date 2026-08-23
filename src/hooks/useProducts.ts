@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
+import { applyBranchFilter } from '@/services/branches/context';
 import type { Product } from '@/types/database';
 
 export interface ProductFilters {
@@ -12,13 +14,16 @@ export interface ProductFilters {
 
 export function useProducts(filters: ProductFilters = {}) {
   const { page = 1, pageSize = 20, search, category_id, is_active } = filters;
+  const { activeBranchId } = useBranchContext();
 
   return useQuery({
-    queryKey: ['products', { page, pageSize, search, category_id, is_active }],
+    queryKey: ['products', { page, pageSize, search, category_id, is_active, activeBranchId }],
     queryFn: async () => {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' });
+
+      query = applyBranchFilter(query, activeBranchId);
 
       if (search) {
         query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);

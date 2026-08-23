@@ -20,8 +20,13 @@ export function MobileNav() {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
+    // The main scroll container is a Radix ScrollArea viewport, not window.
+    // Query for the viewport element which Radix renders with data-radix-scroll-area-viewport.
+    const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = viewport.scrollTop;
       if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
         setVisible(false);
       } else {
@@ -30,8 +35,8 @@ export function MobileNav() {
       lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    return () => viewport.removeEventListener('scroll', handleScroll);
   }, []);
 
   if (!isMobile) return null;

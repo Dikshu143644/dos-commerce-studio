@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { startScanner, stopScanner } from '@/services/barcode/scanner';
+import { startScanner, stopScanner, acquireScannerToken } from '@/services/barcode/scanner';
 import { BARCODE_FORMAT_LABELS } from '@/services/barcode/types';
 import type { ScanResult } from '@/services/barcode/types';
 
@@ -34,6 +34,7 @@ export function BarcodeScanner({
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
   const scannerElementId = 'barcode-scanner-reader';
   const audioContextRef = useRef<AudioContext | null>(null);
+  const tokenRef = useRef<number>(0);
 
   const playBeep = useCallback(() => {
     try {
@@ -73,16 +74,23 @@ export function BarcodeScanner({
   const initScanner = useCallback(async () => {
     setError(null);
     setLastResult(null);
+    const token = acquireScannerToken();
+    tokenRef.current = token;
     try {
-      await startScanner(scannerElementId, handleScanResult);
-      setScanning(true);
+      await startScanner(scannerElementId, handleScanResult, undefined, token);
+      // Only update state if this mount is still the current owner
+      if (tokenRef.current === token) {
+        setScanning(true);
+      }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to start camera. Please ensure camera permissions are granted.'
-      );
-      setScanning(false);
+      if (tokenRef.current === token) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to start camera. Please ensure camera permissions are granted.'
+        );
+        setScanning(false);
+      }
     }
   }, [handleScanResult]);
 

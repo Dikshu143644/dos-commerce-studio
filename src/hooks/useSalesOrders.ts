@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
+import { applyBranchFilter } from '@/services/branches/context';
 import type { SalesOrder, SalesOrderItem, OrderStatus } from '@/types/database';
 
 export interface SalesOrderFilters {
@@ -16,13 +18,16 @@ export interface SalesOrderWithItems extends SalesOrder {
 
 export function useSalesOrders(filters: SalesOrderFilters = {}) {
   const { page = 1, pageSize = 20, status, customer_id } = filters;
+  const { activeBranchId } = useBranchContext();
 
   return useQuery({
-    queryKey: ['sales_orders', { page, pageSize, status, customer_id }],
+    queryKey: ['sales_orders', { page, pageSize, status, customer_id, activeBranchId }],
     queryFn: async () => {
       let query = supabase
         .from('sales_orders')
         .select('*, customers(name)', { count: 'exact' });
+
+      query = applyBranchFilter(query, activeBranchId);
 
       if (status) {
         query = query.eq('status', status);

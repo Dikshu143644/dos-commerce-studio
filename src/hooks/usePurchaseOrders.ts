@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useBranchContext } from '@/contexts/BranchContext';
+import { applyBranchFilter } from '@/services/branches/context';
 import type { PurchaseOrder, PurchaseOrderItem, POStatus } from '@/types/database';
 
 export interface PurchaseOrderFilters {
@@ -16,13 +18,16 @@ export interface PurchaseOrderWithItems extends PurchaseOrder {
 
 export function usePurchaseOrders(filters: PurchaseOrderFilters = {}) {
   const { page = 1, pageSize = 20, status, supplier_id } = filters;
+  const { activeBranchId } = useBranchContext();
 
   return useQuery({
-    queryKey: ['purchase_orders', { page, pageSize, status, supplier_id }],
+    queryKey: ['purchase_orders', { page, pageSize, status, supplier_id, activeBranchId }],
     queryFn: async () => {
       let query = supabase
         .from('purchase_orders')
         .select('*, suppliers(name)', { count: 'exact' });
+
+      query = applyBranchFilter(query, activeBranchId);
 
       if (status) {
         query = query.eq('status', status);
