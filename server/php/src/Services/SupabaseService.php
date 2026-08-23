@@ -84,6 +84,31 @@ class SupabaseService
     }
 
     /**
+     * Bulk insert multiple records into a table in a single request.
+     * PostgREST supports array JSON bodies for batch inserts.
+     *
+     * @param array<int, array<string, mixed>> $rows Array of records to insert
+     * @return array<mixed>
+     */
+    public function bulkInsert(string $table, array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        try {
+            $response = $this->client->post("/rest/v1/{$table}", [
+                'json' => $rows,
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+            return is_array($result) ? $result : [];
+        } catch (GuzzleException $e) {
+            throw new \RuntimeException("Supabase bulk insert failed: {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    /**
      * Update records in a table.
      *
      * @param array<string, mixed> $data

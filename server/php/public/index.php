@@ -123,7 +123,8 @@ $containerBuilder->addDefinitions([
         return new WebhookController(
             $c->get(PaymentService::class),
             $c->get(SupabaseService::class),
-            $settings['shipping']['webhook_secret']
+            $settings['shipping']['webhook_secret'],
+            $settings['razorpay']['webhook_secret']
         );
     },
 

@@ -63,22 +63,21 @@ class ExcelController
                 return Response::error($response, 'No data found in the uploaded file', 400);
             }
 
-            // Insert into Supabase (batch)
+            // Insert into Supabase (batch via bulk insert)
             $inserted = 0;
             $errors = [];
             $batchSize = 100;
 
-            foreach (array_chunk($data, $batchSize) as $batch) {
-                foreach ($batch as $index => $row) {
-                    try {
-                        $this->supabase->insert($targetTable, $row);
-                        $inserted++;
-                    } catch (\Throwable $e) {
-                        $errors[] = [
-                            'row' => $index + 1,
-                            'error' => $e->getMessage(),
-                        ];
-                    }
+            foreach (array_chunk($data, $batchSize) as $batchIndex => $batch) {
+                try {
+                    $this->supabase->bulkInsert($targetTable, $batch);
+                    $inserted += count($batch);
+                } catch (\Throwable $e) {
+                    $errors[] = [
+                        'batch' => $batchIndex + 1,
+                        'rows' => count($batch),
+                        'error' => $e->getMessage(),
+                    ];
                 }
             }
 

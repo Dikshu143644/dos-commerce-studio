@@ -24,6 +24,12 @@ class AuthMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // Fail closed: reject requests when JWT secret is not configured
+        if (empty($this->jwtSecret)) {
+            $response = new Response();
+            return JsonResponse::error($response, 'JWT secret is not configured', 500);
+        }
+
         $authHeader = $request->getHeaderLine('Authorization');
 
         if (empty($authHeader)) {

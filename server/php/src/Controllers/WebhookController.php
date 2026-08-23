@@ -15,20 +15,30 @@ class WebhookController
     private PaymentService $paymentService;
     private SupabaseService $supabase;
     private string $shippingWebhookSecret;
+    private string $razorpayWebhookSecret;
 
-    public function __construct(PaymentService $paymentService, SupabaseService $supabase, string $shippingWebhookSecret = '')
+    public function __construct(PaymentService $paymentService, SupabaseService $supabase, string $shippingWebhookSecret = '', string $razorpayWebhookSecret = '')
     {
         $this->paymentService = $paymentService;
         $this->supabase = $supabase;
         $this->shippingWebhookSecret = $shippingWebhookSecret;
+        $this->razorpayWebhookSecret = $razorpayWebhookSecret;
     }
 
     /**
      * Handle Razorpay payment webhook.
      * POST /api/webhooks/razorpay
+     *
+     * Requires HMAC-SHA256 signature verification via X-Razorpay-Signature header.
+     * Rejects all requests when RAZORPAY_WEBHOOK_SECRET is not configured (fail closed).
      */
     public function razorpay(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // Fail closed: reject requests when webhook secret is not configured
+        if (empty($this->razorpayWebhookSecret)) {
+            return Response::error($response, 'Razorpay webhook secret is not configured', 503);
+        }
+
         $rawBody = (string) $request->getBody();
         $signature = $request->getHeaderLine('X-Razorpay-Signature');
 
