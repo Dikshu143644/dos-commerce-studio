@@ -36,6 +36,14 @@ const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
  * Falls back to VITE_AI_PROXY_URL if configured.
  * This is the only provider that should be used in production browser environments.
  */
+export interface StreamCallbacks {
+  onChunk?: (text: string) => void;
+  onToolCall?: (name: string, input: Record<string, unknown>) => void;
+  onToolResult?: (name: string, output: Record<string, unknown>) => void;
+  onComplete?: (response: { content: string; sources: string[]; tokensUsed?: number }) => void;
+  onError?: (error: Error) => void;
+}
+
 class ProxyProvider implements AIProvider {
   name = 'proxy';
   private agentType: AgentType = 'general';
@@ -75,6 +83,8 @@ class ProxyProvider implements AIProvider {
         conversationId: this.conversationId,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         systemPrompt,
+        enableRag: true,
+        enableTools: true,
       }),
     });
 
@@ -84,6 +94,131 @@ class ProxyProvider implements AIProvider {
 
     const data = await response.json();
     return data.content || data.message || 'No response generated.';
+  }
+
+  async stream(
+    messages: Message[],
+    systemPrompt: string,
+    callbacks: StreamCallbacks
+  ): Promise<void> {
+    const url = AI_EDGE_FUNCTION_URL || AI_PROXY_URL;
+    if (!url) {
+      throw new Error('AI endpoint not configured. Set VITE_SUPABASE_URL or VITE_AI_PROXY_URL.');
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: lastMessage?.content ?? '',
+          agentType: this.agentType,
+          conversationId: this.conversationId,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          systemPrompt,
+          enableRag: true,
+          enableTools: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI streaming error: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+
+      if (!contentType.includes('text/event-stream')) {
+        // Fallback: response is JSON, not SSE
+        const data = await response.json();
+        callbacks.onComplete?.({
+          content: data.content || '',
+          sources: data.sources || [],
+          tokensUsed: data.tokensUsed,
+        });
+        return;
+      }
+
+      // Parse SSE stream
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body for streaming');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+
+            try {
+              const event = JSON.parse(jsonStr) as {
+                type: string;
+                content?: string;
+                name?: string;
+                input?: Record<string, unknown>;
+                output?: Record<string, unknown>;
+                sources?: string[];
+              };
+
+              switch (event.type) {
+                case 'token':
+                  callbacks.onChunk?.(event.content || '');
+                  break;
+                case 'tool_call':
+                  callbacks.onToolCall?.(event.name || '', event.input || {});
+                  break;
+                case 'tool_result':
+                  callbacks.onToolResult?.(event.name || '', event.output || {});
+                  break;
+                case 'done':
+                  callbacks.onComplete?.({
+                    content: event.content || '',
+                    sources: event.sources || [],
+                  });
+                  break;
+                case 'error':
+                  callbacks.onError?.(new Error(event.content || 'Stream error'));
+                  break;
+              }
+            } catch (_parseErr) {
+              // Skip malformed SSE lines
+            }
+          }
+        }
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      callbacks.onError?.(err);
+
+      // Graceful fallback to non-streaming
+      try {
+        const content = await this.chat(messages, systemPrompt);
+        callbacks.onComplete?.({ content, sources: [] });
+      } catch (fallbackError) {
+        callbacks.onError?.(fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError)));
+      }
+    }
   }
 }
 

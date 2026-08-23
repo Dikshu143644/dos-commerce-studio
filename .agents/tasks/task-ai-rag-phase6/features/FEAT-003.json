@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Rewrite the Supabase Edge Function (supabase/functions/ai-chat/index.ts) to support RAG, tool calling, streaming (SSE), rate limiting, and provider fallback. Also update the frontend AI provider service and create streaming.ts.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Completely rewrite supabase/functions/ai-chat/index.ts: Accept { message, agentType, conversationId?, enableRag?, enableTools? }. Flow: validate JWT, rate limit (30 req/min per user), determine agent, if enableRag query knowledge_base + build DB context, build enhanced prompt, call AI with OpenAI function calling (define all 10 tools as function schemas), handle tool_calls loop, save conversation + tokens, support SSE streaming via Accept: text/event-stream header, provider fallback OpenAI->Gemini->Anthropic",
     "Update src/services/ai/providers.ts: ProxyProvider.chat sends enableRag: true and enableTools: true. Add streaming support method to ProxyProvider.",

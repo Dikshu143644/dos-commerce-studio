@@ -6,6 +6,9 @@ export { financeAgent } from './agents/finance';
 export { excelAgent } from './agents/excel';
 export { generalAgent } from './agents/general';
 export { chatWithFallback } from './providers';
+export type { StreamCallbacks } from './providers';
+export { streamChat } from './streaming';
+export type { StreamOptions, StreamCompleteEvent } from './streaming';
 export { analyzeIntent } from './router';
 
 import type { AgentConfig, AgentType } from './types';
