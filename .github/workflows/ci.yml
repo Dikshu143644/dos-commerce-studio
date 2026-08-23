@@ -50,7 +50,7 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, gd, zip, intl
           tools: composer:v2
-      - run: composer install --no-dev --optimize-autoloader
+      - run: composer install --optimize-autoloader
         working-directory: server/php
       - run: find src -name "*.php" -exec php -l {} \;
         working-directory: server/php

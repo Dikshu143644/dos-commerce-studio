@@ -57,11 +57,11 @@ RUN chown -R appuser:appgroup /usr/share/nginx/html && \
 # Switch to non-root user
 USER appuser
 
-EXPOSE 80
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:80/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Graceful shutdown support - nginx handles SIGTERM
 STOPSIGNAL SIGTERM

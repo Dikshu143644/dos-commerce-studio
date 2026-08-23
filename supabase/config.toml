@@ -21,7 +21,7 @@ double_confirm_changes = true
 enable_confirmations = false
 
 [auth.external.google]
-enabled = true
+enabled = false
 client_id = ""
 secret = ""
 redirect_uri = ""
