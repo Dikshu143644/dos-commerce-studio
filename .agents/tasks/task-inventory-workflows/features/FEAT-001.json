@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Database migration (004_inventory_workflows.sql) + TypeScript types for new tables (StockTransfer, StockTransferItem, GoodsReceivedNote, GRNItem, StockAdjustmentReason) + Service layer (src/services/inventory/) with movements, transfers, receiving, adjustments, and alerts logic",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create supabase/migrations/004_inventory_workflows.sql with: stock_transfers table (id, transfer_number, source_warehouse_id, destination_warehouse_id, status CHECK constraint, requested_by, approved_by, rejected_by, rejection_reason, notes, timestamps, completed_at, CONSTRAINT chk_different_warehouses), stock_transfer_items table (id, transfer_id FK, product_id FK, requested_quantity CHECK>0, transferred_quantity, notes), goods_received_notes table (id, grn_number UNIQUE, purchase_order_id FK, warehouse_id FK, received_by FK, supplier_invoice_number, notes, received_at, created_at), grn_items table (id, grn_id FK CASCADE, purchase_order_item_id FK, product_id FK, quantity_received CHECK>0, quantity_rejected DEFAULT 0, rejection_reason, batch_number, expiry_date), stock_adjustment_reasons table (id, code UNIQUE, name, description, requires_approval, is_active). Include seed data for adjustment reasons, sequences for transfer/GRN numbers, generate_transfer_number() and generate_grn_number() functions, RLS policies for all new tables, updated_at trigger for stock_transfers, and indexes. Use exact SQL from the user specification.",
     "Update src/types/database.ts: Add TransferStatus type ('pending'|'approved'|'in_transit'|'completed'|'rejected'), AdjustmentReason type ('damaged'|'expired'|'theft'|'count_correction'|'quality_reject'|'sample'|'other'), and interfaces: StockTransfer, StockTransferItem, GoodsReceivedNote, GRNItem, StockAdjustmentReason. Ensure fields match the 004 migration exactly.",
@@ -27,5 +27,5 @@
     "cd /projects/sandbox/stockflow-inventory-crm && PATH=\"$HOME/.local/share/mise/shims:$PATH\" bun run build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All service files use actual DB column names (type, created_by, reference_type, reference_id, notes) matching the 001 schema. The StockMovement interface in database.ts still has legacy field names (movement_type, performed_by, reference_number, reason) from a previous phase - these do not cause type errors since the service layer uses raw Supabase queries with 'as' casts. The transfer workflow uses 'transfer' type for outbound (trigger subtracts) and 'in' type for inbound at destination (trigger adds). Adjustments pass positive or negative quantity directly since the trigger does quantity + NEW.quantity."
 }
