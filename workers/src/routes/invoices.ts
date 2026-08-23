@@ -9,8 +9,10 @@ const invoices = new Hono<{ Bindings: Env }>();
 // Generate Invoice PDF
 invoices.post('/invoices/generate', async (c) => {
   try {
-    const body = await c.req.json<{ order_id: string; company?: Record<string, unknown> }>();
-    const { order_id, company } = body;
+    const body = await c.req.json<{ order_id?: string; sales_order_id?: string; company?: Record<string, unknown> }>();
+    // Accept both field names: frontend sends sales_order_id, also accept order_id
+    const order_id = body.order_id || body.sales_order_id;
+    const { company } = body;
 
     if (!order_id) {
       return c.json({ error: 'order_id is required' }, 400);
@@ -93,8 +95,9 @@ invoices.post('/invoices/generate', async (c) => {
 // Generate Purchase Order PDF
 invoices.post('/purchase-orders/pdf', async (c) => {
   try {
-    const body = await c.req.json<{ po_id: string }>();
-    const { po_id } = body;
+    const body = await c.req.json<{ po_id?: string; purchase_order_id?: string }>();
+    // Accept both field names: frontend sends purchase_order_id, also accept po_id
+    const po_id = body.po_id || body.purchase_order_id;
 
     if (!po_id) {
       return c.json({ error: 'po_id is required' }, 400);

@@ -14,6 +14,9 @@ export interface Env {
   // Email
   RESEND_API_KEY: string;
 
+  // Payments
+  RAZORPAY_WEBHOOK_SECRET: string;
+
   // CORS
   CORS_ORIGIN: string;
 

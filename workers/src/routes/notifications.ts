@@ -33,7 +33,7 @@ notifications.post('/notifications/whatsapp', async (c) => {
     }
 
     // In production, integrate with MSG91 or Twilio
-    // For now, log and return success
+    // For now, log and return 202 Accepted with stub flag
     const notificationType = type || 'whatsapp';
     console.log(`[${notificationType.toUpperCase()}] To: ${to}, Message: ${message}`);
 
@@ -42,12 +42,14 @@ notifications.post('/notifications/whatsapp', async (c) => {
 
     return c.json({
       success: true,
+      stub: true,
       type: notificationType,
       to,
       template,
       message,
-      status: 'queued',
-    });
+      status: 'not_delivered',
+      note: 'Notification provider not configured. Message was logged but not sent.',
+    }, 202);
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: errorMsg }, 500);

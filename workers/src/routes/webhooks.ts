@@ -4,6 +4,73 @@ import { createSupabaseClient } from '../services/supabase';
 
 const webhooks = new Hono<{ Bindings: Env }>();
 
+/**
+ * Verify Razorpay webhook signature using HMAC-SHA256.
+ * The signature header is 'X-Razorpay-Signature'.
+ * The expected signature is HMAC-SHA256(request body, webhook secret).
+ */
+async function verifyWebhookSignature(
+  body: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  // Constant-time comparison to prevent timing attacks
+  if (expectedSignature.length !== signature.length) {
+    return false;
+  }
+  let mismatch = 0;
+  for (let i = 0; i < expectedSignature.length; i++) {
+    mismatch |= expectedSignature.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+/**
+ * Verify Razorpay payment signature for client-side verification.
+ * Signature = HMAC-SHA256(order_id + '|' + payment_id, key_secret).
+ */
+async function verifyPaymentSignature(
+  orderId: string,
+  paymentId: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const message = `${orderId}|${paymentId}`;
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  // Constant-time comparison
+  if (expectedSignature.length !== signature.length) {
+    return false;
+  }
+  let mismatch = 0;
+  for (let i = 0; i < expectedSignature.length; i++) {
+    mismatch |= expectedSignature.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 // Create Razorpay order
 webhooks.post('/payments/create-order', async (c) => {
   try {
@@ -60,8 +127,23 @@ webhooks.post('/payments/verify', async (c) => {
       return c.json({ error: 'All payment verification fields are required' }, 400);
     }
 
-    // In production, verify signature using crypto.subtle
-    // const expectedSignature = hmac('sha256', secret, orderId + '|' + paymentId);
+    // Verify signature using HMAC-SHA256: sign(order_id + '|' + payment_id, secret)
+    const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error('RAZORPAY_WEBHOOK_SECRET not configured');
+      return c.json({ error: 'Payment verification not configured' }, 503);
+    }
+
+    const isValid = await verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      secret
+    );
+
+    if (!isValid) {
+      return c.json({ error: 'Invalid payment signature' }, 400);
+    }
 
     const supabase = createSupabaseClient(c.env);
     await supabase
@@ -89,7 +171,28 @@ webhooks.post('/payments/verify', async (c) => {
 // Payment webhook (from Razorpay)
 webhooks.post('/payments/webhook', async (c) => {
   try {
-    const payload = await c.req.json<PaymentWebhookPayload>();
+    // Verify webhook signature before processing
+    const signature = c.req.header('X-Razorpay-Signature');
+    const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!secret) {
+      console.error('RAZORPAY_WEBHOOK_SECRET not configured');
+      return c.json({ error: 'Webhook verification not configured' }, 503);
+    }
+
+    if (!signature) {
+      return c.json({ error: 'Missing webhook signature' }, 401);
+    }
+
+    // Read raw body for signature verification
+    const rawBody = await c.req.text();
+    const isValid = await verifyWebhookSignature(rawBody, signature, secret);
+
+    if (!isValid) {
+      return c.json({ error: 'Invalid webhook signature' }, 401);
+    }
+
+    const payload = JSON.parse(rawBody) as PaymentWebhookPayload;
     const { event, payload: eventPayload } = payload;
 
     const supabase = createSupabaseClient(c.env);

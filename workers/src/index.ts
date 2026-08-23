@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from './types';
 import { corsMiddleware } from './middleware/cors';
 import { authMiddleware } from './middleware/auth';
+import { ipRateLimitMiddleware } from './middleware/rate-limit';
 import health from './routes/health';
 import invoices from './routes/invoices';
 import email from './routes/email';
@@ -15,33 +16,28 @@ const app = new Hono<{ Bindings: Env }>();
 // Apply CORS middleware globally
 app.use('/*', corsMiddleware());
 
-// Public routes (no auth required)
-app.route('/api', health);
+// --- Public routes (no auth, IP-based rate limiting) ---
+const publicRoutes = new Hono<{ Bindings: Env }>();
+publicRoutes.route('/', health);
 
-// Webhook routes (authenticated by signature, not JWT)
-app.post('/api/payments/webhook', async (c, next) => {
-  // Skip JWT auth for webhooks - they use signature verification
-  await next();
-});
+// --- Webhook routes (signature-verified, not JWT-auth, IP rate-limited) ---
+const webhookRoutes = new Hono<{ Bindings: Env }>();
+webhookRoutes.use('/*', ipRateLimitMiddleware);
+webhookRoutes.route('/', webhooks);
 
-// Apply auth middleware to all other /api routes
-app.use('/api/*', async (c, next) => {
-  // Skip auth for health check and payment webhooks
-  const path = c.req.path;
-  if (path === '/api/health' || path === '/api/payments/webhook') {
-    await next();
-    return;
-  }
-  return authMiddleware(c, next);
-});
+// --- Protected routes (JWT auth required) ---
+const protectedRoutes = new Hono<{ Bindings: Env }>();
+protectedRoutes.use('/*', authMiddleware);
+protectedRoutes.route('/', invoices);
+protectedRoutes.route('/', email);
+protectedRoutes.route('/', excel);
+protectedRoutes.route('/', notifications);
+protectedRoutes.route('/', aiChat);
 
-// Protected routes
-app.route('/api', invoices);
-app.route('/api', email);
-app.route('/api', excel);
-app.route('/api', webhooks);
-app.route('/api', notifications);
-app.route('/api', aiChat);
+// Mount route groups under /api
+app.route('/api', publicRoutes);
+app.route('/api', webhookRoutes);
+app.route('/api', protectedRoutes);
 
 // 404 fallback
 app.notFound((c) => {

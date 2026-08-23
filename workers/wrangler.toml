@@ -6,6 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
+# KV namespace for rate limiting.
+# After creating the namespace, fill in the IDs:
+#   wrangler kv:namespace create "RATE_LIMIT"
+#   wrangler kv:namespace create "RATE_LIMIT" --preview
+# Then copy the IDs into the fields below.
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
 id = ""
@@ -13,3 +18,14 @@ preview_id = ""
 
 [placement]
 mode = "smart"
+
+# Required secrets (set via `wrangler secret put <NAME>`):
+#   SUPABASE_URL              - Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY - Supabase service role key
+#   SUPABASE_JWT_SECRET       - Supabase JWT secret for token verification
+#   OPENAI_API_KEY            - OpenAI API key (primary AI provider)
+#   GEMINI_API_KEY            - Google Gemini API key (fallback)
+#   ANTHROPIC_API_KEY         - Anthropic API key (fallback)
+#   RESEND_API_KEY            - Resend API key for transactional emails
+#   RAZORPAY_WEBHOOK_SECRET   - Razorpay webhook secret for signature verification
+#   CORS_ORIGIN               - Allowed CORS origin (e.g. https://your-app.vercel.app)
