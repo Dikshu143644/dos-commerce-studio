@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Review-fix pass: remove loginWithOAuth, fix OTP session conflict, extract shared login hook, optimize profile+role query, fix manager access to settings",
+  "status": "in_progress",
+  "steps": [
+    "1. Remove loginWithOAuth from AuthContext interface and provider",
+    "2. Fix OTP session conflict by using updateUser instead of signInWithOtp",
+    "3. Create src/hooks/useLoginForm.ts shared hook",
+    "4. Update Login.tsx and StaffLogin.tsx to use shared hook",
+    "5. Optimize profile+role query with a single join",
+    "6. Remove Settings from manager role's sectionsByRole",
+    "7. Block managers from /settings in AuthGuard"
+  ],
+  "acceptance_criteria": [
+    "pnpm build passes with zero TypeScript errors",
+    "loginWithOAuth removed from AuthContext interface and provider",
+    "OTP page uses updateUser instead of signInWithOtp",
+    "Shared useLoginForm hook exists and is used by both login pages",
+    "Single query for profile+role in AuthContext",
+    "Manager role does not see Settings in sidebar",
+    "Manager role is blocked from /settings routes"
+  ],
+  "verification": [
+    "Run `pnpm build` and confirm zero errors and successful bundle output"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

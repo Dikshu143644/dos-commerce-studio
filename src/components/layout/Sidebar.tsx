@@ -125,7 +125,7 @@ const sectionsByRole: Record<UserRole, string[]> = {
   viewer: ['Main', 'Sales', 'AI'],
   client: ['Main', 'Sales', 'AI'],
   staff: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI'],
-  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI', 'Settings'],
+  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI'],
   admin: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI', 'Settings'],
 };
 

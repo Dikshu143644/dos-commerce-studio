@@ -41,7 +41,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Staff cannot access admin settings
-  if (userRole === 'staff') {
+  if (userRole === 'staff' || userRole === 'manager') {
     const isAdminOnly = adminOnlyPrefixes.some((prefix) => path.startsWith(prefix));
     if (isAdminOnly) {
       return <Navigate to="/" replace />;

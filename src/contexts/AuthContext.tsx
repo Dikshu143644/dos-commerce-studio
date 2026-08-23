@@ -17,7 +17,6 @@ export interface AuthState {
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  loginWithOAuth: (provider: 'google' | 'github') => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);
@@ -26,37 +25,34 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-async function fetchUserProfile(userId: string): Promise<Profile | null> {
+function resolveRoleName(name: string | null | undefined): UserRole {
+  if (!name) return 'viewer';
+  const lower = name.toLowerCase();
+  if (lower === 'admin') return 'admin';
+  if (lower === 'manager') return 'manager';
+  if (lower === 'staff') return 'staff';
+  if (lower === 'client') return 'client';
+  return 'viewer';
+}
+
+async function fetchProfileWithRole(userId: string): Promise<{ profile: Profile | null; role: UserRole }> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, roles(name)')
       .eq('id', userId)
       .single();
-    if (error) return null;
-    return data as Profile;
+    if (error || !data) return { profile: null, role: 'viewer' };
+    // Extract role name from joined result
+    const roleName = (data.roles as { name: string } | null)?.name ?? null;
+    // Remove the joined `roles` field from the profile object
+    const { roles: _roles, ...profileData } = data as Record<string, unknown>;
+    return {
+      profile: profileData as unknown as Profile,
+      role: resolveRoleName(roleName),
+    };
   } catch {
-    return null;
-  }
-}
-
-async function fetchRoleName(roleId: string | null): Promise<UserRole> {
-  if (!roleId) return 'viewer';
-  try {
-    const { data, error } = await supabase
-      .from('roles')
-      .select('name')
-      .eq('id', roleId)
-      .single();
-    if (error || !data) return 'viewer';
-    const name = (data.name as string).toLowerCase();
-    if (name === 'admin') return 'admin';
-    if (name === 'manager') return 'manager';
-    if (name === 'staff') return 'staff';
-    if (name === 'client') return 'client';
-    return 'viewer';
-  } catch {
-    return 'viewer';
+    return { profile: null, role: 'viewer' };
   }
 }
 
@@ -104,14 +100,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUserRole('viewer');
       return;
     }
-    const prof = await fetchUserProfile(currentUser.id);
+    const { profile: prof, role } = await fetchProfileWithRole(currentUser.id);
     setProfile(prof);
-    if (prof) {
-      const role = await fetchRoleName(prof.role_id);
-      setUserRole(role);
-    } else {
-      setUserRole('viewer');
-    }
+    setUserRole(role);
   }, []);
 
   useEffect(() => {
@@ -191,14 +182,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const loginWithOAuth = useCallback(async (provider: 'google' | 'github') => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) throw error;
-  }, []);
-
   return (
     <AuthContext.Provider
       value={{
@@ -212,7 +195,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signup,
         logout,
         resetPassword,
-        loginWithOAuth,
       }}
     >
       {children}

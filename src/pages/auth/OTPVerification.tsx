@@ -34,24 +34,26 @@ export default function OTPVerification({ phone, onVerified, onSkip }: OTPVerifi
     setIsSending(true);
     setError(null);
     try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({ phone });
-      if (otpError) {
-        // If provider not configured, gracefully handle
+      // Use updateUser to attach the phone to the existing session
+      // instead of signInWithOtp which would create a competing session
+      const { error: updateError } = await supabase.auth.updateUser({ phone });
+      if (updateError) {
+        // If provider not configured or phone auth not enabled, gracefully handle
         if (
-          otpError.message.toLowerCase().includes('not enabled') ||
-          otpError.message.toLowerCase().includes('provider') ||
-          otpError.message.toLowerCase().includes('sms') ||
-          otpError.message.toLowerCase().includes('phone')
+          updateError.message.toLowerCase().includes('not enabled') ||
+          updateError.message.toLowerCase().includes('provider') ||
+          updateError.message.toLowerCase().includes('sms') ||
+          updateError.message.toLowerCase().includes('phone')
         ) {
           setProviderUnavailable(true);
           return;
         }
-        throw otpError;
+        throw updateError;
       }
       setOtpSent(true);
       setResendCooldown(60);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send OTP';
+      const message = err instanceof Error ? err.message : 'Failed to send verification code';
       // Check if it is a provider config issue
       if (message.toLowerCase().includes('not enabled') || message.toLowerCase().includes('provider')) {
         setProviderUnavailable(true);
@@ -76,7 +78,7 @@ export default function OTPVerification({ phone, onVerified, onSkip }: OTPVerifi
       const { error: verifyError } = await supabase.auth.verifyOtp({
         phone,
         token: otp,
-        type: 'sms',
+        type: 'phone_change',
       });
       if (verifyError) throw verifyError;
       setSuccess(true);
