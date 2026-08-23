@@ -30,6 +30,7 @@ import {
   Filter,
   RotateCcw,
   CreditCard,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,7 @@ const navSections: NavSection[] = [
       { title: 'Settings', href: '/settings', icon: Settings },
       { title: 'Users', href: '/settings/users', icon: Users },
       { title: 'Roles', href: '/settings/roles', icon: Shield },
+      { title: 'Branches', href: '/settings/branches', icon: Building2 },
       { title: 'Audit Log', href: '/settings/audit-log', icon: ScrollText },
     ],
   },

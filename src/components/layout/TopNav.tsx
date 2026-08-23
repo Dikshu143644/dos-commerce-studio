@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from './Breadcrumbs';
+import { BranchSwitcher } from './BranchSwitcher';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -65,6 +66,8 @@ export function TopNav() {
         <Button variant="ghost" size="icon" className="relative">
           <Bot className="h-5 w-5 text-muted-foreground" />
         </Button>
+
+        <BranchSwitcher />
 
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5 text-muted-foreground" />

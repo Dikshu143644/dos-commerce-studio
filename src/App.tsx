@@ -35,6 +35,7 @@ const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const UsersPage = lazy(() => import('@/pages/settings/UsersPage'));
 const RolesPage = lazy(() => import('@/pages/settings/RolesPage'));
 const AuditLog = lazy(() => import('@/pages/settings/AuditLog'));
+const Branches = lazy(() => import('@/pages/settings/Branches'));
 const Login = lazy(() => import('@/pages/auth/Login'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
@@ -87,6 +88,7 @@ function App() {
           <Route path="settings/users" element={<UsersPage />} />
           <Route path="settings/roles" element={<RolesPage />} />
           <Route path="settings/audit-log" element={<AuditLog />} />
+          <Route path="settings/branches" element={<Branches />} />
         </Route>
 
         {/* 404 */}
