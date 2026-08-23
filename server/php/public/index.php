@@ -10,6 +10,7 @@ use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use StockFlow\Controllers\EmailController;
 use StockFlow\Controllers\ExcelController;
+use StockFlow\Controllers\HealthController;
 use StockFlow\Controllers\InvoiceController;
 use StockFlow\Controllers\NotificationController;
 use StockFlow\Controllers\ReportController;
@@ -139,6 +140,10 @@ $containerBuilder->addDefinitions([
         );
     },
 
+    HealthController::class => function () {
+        return new HealthController();
+    },
+
     // Middleware
     AuthMiddleware::class => function (Container $c) {
         $settings = $c->get('settings');
@@ -180,21 +185,7 @@ $app->addErrorMiddleware(
 );
 
 // Health check route (no auth required)
-$app->get('/api/health', function (ServerRequestInterface $request, ResponseInterface $response) {
-    $payload = [
-        'success' => true,
-        'message' => 'StockFlow PHP Backend is running',
-        'data' => [
-            'version' => '1.0.0',
-            'php_version' => PHP_VERSION,
-            'timestamp' => date('c'),
-            'uptime' => 'OK',
-        ],
-    ];
-
-    $response->getBody()->write(json_encode($payload, JSON_THROW_ON_ERROR));
-    return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
-});
+$app->get('/api/health', [HealthController::class, 'check']);
 
 // Public webhook routes (no auth - they verify their own signatures)
 $app->post('/api/webhooks/razorpay', [WebhookController::class, 'razorpay']);

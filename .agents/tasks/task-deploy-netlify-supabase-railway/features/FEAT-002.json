@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "chore",
   "description": "PHP backend production deployment configs (Railway, Render) and production-hardened Dockerfile with Nginx config",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create server/php/railway.json with DOCKERFILE builder, start command (php-fpm -D && nginx -g 'daemon off;'), /api/health healthcheck, ON_FAILURE restart policy",
     "Create server/php/Procfile with web process: php-fpm -D && nginx -g 'daemon off;'",
