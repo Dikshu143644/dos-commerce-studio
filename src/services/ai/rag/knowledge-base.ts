@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { KnowledgeEntry } from './types';
 import { generateEmbedding } from './embeddings';
+import { sanitizeFilterValue } from './utils';
 
 /**
  * Add a new entry to the knowledge base with an auto-generated embedding.
@@ -32,6 +33,13 @@ export async function addKnowledgeEntry(
 /**
  * Semantic search for knowledge entries using the match_knowledge RPC function.
  * Uses vector cosine distance for similarity matching.
+ *
+ * NOTE: Without the embeddings Edge Function deployed (supabase/functions/embeddings),
+ * the client-side generateEmbedding() always returns a zero-vector. This causes the
+ * match_knowledge RPC to return no meaningful results (cosine distance from zero-vector
+ * is undefined/maximal), and the code falls through to fallbackTextSearch. This is the
+ * expected development behavior - semantic search only works when the embeddings Edge
+ * Function is deployed and OPENAI_API_KEY is configured on the Supabase project.
  */
 export async function searchKnowledge(
   query: string,
@@ -42,7 +50,7 @@ export async function searchKnowledge(
   const embeddingResult = await generateEmbedding(query);
 
   const params: Record<string, unknown> = {
-    query_embedding: JSON.stringify(embeddingResult.embedding),
+    query_embedding: embeddingResult.embedding,
     match_threshold: threshold,
     match_count: limit,
   };
@@ -65,11 +73,12 @@ export async function searchKnowledge(
  * Fallback text search when vector search is unavailable.
  */
 async function fallbackTextSearch(query: string, limit: number): Promise<KnowledgeEntry[]> {
+  const sanitized = sanitizeFilterValue(query);
   const { data, error } = await supabase
     .from('knowledge_base')
     .select('*')
     .eq('is_active', true)
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+    .or(`title.ilike.%${sanitized}%,content.ilike.%${sanitized}%`)
     .limit(limit);
 
   if (error) throw error;

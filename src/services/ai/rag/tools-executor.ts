@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { ToolDefinition, ToolResult } from './types';
+import { sanitizeFilterValue } from './utils';
 
 /**
  * Client-side RAG tool implementations.
@@ -184,7 +185,7 @@ async function logToolExecution(execution: {
 
 async function checkStock(params: Record<string, unknown>): Promise<ToolResult> {
   const startTime = Date.now();
-  const product = String(params['product'] || '');
+  const product = sanitizeFilterValue(String(params['product'] || ''));
 
   const { data, error } = await supabase
     .from('products')
@@ -239,7 +240,7 @@ async function findLowStock(params: Record<string, unknown>): Promise<ToolResult
 
 async function getCustomerInfo(params: Record<string, unknown>): Promise<ToolResult> {
   const startTime = Date.now();
-  const search = String(params['search'] || '');
+  const search = sanitizeFilterValue(String(params['search'] || ''));
 
   const { data, error } = await supabase
     .from('customers')
@@ -261,7 +262,7 @@ async function getCustomerInfo(params: Record<string, unknown>): Promise<ToolRes
 
 async function getOrderStatus(params: Record<string, unknown>): Promise<ToolResult> {
   const startTime = Date.now();
-  const orderRef = String(params['order_ref'] || '');
+  const orderRef = sanitizeFilterValue(String(params['order_ref'] || ''));
 
   const { data, error } = await supabase
     .from('sales_orders')
@@ -402,7 +403,7 @@ async function getPipelineValue(params: Record<string, unknown>): Promise<ToolRe
 
 async function searchProducts(params: Record<string, unknown>): Promise<ToolResult> {
   const startTime = Date.now();
-  const query = String(params['query'] || '');
+  const query = sanitizeFilterValue(String(params['query'] || ''));
   const limit = Number(params['limit']) || 10;
 
   const { data, error } = await supabase
@@ -454,7 +455,7 @@ async function getOverdueInvoices(params: Record<string, unknown>): Promise<Tool
 
 async function getLeadDetails(params: Record<string, unknown>): Promise<ToolResult> {
   const startTime = Date.now();
-  const search = String(params['search'] || '');
+  const search = sanitizeFilterValue(String(params['search'] || ''));
 
   const { data, error } = await supabase
     .from('leads')
@@ -485,7 +486,7 @@ async function getSupplierPerformance(params: Record<string, unknown>): Promise<
     .eq('is_active', true);
 
   if (supplierName) {
-    query = query.ilike('name', `%${supplierName}%`);
+    query = query.ilike('name', `%${sanitizeFilterValue(supplierName)}%`);
   }
 
   const { data: suppliers, error } = await query

@@ -1,0 +1,12 @@
+{
+  "id": "FEAT-007-review-fixes-v2",
+  "title": "Review fixes (iteration 2)",
+  "status": "in_progress",
+  "description": "Address all 4 remaining issues from second code review (2025-01-15-120001-review.md)",
+  "acceptance_criteria": [
+    "sanitizeFilterValue utility created and applied to ALL .or() interpolations in tools-executor.ts and context-builder.ts",
+    "knowledge-base.ts passes raw embedding array to RPC instead of JSON.stringify()",
+    "knowledge-base.ts has clear comment explaining fallthrough to text search without embeddings Edge Function",
+    "Conversation save race condition fixed: client no longer writes messages after streaming; instead refetches conversation from DB"
+  ]
+}

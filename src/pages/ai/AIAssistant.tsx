@@ -77,7 +77,7 @@ export default function AIAssistantPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const { data: conversations } = useConversations();
+  const { data: conversations, refetch: refetchConversations } = useConversations();
   const createConversation = useCreateConversation();
   const deleteConversation = useDeleteConversation();
   const stream = useStreamMessage();
@@ -106,22 +106,27 @@ export default function AIAssistantPage() {
     }
   }, [deleteConversation, activeConversationId, handleNewConversation]);
 
-  const saveMessagesToConversation = useCallback(async (conversationId: string, msgs: ChatMessage[]) => {
-    await supabase
+  const refetchConversation = useCallback(async (conversationId: string) => {
+    // Re-fetch the conversation from the database to get the server-written version.
+    // The Edge Function is the authoritative writer for ai_conversations.messages
+    // during streaming - the client must not overwrite its data.
+    const { data } = await supabase
       .from('ai_conversations')
-      .update({
-        messages: msgs.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestamp: m.timestamp.toISOString(),
-          agentType: m.agentType,
-          sources: m.sources,
-        })),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', conversationId);
-  }, []);
+      .select('messages')
+      .eq('id', conversationId)
+      .single();
+
+    if (data?.messages) {
+      const msgs = (data.messages as Array<{ id: string; role: 'user' | 'assistant' | 'system'; content: string; timestamp: string; agentType?: AgentType; sources?: string[] }>).map((m) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      })) as ChatMessage[];
+      setMessages(msgs);
+    }
+
+    // Also invalidate the conversations list so sidebar updates
+    await refetchConversations();
+  }, [refetchConversations]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || stream.isStreaming) return;
@@ -168,8 +173,11 @@ export default function AIAssistantPage() {
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
 
+      // The Edge Function is the authoritative writer for conversation messages.
+      // Re-fetch from the database to get the server-written version instead of
+      // performing a client-side overwrite that could race with the Edge Function.
       if (convId) {
-        await saveMessagesToConversation(convId, finalMessages);
+        await refetchConversation(convId);
       }
     } catch {
       const errorMessage: ChatMessage = {
@@ -182,11 +190,13 @@ export default function AIAssistantPage() {
       const finalMessages = [...updatedMessages, errorMessage];
       setMessages(finalMessages);
 
+      // On error, the Edge Function may not have saved anything, so re-fetch
+      // to stay consistent with the database state.
       if (convId) {
-        await saveMessagesToConversation(convId, finalMessages);
+        await refetchConversation(convId);
       }
     }
-  }, [messages, selectedAgent, activeConversationId, createConversation, stream, saveMessagesToConversation]);
+  }, [messages, selectedAgent, activeConversationId, createConversation, stream, refetchConversation]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

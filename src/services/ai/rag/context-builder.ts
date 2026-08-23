@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from './utils';
 
 /**
  * Build inventory context by querying products, warehouses, and stock movements
@@ -45,7 +46,7 @@ export async function buildInventoryContext(
     (k) => !['stock', 'inventory', 'warehouse', 'product', 'low'].includes(k)
   );
   if (productKeywords.length > 0) {
-    const searchTerm = productKeywords[0];
+    const searchTerm = sanitizeFilterValue(productKeywords[0]);
     const { data: matchedProducts } = await supabase
       .from('products')
       .select('id, name, sku, quantity, unit_price, cost_price')
@@ -108,7 +109,7 @@ export async function buildSalesContext(
     (k) => !['customer', 'deal', 'sale', 'order', 'pipeline', 'revenue'].includes(k)
   );
   if (customerKeywords.length > 0) {
-    const searchTerm = customerKeywords[0];
+    const searchTerm = sanitizeFilterValue(customerKeywords[0]);
     const { data: matchedCustomers } = await supabase
       .from('customers')
       .select('id, name, email, customer_type, total_orders, total_spent')
@@ -167,7 +168,7 @@ export async function buildProcurementContext(
     (k) => !['supplier', 'purchase', 'po', 'order', 'procurement', 'delivery'].includes(k)
   );
   if (supplierKeywords.length > 0) {
-    const searchTerm = supplierKeywords[0];
+    const searchTerm = sanitizeFilterValue(supplierKeywords[0]);
     const { data: matchedSuppliers } = await supabase
       .from('suppliers')
       .select('id, name, contact_name, email, phone, rating')
@@ -284,7 +285,7 @@ export async function buildCRMContext(
     (k) => !['lead', 'customer', 'crm', 'deal', 'contact', 'activity'].includes(k)
   );
   if (crmKeywords.length > 0) {
-    const searchTerm = crmKeywords[0];
+    const searchTerm = sanitizeFilterValue(crmKeywords[0]);
     const { data: matchedLeads } = await supabase
       .from('leads')
       .select('id, name, email, status, score, source')
