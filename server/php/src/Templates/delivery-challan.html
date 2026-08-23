@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Challan {{challan_number}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background: #ffffff;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 4px solid #10b981;
+            display: table;
+            width: 100%;
+        }
+        .header-left { display: table-cell; vertical-align: middle; width: 50%; }
+        .header-right { display: table-cell; vertical-align: middle; text-align: right; width: 50%; }
+        .company-name { font-size: 24px; font-weight: bold; color: #10b981; margin-bottom: 5px; }
+        .company-details { font-size: 10px; color: #a1a1aa; line-height: 1.6; }
+        .doc-title { font-size: 20px; font-weight: bold; color: #ffffff; letter-spacing: 1px; }
+        .doc-number { font-size: 14px; color: #10b981; margin-top: 5px; font-weight: 600; }
+
+        .info-grid {
+            display: table; width: 100%; padding: 20px 0; border-bottom: 1px solid #e5e7eb;
+        }
+        .info-col { display: table-cell; vertical-align: top; width: 33.33%; padding: 10px; }
+        .info-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .info-value { font-size: 12px; font-weight: 500; }
+
+        .addresses { display: table; width: 100%; padding: 20px 0; }
+        .address-box { display: table-cell; vertical-align: top; width: 50%; padding: 0 10px; }
+        .section-title {
+            font-size: 11px; color: #10b981; text-transform: uppercase;
+            letter-spacing: 1px; font-weight: 700; margin-bottom: 8px;
+            padding-bottom: 5px; border-bottom: 2px solid #10b981;
+        }
+        .address-detail { font-size: 11px; line-height: 1.8; }
+
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table thead th {
+            background: #0a0a0a; color: #ffffff; padding: 10px 8px;
+            font-size: 10px; text-transform: uppercase; text-align: left;
+        }
+        .items-table tbody td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; font-size: 11px; }
+        .items-table tbody tr:nth-child(even) { background: #f9fafb; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .transport-info { margin: 20px 0; padding: 15px; background: #f9fafb; border-radius: 6px; }
+        .transport-info p { font-size: 11px; margin-bottom: 5px; }
+
+        .notes { margin-top: 15px; padding: 15px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 11px; }
+        .signatures { display: table; width: 100%; margin-top: 50px; }
+        .sig-box { display: table-cell; width: 33.33%; text-align: center; }
+        .sig-line { border-top: 1px solid #1a1a1a; width: 150px; margin: 0 auto; padding-top: 5px; font-size: 10px; color: #6b7280; }
+
+        .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #a1a1aa; border-top: 1px solid #e5e7eb; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="company-name">StockFlow</div>
+                <div class="company-details">
+                    {{company_address}}<br>
+                    GST: {{company_gst}} | Phone: {{company_phone}}
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="doc-title">DELIVERY CHALLAN</div>
+                <div class="doc-number">{{challan_number}}</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-col">
+                <div class="info-label">Challan Date</div>
+                <div class="info-value">{{challan_date}}</div>
+            </div>
+            <div class="info-col">
+                <div class="info-label">Reference Order</div>
+                <div class="info-value">{{order_reference}}</div>
+            </div>
+            <div class="info-col">
+                <div class="info-label">Challan Type</div>
+                <div class="info-value">{{challan_type}}</div>
+            </div>
+        </div>
+
+        <div class="addresses">
+            <div class="address-box">
+                <div class="section-title">Ship From</div>
+                <div class="address-detail">
+                    <strong>{{from_warehouse}}</strong><br>
+                    {{from_address}}
+                </div>
+            </div>
+            <div class="address-box">
+                <div class="section-title">Ship To</div>
+                <div class="address-detail">
+                    <strong>{{customer_name}}</strong><br>
+                    {{customer_address}}<br>
+                    Phone: {{customer_phone}}
+                </div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>SKU</th>
+                    <th>Product Description</th>
+                    <th class="text-center">Quantity</th>
+                    <th>Unit</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#items}}
+                <tr>
+                    <td>{{sr_no}}</td>
+                    <td>{{sku}}</td>
+                    <td>{{product_name}}</td>
+                    <td class="text-center">{{quantity}}</td>
+                    <td>{{unit}}</td>
+                    <td>{{remarks}}</td>
+                </tr>
+                {{/items}}
+            </tbody>
+        </table>
+
+        <div class="transport-info">
+            <p><strong>Vehicle Number:</strong> {{vehicle_number}}</p>
+            <p><strong>Driver Name:</strong> {{driver_name}}</p>
+            <p><strong>Transport Company:</strong> {{transport_company}}</p>
+            <p><strong>E-Way Bill No:</strong> {{eway_bill_number}}</p>
+        </div>
+
+        <div class="notes">
+            <strong>Special Instructions:</strong> {{notes}}
+        </div>
+
+        <div class="signatures">
+            <div class="sig-box">
+                <div class="sig-line">Prepared By</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-line">Received By</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-line">Authorized Signatory</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            This is a system-generated delivery challan from StockFlow. Goods are sent on approval basis and remain the property of the sender until accepted.
+        </div>
+    </div>
+</body>
+</html>

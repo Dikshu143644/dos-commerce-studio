@@ -1,0 +1,7 @@
+{
+  "task_id": "task-phase2-wiring",
+  "task_description": "Phase 2 of StockFlow - Wire real functionality: PHP backend service with Slim 4, Supabase data hooks for all frontend pages, AI Edge Function, Docker multi-service setup, and comprehensive documentation.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

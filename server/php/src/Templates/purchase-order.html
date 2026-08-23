@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order {{po_number}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background: #ffffff;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 4px solid #10b981;
+            display: table;
+            width: 100%;
+        }
+        .header-left { display: table-cell; vertical-align: middle; width: 50%; }
+        .header-right { display: table-cell; vertical-align: middle; text-align: right; width: 50%; }
+        .company-name { font-size: 24px; font-weight: bold; color: #10b981; margin-bottom: 5px; }
+        .company-details { font-size: 10px; color: #a1a1aa; line-height: 1.6; }
+        .doc-title { font-size: 22px; font-weight: bold; color: #ffffff; letter-spacing: 1px; }
+        .doc-number { font-size: 14px; color: #10b981; margin-top: 5px; font-weight: 600; }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-col { display: table-cell; vertical-align: top; width: 50%; padding: 10px; }
+        .info-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .info-value { font-size: 12px; font-weight: 500; }
+
+        .section-title {
+            font-size: 11px; color: #10b981; text-transform: uppercase;
+            letter-spacing: 1px; font-weight: 700; margin-bottom: 8px;
+            padding-bottom: 5px; border-bottom: 2px solid #10b981;
+        }
+
+        .supplier-section { padding: 20px 0; }
+        .supplier-info { font-size: 11px; line-height: 1.8; }
+
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table thead th {
+            background: #0a0a0a; color: #ffffff; padding: 10px 8px;
+            font-size: 10px; text-transform: uppercase; text-align: left;
+        }
+        .items-table tbody td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; font-size: 11px; }
+        .items-table tbody tr:nth-child(even) { background: #f9fafb; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .totals-table { width: 50%; margin-left: auto; margin-top: 10px; }
+        .totals-table td { padding: 6px 10px; font-size: 11px; }
+        .totals-table td:last-child { text-align: right; font-weight: 500; }
+        .total-row { background: #0a0a0a; color: #10b981; font-size: 14px; font-weight: 700; }
+        .total-row td { padding: 12px 10px; }
+
+        .notes { margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 6px; font-size: 11px; }
+        .footer {
+            margin-top: 40px; padding-top: 20px; border-top: 2px solid #0a0a0a;
+            text-align: center; font-size: 9px; color: #a1a1aa;
+        }
+        .signature-section { margin-top: 50px; text-align: right; }
+        .signature-line { display: inline-block; width: 200px; border-top: 1px solid #1a1a1a; padding-top: 5px; font-size: 10px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="company-name">StockFlow</div>
+                <div class="company-details">
+                    {{company_address}}<br>
+                    GST: {{company_gst}}<br>
+                    Phone: {{company_phone}}
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="doc-title">PURCHASE ORDER</div>
+                <div class="doc-number">{{po_number}}</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-col">
+                <div class="info-label">PO Date</div>
+                <div class="info-value">{{po_date}}</div>
+            </div>
+            <div class="info-col">
+                <div class="info-label">Expected Delivery</div>
+                <div class="info-value">{{expected_date}}</div>
+            </div>
+        </div>
+
+        <div class="supplier-section">
+            <div class="section-title">Supplier Details</div>
+            <div class="supplier-info">
+                <strong>{{supplier_name}}</strong><br>
+                {{supplier_address}}<br>
+                GST: {{supplier_gst}}<br>
+                Contact: {{supplier_contact}}
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>SKU</th>
+                    <th>Product / Description</th>
+                    <th class="text-center">Quantity</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#items}}
+                <tr>
+                    <td>{{sr_no}}</td>
+                    <td>{{sku}}</td>
+                    <td>{{product_name}}</td>
+                    <td class="text-center">{{quantity}}</td>
+                    <td class="text-right">&#8377; {{unit_price}}</td>
+                    <td class="text-right">&#8377; {{total}}</td>
+                </tr>
+                {{/items}}
+            </tbody>
+        </table>
+
+        <table class="totals-table">
+            <tr><td>Subtotal</td><td>&#8377; {{subtotal}}</td></tr>
+            <tr><td>Tax (GST)</td><td>&#8377; {{tax_amount}}</td></tr>
+            <tr class="total-row"><td>TOTAL</td><td>&#8377; {{total_amount}}</td></tr>
+        </table>
+
+        <div class="notes">
+            <strong>Notes:</strong> {{notes}}
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-line">Authorized Signatory</div>
+        </div>
+
+        <div class="footer">
+            This is a system-generated purchase order from StockFlow Inventory Management System.
+        </div>
+    </div>
+</body>
+</html>

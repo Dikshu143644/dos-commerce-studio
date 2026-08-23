@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Report - {{report_date}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #1a1a1a;
+            background: #ffffff;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 25px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 4px solid #10b981;
+            display: table;
+            width: 100%;
+        }
+        .header-left { display: table-cell; vertical-align: middle; width: 50%; }
+        .header-right { display: table-cell; vertical-align: middle; text-align: right; width: 50%; }
+        .company-name { font-size: 22px; font-weight: bold; color: #10b981; }
+        .report-title { font-size: 18px; font-weight: bold; color: #ffffff; }
+        .report-meta { font-size: 10px; color: #a1a1aa; margin-top: 5px; }
+
+        .summary-cards {
+            display: table;
+            width: 100%;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .summary-card {
+            display: table-cell;
+            width: 33.33%;
+            text-align: center;
+            padding: 15px;
+        }
+        .card-value { font-size: 24px; font-weight: bold; color: #10b981; }
+        .card-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table thead th {
+            background: #0a0a0a; color: #ffffff; padding: 8px 6px;
+            font-size: 9px; text-transform: uppercase; text-align: left;
+        }
+        .items-table tbody td { padding: 7px 6px; border-bottom: 1px solid #f3f4f6; font-size: 10px; }
+        .items-table tbody tr:nth-child(even) { background: #f9fafb; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .low-stock { color: #ef4444; font-weight: bold; }
+        .ok-stock { color: #10b981; }
+
+        .footer {
+            margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;
+            text-align: center; font-size: 9px; color: #a1a1aa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="company-name">StockFlow</div>
+            </div>
+            <div class="header-right">
+                <div class="report-title">DAILY STOCK REPORT</div>
+                <div class="report-meta">Generated: {{report_date}} at {{report_time}}</div>
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="card-value">{{total_items}}</div>
+                <div class="card-label">Total Items</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-value">&#8377; {{total_value}}</div>
+                <div class="card-label">Total Value</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-value">{{low_stock_count}}</div>
+                <div class="card-label">Low Stock Alerts</div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Warehouse</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Value</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#items}}
+                <tr>
+                    <td>{{sr_no}}</td>
+                    <td>{{sku}}</td>
+                    <td>{{product_name}}</td>
+                    <td>{{category}}</td>
+                    <td>{{warehouse}}</td>
+                    <td class="text-center">{{quantity}}</td>
+                    <td class="text-right">&#8377; {{unit_price}}</td>
+                    <td class="text-right">&#8377; {{total_value}}</td>
+                    <td class="text-center {{status_class}}">{{status}}</td>
+                </tr>
+                {{/items}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            StockFlow Inventory Management System | Auto-generated report - do not reply
+        </div>
+    </div>
+</body>
+</html>

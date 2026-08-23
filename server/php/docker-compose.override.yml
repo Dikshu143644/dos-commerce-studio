@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  php-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stockflow-php-backend
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    volumes:
+      - ./storage/pdfs:/var/www/html/storage/pdfs
+      - ./storage/exports:/var/www/html/storage/exports
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

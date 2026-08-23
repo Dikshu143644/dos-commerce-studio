@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Update Docker configuration to include all services (frontend, PHP backend, cron), update .env.example with all new variables, update the Excel service to route large files to PHP backend, and update README.md with comprehensive Phase 2 documentation.",
+  "status": "pending",
+  "steps": [
+    "Update root docker-compose.yml to include: frontend service (nginx serving built React app, port 3000), php-backend service (PHP-FPM + Nginx from server/php/Dockerfile, port 8080), cron service (PHP CLI running scheduled tasks from server/php/cron/, uses same image as php-backend). All services on same docker network. Add environment variables for PHP service.",
+    "Update root .env.example with ALL new environment variables as specified: PHP_API_URL, SMTP_HOST/PORT/USER/PASS, RAZORPAY_KEY_ID/KEY_SECRET/WEBHOOK_SECRET, MSG91_AUTH_KEY/SENDER_ID/TEMPLATE_ID, TWILIO_SID/AUTH_TOKEN/WHATSAPP_FROM, OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, AI_PRIMARY_PROVIDER, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET. Add VITE_PHP_API_URL for frontend.",
+    "Update src/services/excel/index.ts (or create a new wrapper) to check file size: files < 5MB process client-side with existing SheetJS code, files > 5MB upload to PHP backend via src/services/php.ts.",
+    "Update README.md with: PHP backend setup instructions, Docker development workflow (docker-compose up), API documentation table for all PHP endpoints, cron job configuration details, environment variables documentation for all services, architecture overview showing frontend -> Supabase + PHP backend + Edge Functions.",
+    "Update .github/workflows/ci.yml to add a PHP job that runs composer install and php -l syntax checks on server/php/ files.",
+    "Update root .gitignore to add server/php/vendor/, server/php/storage/pdfs/*.pdf, server/php/storage/exports/*.xlsx, server/php/.env."
+  ],
+  "acceptance_criteria": [
+    "docker-compose.yml has frontend, php-backend, and cron services",
+    "All services share a common Docker network",
+    ".env.example contains all variables listed in the requirements",
+    "Excel service routes large files (>5MB) to PHP backend",
+    "README.md has PHP backend setup, Docker workflow, API docs, cron config, env vars documentation",
+    "CI workflow includes PHP syntax checking",
+    "pnpm type-check and pnpm build still pass after all changes"
+  ],
+  "verification": [
+    "Run 'pnpm type-check' and confirm zero errors",
+    "Run 'pnpm build' and confirm success",
+    "Verify docker-compose.yml has 3 services defined",
+    "Verify .env.example has all required variables",
+    "Verify README.md has PHP backend section"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

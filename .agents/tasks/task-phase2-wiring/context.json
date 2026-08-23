@@ -1,0 +1,43 @@
+{
+  "project_type": "React 18 + Vite SPA with PHP Slim 4 backend, Supabase BaaS",
+  "language": "TypeScript (frontend), PHP 8.4 (backend), Deno (edge functions)",
+  "build_system": "pnpm for frontend, Composer for PHP backend",
+  "test_framework": "No frontend tests yet, PHPUnit for PHP backend (to create)",
+  "build_command": "pnpm build (frontend), composer install (PHP backend)",
+  "test_command": "pnpm type-check && pnpm lint && pnpm build",
+  "verification_instructions": "1. Run pnpm type-check - must pass with zero errors. 2. Run pnpm lint - must pass. 3. Run pnpm build - must succeed. 4. Run composer install in server/php/ - must succeed. 5. PHP syntax check on all PHP files.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pnpm install in root. composer install in server/php/.",
+  "environment_constraints": "OPEN_INTERNET - can install packages. Node.js 22, PHP 8.4, Composer available via mise.",
+  "contribution_requirements": "TypeScript strict mode (zero errors). PHP 8.2+ with strict types. All API endpoints documented. Build must pass.",
+  "key_patterns": {
+    "frontend_pages": "Pages use mock data arrays, motion/react animations, shadcn UI components, DataTable, PageHeader. Each page is a default export in src/pages/.",
+    "hooks": "Only useAuth.ts, useDebounce.ts, useMediaQuery.ts exist. TanStack Query is installed but not used for data fetching yet.",
+    "supabase": "Client at src/lib/supabase.ts. Uses VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY env vars.",
+    "ai_service": "6 agents with system prompts in src/services/ai/agents/. Provider layer with proxy pattern in providers.ts. Mock responses as fallback.",
+    "types": "Database types in src/types/database.ts match the Supabase schema. Note: DB schema uses slightly different column names (e.g. company_name vs name, purchase_price vs cost_price) than the TS types.",
+    "design_system": "Dark glassmorphism theme: bg #0a0a0a, text #f4f4f4/#a1a1aa, accent #10b981. glass class with backdrop-blur. Cards 24px radius, buttons 16px, inputs 12px.",
+    "docker": "Simple Dockerfile builds frontend with nginx. docker-compose.yml has single app service."
+  },
+  "relevant_files": [
+    "src/lib/supabase.ts",
+    "src/types/database.ts",
+    "src/types/index.ts",
+    "src/contexts/AuthContext.tsx",
+    "src/hooks/useAuth.ts",
+    "src/services/ai/providers.ts",
+    "src/services/ai/types.ts",
+    "src/services/ai/index.ts",
+    "src/services/excel/index.ts",
+    "src/pages/Dashboard.tsx",
+    "src/pages/inventory/Products.tsx",
+    "src/main.tsx",
+    "supabase/migrations/001_initial_schema.sql",
+    "docker-compose.yml",
+    "Dockerfile",
+    "package.json",
+    "vite.config.ts",
+    ".env.example"
+  ],
+  "directory_structure": "Root: React SPA with Vite. src/components/{ui,layout,shared,auth}. src/pages/{ai,auth,crm,inventory,procurement,reports,sales,settings}. src/services/{ai,excel}. src/hooks/. src/contexts/. supabase/migrations/. New: server/php/ (to create), supabase/functions/ (to create)."
+}

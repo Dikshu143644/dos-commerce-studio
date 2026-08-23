@@ -1,0 +1,5 @@
+/vendor/
+storage/pdfs/*.pdf
+storage/exports/*.xlsx
+storage/exports/*.csv
+.env

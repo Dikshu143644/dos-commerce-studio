@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Follow-up Reminder</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: #0a0a0a; padding: 30px; text-align: center; border-bottom: 4px solid #10b981;">
+                            <h1 style="color: #10b981; font-size: 24px; margin: 0;">StockFlow</h1>
+                            <p style="color: #a1a1aa; font-size: 12px; margin-top: 5px;">CRM Follow-up Reminder</p>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <h2 style="color: #1a1a1a; font-size: 20px; margin-bottom: 10px;">Follow-up Reminder</h2>
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                                Hi {{sales_rep_name}}, you have a pending follow-up scheduled for today.
+                            </p>
+
+                            <!-- Lead Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">Lead / Contact</p>
+                                        <p style="margin: 0 0 15px; font-size: 16px; font-weight: bold; color: #1a1a1a;">{{lead_name}}</p>
+                                        <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">Company</p>
+                                        <p style="margin: 0 0 15px; font-size: 14px; color: #1a1a1a;">{{company_name}}</p>
+                                        <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">Deal Value</p>
+                                        <p style="margin: 0 0 15px; font-size: 14px; color: #10b981; font-weight: 600;">&#8377; {{deal_value}}</p>
+                                        <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280;">Last Activity</p>
+                                        <p style="margin: 0; font-size: 13px; color: #4b5563;">{{last_activity}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
+                                <strong>Notes:</strong> {{followup_notes}}
+                            </p>
+
+                            <!-- CTA -->
+                            <table cellpadding="0" cellspacing="0" style="margin-top: 25px;">
+                                <tr>
+                                    <td style="background: #10b981; border-radius: 8px; padding: 12px 30px; margin-right: 10px;">
+                                        <a href="{{lead_url}}" style="color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600;">View Lead Details</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #a1a1aa; font-size: 11px; margin: 0;">
+                                Automated reminder from StockFlow CRM. Manage your notification preferences in Settings.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
