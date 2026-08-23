@@ -16,6 +16,7 @@ import {
   BarChart3,
   FileSpreadsheet,
   Bot,
+  BookOpen,
   Settings,
   Shield,
   ScrollText,
@@ -94,7 +95,10 @@ const navSections: NavSection[] = [
   },
   {
     title: 'AI',
-    items: [{ title: 'AI Assistant', href: '/ai', icon: Bot }],
+    items: [
+      { title: 'AI Assistant', href: '/ai', icon: Bot },
+      { title: 'Knowledge Base', href: '/ai/knowledge-base', icon: BookOpen },
+    ],
   },
   {
     title: 'Settings',

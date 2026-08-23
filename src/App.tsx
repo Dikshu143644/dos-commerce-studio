@@ -82,7 +82,7 @@ function App() {
           <Route path="reports/analytics" element={<Analytics />} />
           <Route path="reports/export" element={<ExcelExport />} />
           <Route path="ai" element={<AIAssistant />} />
-          <Route path="ai/knowledge" element={<KnowledgeBase />} />
+          <Route path="ai/knowledge-base" element={<KnowledgeBase />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/users" element={<UsersPage />} />
           <Route path="settings/roles" element={<RolesPage />} />
