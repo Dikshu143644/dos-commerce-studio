@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
+import { MobileNav } from './MobileNav';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FloatingAIWidget } from '@/components/ai/FloatingAIWidget';
 
@@ -19,7 +20,7 @@ export function AppShell() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopNav />
         <ScrollArea className="flex-1">
-          <main className="p-4 md:p-6 lg:p-8">
+          <main className="p-4 md:p-6 lg:p-8 pb-20 md:pb-6 lg:pb-8">
             <Outlet />
           </main>
         </ScrollArea>
@@ -27,6 +28,9 @@ export function AppShell() {
 
       {/* Floating AI Widget */}
       <FloatingAIWidget />
+
+      {/* Mobile bottom navigation */}
+      <MobileNav />
     </div>
   );
 }

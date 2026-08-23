@@ -1,4 +1,5 @@
-import { Bell, Bot, Menu, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -14,10 +15,14 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { BranchSwitcher } from './BranchSwitcher';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/utils';
 
 export function TopNav() {
   const { setMobileOpen } = useSidebar();
   const { user, logout } = useAuth();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name
@@ -26,6 +31,32 @@ export function TopNav() {
         .join('')
         .toUpperCase()
     : 'U';
+
+  // Full-screen search overlay for mobile
+  if (isMobile && searchOpen) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md p-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search..."
+            className="flex-1 h-10 rounded-lg border border-border bg-secondary/50 px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setSearchOpen(false);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/60 backdrop-blur-md px-4 md:px-6">
@@ -38,15 +69,31 @@ export function TopNav() {
         <Menu className="h-5 w-5" />
       </Button>
 
+      {/* Mobile: show app title */}
+      <span className="md:hidden text-sm font-semibold text-foreground truncate">
+        StockFlow
+      </span>
+
       <div className="hidden md:block">
         <Breadcrumbs />
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {/* Mobile: search icon that opens overlay */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('md:hidden')}
+          onClick={() => setSearchOpen(true)}
+        >
+          <Search className="h-5 w-5 text-muted-foreground" />
+        </Button>
+
+        {/* Desktop: inline search button */}
         <Button
           variant="outline"
           size="sm"
-          className="hidden sm:flex gap-2 text-muted-foreground"
+          className="hidden md:flex gap-2 text-muted-foreground"
           onClick={() => {
             const event = new KeyboardEvent('keydown', {
               key: 'k',
@@ -63,11 +110,10 @@ export function TopNav() {
           </kbd>
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bot className="h-5 w-5 text-muted-foreground" />
-        </Button>
-
-        <BranchSwitcher />
+        {/* Branch switcher: hidden on mobile (available in sidebar mobile menu) */}
+        <div className="hidden md:block">
+          <BranchSwitcher />
+        </div>
 
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5 text-muted-foreground" />
