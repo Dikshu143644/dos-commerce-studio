@@ -1,0 +1,42 @@
+{
+  "project_type": "React SPA with Supabase backend, Vite build, TypeScript strict mode",
+  "language": "TypeScript/React",
+  "build_system": "Vite with pnpm package manager. Uses @tailwindcss/vite plugin. Path alias @/ -> ./src/",
+  "test_framework": "No test framework installed - verification is via pnpm build (tsc + vite build)",
+  "build_command": "pnpm build",
+  "test_command": "pnpm build",
+  "verification_instructions": "Run 'pnpm build' which runs 'tsc -b && vite build'. Must produce zero TypeScript errors and a successful vite bundle.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pnpm install to install dependencies",
+  "environment_constraints": "COMMON_DEPENDENCIES network mode. pnpm is available. Node.js available. Can install npm packages.",
+  "contribution_requirements": "TypeScript strict mode (noUnusedLocals, noUnusedParameters). Build must pass with zero errors.",
+  "key_patterns": {
+    "routing": "React Router v7 with lazy-loaded pages in src/App.tsx. Public routes (login, register, forgot-password) outside AuthGuard. Protected routes inside AuthGuard > AppShell.",
+    "auth": "AuthContext in src/contexts/AuthContext.tsx provides login/signup/logout/resetPassword/loginWithOAuth. useAuth hook in src/hooks/useAuth.ts. AuthGuard redirects to /login if not authenticated.",
+    "forms": "react-hook-form + zod validation. Multi-step forms with separate schemas per step.",
+    "ui_components": "Radix UI primitives in src/components/ui/ (button, input, label, select, dialog, etc.). shadcn/ui pattern with class-variance-authority.",
+    "styling": "Tailwind CSS v4 with dark theme. Glass morphism cards (class 'glass'). Gradient orbs for backgrounds. 24px border-radius on cards. Primary color: emerald (#10b981).",
+    "animations": "motion/react (framer-motion v12+) for page transitions and component animations.",
+    "state": "React Query for server state. React Context for auth and sidebar state.",
+    "database_types": "src/types/database.ts has Profile interface with id, email, full_name, avatar_url, role_id, branch_id, phone, is_active, created_at, updated_at.",
+    "toasts": "sonner library installed for toast notifications.",
+    "icons": "lucide-react for all icons."
+  },
+  "relevant_files": [
+    "src/pages/auth/Login.tsx",
+    "src/pages/auth/Register.tsx",
+    "src/pages/auth/ForgotPassword.tsx",
+    "src/contexts/AuthContext.tsx",
+    "src/hooks/useAuth.ts",
+    "src/hooks/useProfile.ts",
+    "src/components/auth/AuthGuard.tsx",
+    "src/components/layout/Sidebar.tsx",
+    "src/components/layout/AppShell.tsx",
+    "src/App.tsx",
+    "src/types/index.ts",
+    "src/types/database.ts",
+    "src/lib/supabase.ts",
+    "src/lib/config.ts"
+  ],
+  "directory_structure": "src/pages/auth/ - auth pages. src/components/auth/ - AuthGuard. src/components/ui/ - reusable UI primitives. src/components/layout/ - AppShell, Sidebar, TopNav. src/contexts/ - AuthContext, SidebarContext, BranchContext. src/hooks/ - custom hooks including useAuth, useProfile. src/lib/ - supabase client, config, utils. src/types/ - TypeScript type definitions."
+}

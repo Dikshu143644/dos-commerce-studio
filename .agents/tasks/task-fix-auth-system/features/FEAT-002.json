@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Redesign Registration page: remove role selector, add country code picker for phone, add OTP verification step, auto-assign viewer role",
+  "status": "completed",
+  "steps": [
+    "1. Create src/components/auth/CountryCodePicker.tsx - A searchable country code dropdown component. Show country flag emoji + code (+91, +1, +44, etc.). Default to India (+91). Dark themed dropdown matching the app's glassmorphism design. Searchable with keyboard input. Store and output in E.164 format. Include a comprehensive list of countries with their dial codes and flag emojis. Use Radix UI primitives or a custom dropdown with the existing UI components.",
+    "2. Create src/components/auth/OTPInput.tsx - A 6-digit OTP input component. Six separate input boxes that auto-advance on type. Emerald border on focus. Backspace goes to previous box. Paste support for full 6-digit code. Dark themed matching the app design. Auto-focus first box on mount.",
+    "3. Redesign src/pages/auth/Register.tsx - REMOVE the Role dropdown entirely from step 2. Auto-assign role as 'viewer' for all public registrations (hardcode in the signup metadata). Replace the plain text phone input with the CountryCodePicker component integrated with a phone number input. The phone field should combine country code + number and store in E.164 format (+917666971183). Add Step 3: OTP verification after step 2. Show the OTPInput component. Send OTP via Supabase phone auth (supabase.auth.signInWithOtp({ phone })) OR gracefully skip if no SMS provider is configured. Show 'Resend' button with 60-second cooldown timer. If OTP sending fails (no provider configured), show a 'Phone verification pending' badge and allow completing registration. Update the progress indicator to show 3 steps instead of 2. Validate phone number is in E.164 format before proceeding.",
+    "4. Create src/pages/auth/OTPVerification.tsx - Optional standalone OTP verification page/component that can be reused. This can be a wrapper around OTPInput with the resend logic, countdown timer, and verification API call. Include success/error states with appropriate feedback."
+  ],
+  "acceptance_criteria": [
+    "pnpm build passes with zero TypeScript errors",
+    "Registration form has NO role selector/dropdown visible to users",
+    "All public registrations auto-assign role as 'viewer'",
+    "Phone input has a country code picker with flag emojis and search",
+    "Default country is India (+91)",
+    "Phone number is stored in E.164 format",
+    "OTP step appears after personal info step",
+    "OTP input has 6 separate boxes with auto-advance",
+    "Resend button has 60-second cooldown",
+    "If SMS provider is not configured, registration completes with 'Phone verification pending' badge",
+    "CountryCodePicker is a reusable component in src/components/auth/",
+    "OTPInput is a reusable component in src/components/auth/"
+  ],
+  "verification": [
+    "Run `pnpm build` and confirm zero errors and successful bundle output"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. Custom CountryCodePicker built instead of react-phone-number-input to avoid CSS conflicts with dark theme. OTP verification gracefully falls back to 'pending' badge when SMS provider is not configured. Registration uses 3-step progress indicator."
+}
