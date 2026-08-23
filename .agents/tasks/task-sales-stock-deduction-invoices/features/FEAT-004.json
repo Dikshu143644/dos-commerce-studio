@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "fix",
   "description": "Address all 6 issues from code review: non-atomic stock reservation, non-atomic shipment movements, phantom RPC, hardcoded 'current_user', RLS asymmetry on invoices, and warehouse mismatch in returns",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix issues 1+3 in orders.ts: Remove phantom increment_reserved_quantity RPC call, replace read-then-write loop with atomic UPDATE ... SET reserved_quantity = reserved_quantity + qty using .rpc or raw filter",
     "Fix issue 2 in fulfillment.ts: Batch stock movement inserts into a single .insert() call with array, make reservation release also use arithmetic update",
@@ -22,5 +22,5 @@
     "Run pnpm build and confirm zero errors"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 6 issues fixed. Build passes (tsc -b + vite build). Used optimistic concurrency control (WHERE reserved_quantity = expected_value) since Supabase JS client does not support SQL arithmetic in SET clauses. The warehouse_id in ApproveReturnInput type is kept for backward compatibility but the service now prefers the original order warehouse. Also found and fixed 'current_user' in Payments.tsx which was not listed in the original review."
 }
