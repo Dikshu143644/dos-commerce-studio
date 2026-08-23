@@ -6,8 +6,18 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+// Define which routes are restricted by role
+const staffOnlyPrefixes = [
+  '/inventory',
+  '/crm',
+  '/procurement',
+  '/reports',
+];
+
+const adminOnlyPrefixes = ['/settings'];
+
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, initialized } = useAuth();
+  const { user, initialized, userRole } = useAuth();
   const location = useLocation();
 
   if (!initialized) {
@@ -16,6 +26,26 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role-based access control
+  const path = location.pathname;
+
+  // Viewers/clients can only access dashboard, sales (their orders/invoices), and AI
+  if (userRole === 'viewer' || userRole === 'client') {
+    const isStaffOnly = staffOnlyPrefixes.some((prefix) => path.startsWith(prefix));
+    const isAdminOnly = adminOnlyPrefixes.some((prefix) => path.startsWith(prefix));
+    if (isStaffOnly || isAdminOnly) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  // Staff cannot access admin settings
+  if (userRole === 'staff') {
+    const isAdminOnly = adminOnlyPrefixes.some((prefix) => path.startsWith(prefix));
+    if (isAdminOnly) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;

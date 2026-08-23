@@ -40,6 +40,7 @@ const Branches = lazy(() => import('@/pages/settings/Branches'));
 const Login = lazy(() => import('@/pages/auth/Login'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
+const StaffLogin = lazy(() => import('@/pages/auth/StaffLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/staff-login" element={<StaffLogin />} />
 
         {/* Protected routes */}
         <Route

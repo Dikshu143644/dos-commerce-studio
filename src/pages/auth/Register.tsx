@@ -1,15 +1,17 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CountryCodePicker } from '@/components/auth/CountryCodePicker';
 import { useAuth } from '@/hooks/useAuth';
+import OTPVerification from '@/pages/auth/OTPVerification';
 
 const step1Schema = z
   .object({
@@ -24,8 +26,7 @@ const step1Schema = z
 
 const step2Schema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  role: z.string().min(1, 'Please select a role'),
+  phone: z.string().min(7, 'Please enter a valid phone number'),
 });
 
 type Step1Data = z.infer<typeof step1Schema>;
@@ -34,9 +35,10 @@ type Step2Data = z.infer<typeof step2Schema>;
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [fullPhone, setFullPhone] = useState('');
   const { signup, loading: isLoading } = useAuth();
+  const navigate = useNavigate();
 
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
@@ -50,22 +52,46 @@ export default function RegisterPage() {
     setStep(2);
   };
 
-  const handleStep2 = async (data: Step2Data) => {
-    setError(null);
-    try {
-      const credentials = step1Form.getValues();
-      await signup(credentials.email, credentials.password, {
-        full_name: data.fullName,
-        phone: data.phone,
-        role: data.role,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
-    }
-  };
+  const handleStep2 = useCallback(
+    async (data: Step2Data) => {
+      try {
+        const credentials = step1Form.getValues();
+        // Build E.164 phone number
+        const phoneNumber = `${countryCode}${data.phone.replace(/\D/g, '')}`;
+        setFullPhone(phoneNumber);
+
+        // Auto-assign viewer role - no user choice
+        await signup(credentials.email, credentials.password, {
+          full_name: data.fullName,
+          phone: phoneNumber,
+          role: 'viewer',
+        });
+
+        // Move to OTP step
+        setStep(3);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create account.';
+        // Check for rate limit
+        if (message.toLowerCase().includes('after') && message.toLowerCase().includes('seconds')) {
+          toast.error(message);
+        } else {
+          toast.error(message);
+        }
+      }
+    },
+    [step1Form, countryCode, signup]
+  );
+
+  const handleOtpVerified = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
+  const handleOtpSkip = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4">
       <div className="gradient-orb absolute -top-32 -right-32 h-96 w-96" />
       <div className="gradient-orb absolute -bottom-32 -left-32 h-80 w-80 opacity-10" />
 
@@ -77,12 +103,22 @@ export default function RegisterPage() {
       >
         {/* Progress indicator */}
         <div className="mb-6 flex items-center justify-center gap-2">
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
             {step > 1 ? <Check className="h-4 w-4" /> : '1'}
           </div>
-          <div className={`h-0.5 w-12 ${step > 1 ? 'bg-primary' : 'bg-border'}`} />
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-            2
+          <div className={`h-0.5 w-8 ${step > 1 ? 'bg-primary' : 'bg-border'}`} />
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            {step > 2 ? <Check className="h-4 w-4" /> : '2'}
+          </div>
+          <div className={`h-0.5 w-8 ${step > 2 ? 'bg-primary' : 'bg-border'}`} />
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            3
           </div>
         </div>
 
@@ -90,16 +126,11 @@ export default function RegisterPage() {
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {step === 1 ? 'Set up your login credentials' : 'Tell us about yourself'}
+            {step === 1 && 'Set up your login credentials'}
+            {step === 2 && 'Tell us about yourself'}
+            {step === 3 && 'Verify your phone number'}
           </p>
         </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
 
         {/* Step 1: Credentials */}
         {step === 1 && (
@@ -120,7 +151,9 @@ export default function RegisterPage() {
                 {...step1Form.register('email')}
               />
               {step1Form.formState.errors.email && (
-                <p className="text-xs text-destructive">{step1Form.formState.errors.email.message}</p>
+                <p className="text-xs text-destructive">
+                  {step1Form.formState.errors.email.message}
+                </p>
               )}
             </div>
 
@@ -143,7 +176,9 @@ export default function RegisterPage() {
                 </button>
               </div>
               {step1Form.formState.errors.password && (
-                <p className="text-xs text-destructive">{step1Form.formState.errors.password.message}</p>
+                <p className="text-xs text-destructive">
+                  {step1Form.formState.errors.password.message}
+                </p>
               )}
             </div>
 
@@ -156,7 +191,9 @@ export default function RegisterPage() {
                 {...step1Form.register('confirmPassword')}
               />
               {step1Form.formState.errors.confirmPassword && (
-                <p className="text-xs text-destructive">{step1Form.formState.errors.confirmPassword.message}</p>
+                <p className="text-xs text-destructive">
+                  {step1Form.formState.errors.confirmPassword.message}
+                </p>
               )}
             </div>
 
@@ -184,48 +221,37 @@ export default function RegisterPage() {
                 {...step2Form.register('fullName')}
               />
               {step2Form.formState.errors.fullName && (
-                <p className="text-xs text-destructive">{step2Form.formState.errors.fullName.message}</p>
+                <p className="text-xs text-destructive">
+                  {step2Form.formState.errors.fullName.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone">Phone number</Label>
-              <Input
-                id="phone"
-                placeholder="+91 98765 43210"
-                {...step2Form.register('phone')}
-              />
+              <div className="flex">
+                <CountryCodePicker value={countryCode} onChange={setCountryCode} />
+                <Input
+                  id="phone"
+                  placeholder="9876543210"
+                  className="rounded-l-none"
+                  {...step2Form.register('phone')}
+                />
+              </div>
               {step2Form.formState.errors.phone && (
-                <p className="text-xs text-destructive">{step2Form.formState.errors.phone.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select
-                onValueChange={(value) => {
-                  setSelectedRole(value);
-                  step2Form.setValue('role', value);
-                }}
-                value={selectedRole}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-              {step2Form.formState.errors.role && (
-                <p className="text-xs text-destructive">{step2Form.formState.errors.role.message}</p>
+                <p className="text-xs text-destructive">
+                  {step2Form.formState.errors.phone.message}
+                </p>
               )}
             </div>
 
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="flex-1"
+              >
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back
               </Button>
               <Button type="submit" className="flex-1" disabled={isLoading}>
@@ -242,13 +268,24 @@ export default function RegisterPage() {
           </motion.form>
         )}
 
+        {/* Step 3: OTP Verification */}
+        {step === 3 && (
+          <OTPVerification
+            phone={fullPhone}
+            onVerified={handleOtpVerified}
+            onSkip={handleOtpSkip}
+          />
+        )}
+
         {/* Login link */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {step < 3 && (
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
       </motion.div>
     </div>
   );

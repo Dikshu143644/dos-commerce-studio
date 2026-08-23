@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+export default function StaffLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
@@ -59,7 +59,6 @@ export default function LoginPage() {
         await login(data.email, data.password);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to sign in.';
-        // Check for rate limit error
         if (message.toLowerCase().includes('after') && message.toLowerCase().includes('seconds')) {
           const match = message.match(/(\d+)\s*second/i);
           const seconds = match ? parseInt(match[1], 10) : 60;
@@ -78,13 +77,8 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4">
       {/* Background gradient orbs */}
-      <div className="gradient-orb absolute -top-32 -left-32 h-96 w-96" />
-      <div className="gradient-orb absolute -bottom-32 -right-32 h-80 w-80 opacity-10" />
-      <motion.div
-        className="gradient-orb absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 opacity-5"
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-      />
+      <div className="gradient-orb absolute -top-40 -right-40 h-[500px] w-[500px] opacity-15" />
+      <div className="gradient-orb absolute -bottom-40 -left-40 h-[400px] w-[400px] opacity-10" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -92,30 +86,32 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="glass w-full max-w-md rounded-[24px] p-8"
       >
-        {/* Logo and title */}
+        {/* Staff portal branding */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.4 }}
           className="mb-8 text-center"
         >
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary/20">
-            <span className="text-2xl font-bold text-primary">S</span>
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary/20 border border-primary/30">
+            <ShieldCheck className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Sign in to your StockFlow account</p>
+          <h1 className="text-2xl font-bold text-foreground">Staff Portal</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            StockFlow internal access
+          </p>
         </motion.div>
 
         {/* Login form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="staff-email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                id="email"
+                id="staff-email"
                 type="email"
-                placeholder="name@company.com"
+                placeholder="you@stockflow.com"
                 className="pl-10"
                 {...register('email')}
               />
@@ -126,19 +122,11 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <Label htmlFor="staff-password">Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                id="password"
+                id="staff-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 className="pl-10 pr-10"
@@ -166,30 +154,15 @@ export default function LoginPage() {
             ) : rateLimitCountdown > 0 ? (
               `Wait ${rateLimitCountdown}s`
             ) : (
-              'Sign in'
+              'Sign in to Staff Portal'
             )}
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Register link */}
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-
-        {/* Staff login link */}
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <Link to="/staff-login" className="text-muted-foreground hover:text-primary transition-colors">
-            Staff? Login here &rarr;
+        {/* Back to customer login */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+            &larr; Back to customer login
           </Link>
         </p>
       </motion.div>

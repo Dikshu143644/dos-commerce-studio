@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -40,7 +41,9 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useAuth } from '@/hooks/useAuth';
 import type { NavSection } from '@/types';
+import type { UserRole } from '@/contexts/AuthContext';
 
 const navSections: NavSection[] = [
   {
@@ -113,14 +116,44 @@ const navSections: NavSection[] = [
   },
 ];
 
+// Sections visible by role:
+// viewer/client: Main, Sales, AI
+// staff: Main, Inventory, CRM, Procurement, Sales, Reports, AI
+// manager: All sections
+// admin: All sections (including Settings)
+const sectionsByRole: Record<UserRole, string[]> = {
+  viewer: ['Main', 'Sales', 'AI'],
+  client: ['Main', 'Sales', 'AI'],
+  staff: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI'],
+  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI', 'Settings'],
+  admin: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI', 'Settings'],
+};
+
+function getFilteredSections(role: UserRole): NavSection[] {
+  const allowedTitles = sectionsByRole[role] || sectionsByRole.viewer;
+  return navSections.filter((section) => allowedTitles.includes(section.title));
+}
+
 function SidebarContent() {
   const location = useLocation();
   const { isCollapsed, toggle } = useSidebar();
+  const { userRole, profile } = useAuth();
+
+  const filteredSections = useMemo(() => getFilteredSections(userRole), [userRole]);
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/';
     return location.pathname.startsWith(href);
   };
+
+  const displayName = profile?.full_name || 'User';
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const roleName = userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -146,7 +179,7 @@ function SidebarContent() {
         {/* Navigation */}
         <ScrollArea className="flex-1 py-4">
           <nav className="space-y-6 px-3">
-            {navSections.map((section) => (
+            {filteredSections.map((section) => (
               <div key={section.title} className="space-y-1">
                 {!isCollapsed && (
                   <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
@@ -192,11 +225,11 @@ function SidebarContent() {
           {!isCollapsed && (
             <div className="flex items-center gap-3 rounded-[12px] px-3 py-2 mb-2">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs bg-primary/20 text-primary">AD</AvatarFallback>
+                <AvatarFallback className="text-xs bg-primary/20 text-primary">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium text-foreground truncate">Admin User</p>
-                <p className="text-xs text-muted-foreground truncate">Administrator</p>
+                <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{roleName}</p>
               </div>
             </div>
           )}
