@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "TanStack Query hooks for sales workflow, invoices, payments, and returns - bridges the service layer to the UI",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/hooks/useSalesWorkflow.ts with mutations: useConfirmOrder() (calls confirmOrder service, invalidates sales_orders + inventory queries), useProcessOrder() (calls processOrder), useShipOrder() (calls shipOrder, invalidates sales_orders + inventory + invoices), useDeliverOrder() (calls deliverOrder), useCancelOrder() (calls cancelOrder, invalidates sales_orders + inventory). Each mutation uses useMutation with onSuccess invalidation following the pattern in useSalesOrders.ts",
     "Create src/hooks/useInvoices.ts with: useInvoices(filters) (useQuery listing invoices with status/customer/date filters), useInvoice(id) (single invoice with order details), useGenerateInvoice() (mutation calling service), useEmailInvoice() (mutation), useOutstandingInvoices() (query for unpaid/overdue)",
