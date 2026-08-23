@@ -25,13 +25,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Check for OAuth callback — hash fragments OR query code parameter
-  // Supabase may redirect with #access_token=... or ?code=...
+  // But NOT if it's an error callback
+  const hasOAuthError = location.search.includes('error=');
   const hasOAuthCallback =
-    (location.hash && (location.hash.includes('access_token') || location.hash.includes('refresh_token'))) ||
-    (location.search && location.search.includes('code='));
+    !hasOAuthError && (
+      (location.hash && (location.hash.includes('access_token') || location.hash.includes('refresh_token'))) ||
+      (location.search && location.search.includes('code='))
+    );
 
   if (!user && hasOAuthCallback) {
     return <LoadingSkeleton />;
+  }
+
+  // If OAuth returned an error, redirect to login (don't show infinite skeleton)
+  if (!user && hasOAuthError) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (!user) {

@@ -111,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const searchParams = window.location.search;
     const hasOAuthReturn =
       (hashParams && (hashParams.includes('access_token') || hashParams.includes('refresh_token'))) ||
-      (searchParams && searchParams.includes('code='));
+      (searchParams && searchParams.includes('code=') && !searchParams.includes('error='));
 
     if (hasOAuthReturn) {
       // For PKCE flow: Supabase JS automatically exchanges the code for a session
