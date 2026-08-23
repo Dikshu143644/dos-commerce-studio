@@ -126,9 +126,53 @@ CREATE POLICY "Auth insert return items" ON sales_return_items FOR INSERT WITH C
 -- Allow authenticated users to update invoices (needed for payment recording to update amount_paid/payment_status).
 -- This supplements the existing invoices_manage policy (which is restricted to managers+),
 -- ensuring that any authenticated user who can record a payment can also update the invoice balance.
+-- SECURITY NOTE: The trigger below (restrict_invoice_update_columns) enforces that non-manager
+-- users can only modify payment-related columns (amount_paid, payment_status, paid_at, status).
+-- This prevents a compromised client from overwriting arbitrary invoice fields via the RLS policy.
 CREATE POLICY "Auth update invoices for payments" ON invoices FOR UPDATE
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
+
+-- Trigger to restrict which columns non-manager users can modify on invoices.
+-- Managers (identified by role in profiles) can update any column.
+-- Non-managers can only change: amount_paid, payment_status, paid_at, status.
+-- All other columns are reset to their OLD values if tampered with.
+CREATE OR REPLACE FUNCTION restrict_invoice_update_columns()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_role TEXT;
+BEGIN
+    -- Look up the current user's role from profiles
+    SELECT role INTO user_role FROM profiles WHERE id = auth.uid();
+
+    -- Managers and admins can update any column
+    IF user_role IN ('admin', 'manager') THEN
+        RETURN NEW;
+    END IF;
+
+    -- For non-managers, enforce that only payment-related columns can change.
+    -- Reset protected columns to their original values.
+    NEW.invoice_number := OLD.invoice_number;
+    NEW.sales_order_id := OLD.sales_order_id;
+    NEW.customer_id := OLD.customer_id;
+    NEW.total_amount := OLD.total_amount;
+    NEW.tax_amount := OLD.tax_amount;
+    NEW.subtotal := OLD.subtotal;
+    NEW.discount_amount := OLD.discount_amount;
+    NEW.due_date := OLD.due_date;
+    NEW.notes := OLD.notes;
+    NEW.pdf_url := OLD.pdf_url;
+    NEW.generated_at := OLD.generated_at;
+    NEW.created_at := OLD.created_at;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_restrict_invoice_update
+    BEFORE UPDATE ON invoices
+    FOR EACH ROW
+    EXECUTE FUNCTION restrict_invoice_update_columns();
 
 -- ============================================================
 -- Indexes

@@ -12,6 +12,45 @@ import type {
 } from './types';
 
 /**
+ * Compensating rollback: reverses previously successful reservations when a
+ * conflict occurs mid-loop in confirmOrder. Uses optimistic concurrency to
+ * decrement reserved_quantity back to its pre-reservation value. If a rollback
+ * item itself fails (concurrent modification), it logs the error but continues
+ * attempting the remaining rollbacks to minimize orphaned reservations.
+ */
+async function rollbackReservations(
+  reservedItems: Array<{ product_id: string; previousReserved: number; addedQuantity: number }>,
+  warehouseId: string
+): Promise<void> {
+  for (const reserved of reservedItems) {
+    try {
+      // The current reserved_quantity should be previousReserved + addedQuantity
+      // (what we set it to during the successful reservation).
+      const currentExpected = reserved.previousReserved + reserved.addedQuantity;
+
+      const { data: rollbackResult } = await supabase
+        .from('inventory')
+        .update({ reserved_quantity: reserved.previousReserved })
+        .eq('product_id', reserved.product_id)
+        .eq('warehouse_id', warehouseId)
+        .eq('reserved_quantity', currentExpected)
+        .select('id');
+
+      if (!rollbackResult || rollbackResult.length === 0) {
+        // Best-effort rollback: if the optimistic guard fails, another concurrent
+        // operation modified reserved_quantity. Log and continue with remaining items.
+        console.error(
+          `Rollback conflict for product ${reserved.product_id}: ` +
+          `expected reserved_quantity=${currentExpected}, row not matched.`
+        );
+      }
+    } catch (err) {
+      console.error(`Rollback error for product ${reserved.product_id}:`, err);
+    }
+  }
+}
+
+/**
  * Creates a new sales order in draft status with auto-generated order number.
  * Inserts both the order header and line items.
  */
@@ -154,6 +193,11 @@ export async function confirmOrder(input: ConfirmOrderInput): Promise<SalesOrder
   // We use the reserved_quantity value from the availability check above as a guard
   // in the WHERE clause. If another request modified reserved_quantity between our
   // read and this update, the update will match zero rows and we throw a conflict error.
+  //
+  // Compensating rollback: if item N fails, we unreserve items 1..(N-1) to prevent
+  // orphaned reservations (since the order stays in 'draft' and cancel/ship won't release them).
+  const reservedItems: Array<{ product_id: string; previousReserved: number; addedQuantity: number }> = [];
+
   for (const item of items) {
     const { data: inv } = await supabase
       .from('inventory')
@@ -163,6 +207,8 @@ export async function confirmOrder(input: ConfirmOrderInput): Promise<SalesOrder
       .single();
 
     if (!inv) {
+      // Rollback previously reserved items before throwing
+      await rollbackReservations(reservedItems, warehouseId);
       throw new Error(`Inventory record not found for product ${item.product_id} in warehouse ${warehouseId}`);
     }
 
@@ -178,15 +224,24 @@ export async function confirmOrder(input: ConfirmOrderInput): Promise<SalesOrder
       .select('id');
 
     if (reserveError) {
+      await rollbackReservations(reservedItems, warehouseId);
       throw new Error(`Failed to reserve stock for product ${item.product_id}: ${reserveError.message}`);
     }
 
     if (!reserveResult || reserveResult.length === 0) {
+      await rollbackReservations(reservedItems, warehouseId);
       throw new Error(
         `Stock reservation conflict for product ${item.product_id}. ` +
         `Another operation modified the inventory concurrently. Please retry.`
       );
     }
+
+    // Track successful reservation for potential rollback
+    reservedItems.push({
+      product_id: item.product_id,
+      previousReserved: expectedReserved,
+      addedQuantity: item.quantity,
+    });
   }
 
   // Transition order to confirmed
@@ -253,12 +308,20 @@ export async function cancelOrder(input: CancelOrderInput): Promise<SalesOrder> 
       if (current) {
         const expectedReserved = current.reserved_quantity;
         const newReserved = Math.max(0, expectedReserved - item.quantity);
-        await supabase
+        const { data: releaseResult } = await supabase
           .from('inventory')
           .update({ reserved_quantity: newReserved })
           .eq('product_id', item.product_id)
           .eq('warehouse_id', warehouseId)
-          .eq('reserved_quantity', expectedReserved);
+          .eq('reserved_quantity', expectedReserved)
+          .select('id');
+
+        if (!releaseResult || releaseResult.length === 0) {
+          throw new Error(
+            `Failed to release reserved stock for product ${item.product_id}. ` +
+            `Concurrent modification detected. Please retry the cancellation.`
+          );
+        }
       }
     }
   }

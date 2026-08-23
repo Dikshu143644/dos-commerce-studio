@@ -90,7 +90,8 @@ export async function shipOrder(input: ShipOrderInput): Promise<SalesOrder> {
     );
   }
 
-  // Release reserved quantities using optimistic concurrency control
+  // Release reserved quantities using optimistic concurrency control.
+  // Verify each release matched a row to prevent silent reservation leaks.
   for (const item of items) {
     const { data: inventory } = await supabase
       .from('inventory')
@@ -102,12 +103,20 @@ export async function shipOrder(input: ShipOrderInput): Promise<SalesOrder> {
     if (inventory) {
       const expectedReserved = inventory.reserved_quantity;
       const newReserved = Math.max(0, expectedReserved - item.quantity);
-      await supabase
+      const { data: releaseResult } = await supabase
         .from('inventory')
         .update({ reserved_quantity: newReserved })
         .eq('product_id', item.product_id)
         .eq('warehouse_id', warehouseId)
-        .eq('reserved_quantity', expectedReserved);
+        .eq('reserved_quantity', expectedReserved)
+        .select('id');
+
+      if (!releaseResult || releaseResult.length === 0) {
+        throw new Error(
+          `Failed to release reserved stock for product ${item.product_id} during shipment. ` +
+          `Concurrent modification detected. Please retry.`
+        );
+      }
     }
   }
 

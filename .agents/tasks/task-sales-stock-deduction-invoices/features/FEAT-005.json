@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Address 3 remaining issues from v2 code review: partial reservation orphan on conflict, unrestricted invoice UPDATE policy, and silent reservation leak on release",
+  "status": "in_progress",
+  "steps": [
+    "Fix issue 1 in orders.ts: Add compensating rollback logic in confirmOrder that tracks successful reservations and reverses them if any item fails the optimistic check",
+    "Fix issue 2 in migration 006: Add a BEFORE UPDATE trigger on invoices that restricts non-manager updates to only payment-related columns, and document the rationale",
+    "Fix issue 3 in orders.ts and fulfillment.ts: Add .select('id') + length check to reservation release in shipOrder and cancelOrder, throw on mismatch"
+  ],
+  "acceptance_criteria": [
+    "confirmOrder rolls back previously reserved items when a conflict occurs on any subsequent item",
+    "Invoice UPDATE policy has a documented safeguard (trigger or comment) limiting column scope",
+    "shipOrder and cancelOrder throw an error when reservation release fails to match rows",
+    "pnpm build passes with zero TypeScript errors"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}
