@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Database migration, TypeScript types, and sales service layer - creates the foundation for the entire sales workflow including stock deduction, invoicing, returns, and payments",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create supabase/migrations/006_sales_workflows.sql that ALTERs existing invoices table (add columns: subtotal, discount_amount, amount_paid, payment_status with CHECK, pdf_url, notes, generated_at; rename 'amount' to keep backward compat; update status CHECK to include 'partial','paid','unpaid','overdue','refunded'), adds payments table, sales_returns table, sales_return_items table, ALTERs sales_orders to add shipped_at, delivered_at, warehouse_id (FK warehouses), invoice_id columns, creates sequences (return_number_seq since invoice_number_seq already exists in 003), creates generate_return_number() function, enables RLS on new tables with authenticated user policies, creates indexes on new tables",
     "Update src/types/database.ts: Add Invoice interface (matching new invoices schema with all columns), Payment interface, SalesReturn interface, SalesReturnItem interface, PaymentStatus type, PaymentMethod type, ReturnStatus type, ReturnCondition type, ReturnReason type. Update SalesOrder to include shipped_at, delivered_at, warehouse_id, invoice_id optional fields. Confirm WarehouseStock already has reserved_quantity.",
@@ -26,5 +26,5 @@
     "Run pnpm build and confirm zero errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Node.js not pre-installed; used mise to install node@22. pnpm had supply-chain policy issue with baseline-browser-mapping@2.11.18 but node_modules were functional. Verified build via direct node node_modules/typescript/bin/tsc -b and node node_modules/vite/bin/vite.js build. Both pass zero errors. The mise.toml file was created in project root during setup."
 }
