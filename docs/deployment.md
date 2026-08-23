@@ -1,14 +1,16 @@
 # StockFlow Deployment Guide
 
-This guide covers deploying StockFlow to production using Netlify (frontend), Supabase (database + auth + edge functions), and Railway/Render (PHP backend).
+This guide covers deploying StockFlow to production. The recommended setup uses Vercel (frontend) + Cloudflare Workers (backend API) + Supabase (database + auth + edge functions). Alternative options include Netlify (frontend) and Railway/Render (PHP backend).
 
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
 - [Prerequisites](#prerequisites)
-- [Netlify Setup (Frontend)](#netlify-setup-frontend)
+- [Vercel Setup (Frontend)](#vercel-setup-frontend)
+- [Cloudflare Workers Setup (Backend API)](#cloudflare-workers-setup-backend-api)
+- [Netlify Setup (Frontend - Alternative)](#netlify-setup-frontend---alternative)
 - [Supabase Setup (Database & Auth)](#supabase-setup-database--auth)
-- [Railway/Render Setup (PHP Backend)](#railwayrender-setup-php-backend)
+- [Railway/Render Setup (PHP Backend - Alternative)](#railwayrender-setup-php-backend---alternative)
 - [DNS Configuration](#dns-configuration)
 - [SSL/TLS](#ssltls)
 - [Environment Variable Reference](#environment-variable-reference)
@@ -28,9 +30,9 @@ This guide covers deploying StockFlow to production using Netlify (frontend), Su
               +-----------+-----------+
               |                       |
         +-----v-----+         +------v------+
-        |  Netlify   |         |  Railway/   |
-        |  (React)   |         |  Render     |
-        |  CDN       |         |  (PHP API)  |
+        |  Vercel    |         | Cloudflare  |
+        |  (React)   |         |  Workers    |
+        |  CDN       |         | (Hono API)  |
         +-----+------+         +------+------+
               |                       |
               +----------+------------+
@@ -43,6 +45,8 @@ This guide covers deploying StockFlow to production using Netlify (frontend), Su
                   +-------------+
 ```
 
+> **Note:** Netlify (frontend) + Railway/Render (PHP backend) is also supported as an alternative deployment. See the respective sections below.
+
 ---
 
 ## Prerequisites
@@ -50,15 +54,165 @@ This guide covers deploying StockFlow to production using Netlify (frontend), Su
 Before deploying, ensure you have:
 
 - A GitHub account with the StockFlow repository
-- A [Netlify](https://netlify.com) account
+- A [Vercel](https://vercel.com) account (recommended for frontend)
+- A [Cloudflare](https://cloudflare.com) account (recommended for backend API)
 - A [Supabase](https://supabase.com) account
-- A [Railway](https://railway.app) or [Render](https://render.com) account
+- A [Netlify](https://netlify.com) account (alternative frontend)
+- A [Railway](https://railway.app) or [Render](https://render.com) account (alternative backend)
 - A custom domain (optional but recommended)
 - Supabase CLI installed locally (`npm install -g supabase`)
+- Wrangler CLI installed locally (`npm install -g wrangler`) for Cloudflare Workers
 
 ---
 
-## Netlify Setup (Frontend)
+## Vercel Setup (Frontend)
+
+### Step 1: Connect GitHub Repository
+
+1. Log in to [Vercel](https://vercel.com)
+2. Click **"Add New..."** > **"Project"**
+3. Import the `stockflow-inventory-crm` repository from GitHub
+4. Configure build settings:
+   - **Framework Preset:** Vite
+   - **Build Command:** `pnpm build`
+   - **Output Directory:** `dist`
+   - **Install Command:** `pnpm install`
+   - **Node.js Version:** 22.x
+
+### Step 2: Set Environment Variables
+
+In the Vercel project dashboard: **Settings** > **Environment Variables**
+
+| Variable | Value |
+|----------|-------|
+| `VITE_SUPABASE_URL` | `https://your-project.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+| `VITE_API_URL` | `https://your-worker.your-subdomain.workers.dev` (Cloudflare Workers URL) |
+| `VITE_AI_PROXY_URL` | `https://your-project.supabase.co/functions/v1/ai-chat` |
+
+### Step 3: Deploy
+
+1. Click **"Deploy"** - Vercel will build and deploy automatically
+2. Subsequent pushes to `main` trigger automatic production deploys
+3. Pull requests get preview deployments automatically
+
+### Step 4: SPA Routing
+
+The `vercel.json` in the repository handles SPA rewrites:
+
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+No additional configuration needed.
+
+### Step 5: CI/CD Integration
+
+For automated deployments via GitHub Actions, set up these repository secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Personal access token from Vercel account settings |
+| `VERCEL_ORG_ID` | Organization ID (found in Vercel project settings) |
+| `VERCEL_PROJECT_ID` | Project ID (found in Vercel project settings) |
+
+The CI pipeline includes a `deploy-vercel` job that runs on every push to `main`.
+
+---
+
+## Cloudflare Workers Setup (Backend API)
+
+### Step 1: Install Wrangler CLI
+
+```bash
+npm install -g wrangler
+
+# Authenticate with Cloudflare
+wrangler login
+```
+
+### Step 2: Create KV Namespaces
+
+The Workers backend uses KV for rate limiting and caching:
+
+```bash
+# Create KV namespace for rate limiting
+wrangler kv:namespace create "RATE_LIMIT_KV"
+
+# Create KV namespace for caching
+wrangler kv:namespace create "CACHE_KV"
+```
+
+Note the namespace IDs returned and update `workers/wrangler.toml` with them.
+
+### Step 3: Set Worker Secrets
+
+```bash
+cd workers/
+
+# Supabase credentials
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+wrangler secret put SUPABASE_JWT_SECRET
+
+# AI provider keys (at least one required)
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GEMINI_API_KEY
+wrangler secret put ANTHROPIC_API_KEY
+```
+
+### Step 4: Deploy
+
+```bash
+cd workers/
+
+# Install dependencies
+npm install
+
+# Type-check
+npx tsc --noEmit
+
+# Deploy to Cloudflare
+wrangler deploy
+```
+
+### Step 5: Configure Custom Domain (Optional)
+
+1. In the Cloudflare dashboard, go to **Workers & Pages** > your worker
+2. Click **Settings** > **Triggers** > **Custom Domains**
+3. Add `api.yourdomain.com`
+4. Cloudflare automatically provisions SSL and routes traffic
+
+### Step 6: CI/CD Integration
+
+For automated deployments via GitHub Actions, add this repository secret:
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_API_TOKEN` | API token with "Edit Cloudflare Workers" permissions |
+
+The CI pipeline includes a `deploy-cloudflare` job that runs on every push to `main`.
+
+### Step 7: Verify Deployment
+
+```bash
+# Test the health endpoint
+curl https://your-worker.your-subdomain.workers.dev/api/health
+
+# Test with authentication
+curl https://your-worker.your-subdomain.workers.dev/api/invoices/generate \
+  -H "Authorization: Bearer $SUPABASE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sales_order_id": "uuid-here"}'
+```
+
+---
+
+## Netlify Setup (Frontend - Alternative)
+
+> **Note:** Netlify is an alternative to Vercel for hosting the frontend. Choose one or the other.
 
 ### Step 1: Connect GitHub Repository
 
@@ -179,7 +333,9 @@ From **Project Settings** > **API** > **JWT Settings**:
 
 ---
 
-## Railway/Render Setup (PHP Backend)
+## Railway/Render Setup (PHP Backend - Alternative)
+
+> **Note:** Railway/Render with the PHP backend is an alternative to Cloudflare Workers. The Workers backend provides the same API endpoints with lower latency and no cold starts. Use the PHP backend if you need DomPDF rendering or PhpSpreadsheet processing that cannot run in a Worker environment.
 
 ### Option A: Railway
 
@@ -305,14 +461,15 @@ No manual certificate configuration is required. SSL is provisioned automaticall
 
 | Variable | Service | Required | Description |
 |----------|---------|----------|-------------|
-| `VITE_SUPABASE_URL` | Netlify | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Netlify | Yes | Supabase public/anon API key |
-| `VITE_PHP_API_URL` | Netlify | No | PHP backend URL (default: `http://localhost:8080`) |
-| `VITE_AI_PROXY_URL` | Netlify | No | AI edge function URL |
+| `VITE_SUPABASE_URL` | Vercel/Netlify | Yes | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Vercel/Netlify | Yes | Supabase public/anon API key |
+| `VITE_API_URL` | Vercel/Netlify | Yes | Backend API URL (Cloudflare Workers or PHP) |
+| `VITE_PHP_API_URL` | Netlify | No | PHP backend URL (legacy, use VITE_API_URL instead) |
+| `VITE_AI_PROXY_URL` | Vercel/Netlify | No | AI edge function URL |
 | `NODE_VERSION` | Netlify | Yes | Node.js version (set to `22`) |
-| `SUPABASE_URL` | Railway/Render | Yes | Supabase project URL (server-side) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Railway/Render | Yes | Service role key for admin access |
-| `SUPABASE_JWT_SECRET` | Railway/Render | Yes | JWT secret for token verification |
+| `SUPABASE_URL` | Cloudflare/Railway/Render | Yes | Supabase project URL (server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cloudflare/Railway/Render | Yes | Service role key for admin access |
+| `SUPABASE_JWT_SECRET` | Cloudflare/Railway/Render | Yes | JWT secret for token verification |
 | `SMTP_HOST` | Railway/Render | Yes | SMTP server hostname |
 | `SMTP_PORT` | Railway/Render | Yes | SMTP server port |
 | `SMTP_USER` | Railway/Render | Yes | SMTP auth username |
@@ -349,6 +506,26 @@ Run through this checklist after deploying:
 - [ ] Static assets load (images, fonts, CSS)
 - [ ] No console errors related to missing env vars
 - [ ] Deploy previews work for pull requests
+
+### Frontend (Vercel)
+
+- [ ] Site loads at production URL
+- [ ] Login/register pages render correctly
+- [ ] Supabase connection works (attempt login)
+- [ ] SPA routing works (navigate between pages, refresh)
+- [ ] Static assets load (images, fonts, CSS)
+- [ ] No console errors related to missing env vars
+- [ ] Preview deployments work for pull requests
+
+### Cloudflare Workers (Backend API)
+
+- [ ] Health endpoint responds: `curl https://your-worker.workers.dev/api/health`
+- [ ] JWT verification works (test with valid Supabase token)
+- [ ] Invoice generation endpoint responds
+- [ ] Excel export endpoint responds
+- [ ] CORS headers are correct for your frontend domain
+- [ ] KV namespaces are bound (rate limiting works)
+- [ ] Worker logs show no errors in Cloudflare dashboard
 
 ### Supabase
 

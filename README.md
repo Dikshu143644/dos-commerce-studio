@@ -97,8 +97,8 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 +--------+---------+     +------------------+     +------------------+
          |
          |  +------------------+     +------------------+
-         +->|  PHP Backend     |---->|  Cron Service    |
-         |  |  (Slim 4 API)   |     |  (Scheduled Jobs)|
+         +->| Cloudflare       |---->|  KV Storage      |
+         |  | Workers (Hono)   |     |  (Rate Limiting) |
          |  +------------------+     +------------------+
          |
          |  +------------------+
@@ -115,10 +115,10 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 
 ### Request Flow
 
-1. **Frontend** makes requests to Supabase for CRUD operations (auth, data)
-2. **PHP Backend** handles heavy operations: PDF generation, large Excel files, email/SMS
+1. **Frontend** (hosted on Vercel) makes requests to Supabase for CRUD operations (auth, data)
+2. **Cloudflare Workers** handle backend operations: invoice PDF generation, Excel processing, email/SMS notifications
 3. **Supabase Edge Function** proxies AI requests with secure API key handling
-4. **Cron Service** runs scheduled tasks (low stock alerts, report generation, payment reminders)
+4. **KV Storage** provides rate limiting and response caching at the edge
 
 ## Getting Started
 
@@ -316,7 +316,8 @@ To add a new cron task:
 |----------|-------------|----------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL | Yes | - |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes | - |
-| `VITE_PHP_API_URL` | PHP backend URL | No | `http://localhost:8080` |
+| `VITE_API_URL` | Backend API URL (Cloudflare Workers or PHP) | Yes | `http://localhost:8080` |
+| `VITE_PHP_API_URL` | PHP backend URL (legacy, use VITE_API_URL) | No | `http://localhost:8080` |
 | `VITE_AI_PROXY_URL` | AI proxy endpoint URL | No | `http://localhost:3001/api/ai/chat` |
 
 ### PHP Backend Variables
@@ -364,6 +365,7 @@ To add a new cron task:
 
 ### One-Click Deploy
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/stockflow-inventory-crm)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/your-org/stockflow-inventory-crm)
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/stockflow?referralCode=stockflow)
 
@@ -371,22 +373,24 @@ To add a new cron task:
 
 | Service | Platform | Deploy From | URL |
 |---------|----------|-------------|-----|
-| Frontend (React SPA) | Netlify | Root directory | `https://yourdomain.com` |
+| Frontend (React SPA) | Vercel (recommended) | Root directory | `https://yourdomain.com` |
+| Frontend (React SPA) | Netlify (alternative) | Root directory | `https://yourdomain.com` |
+| Backend API | Cloudflare Workers (recommended) | `workers/` | `https://api.yourdomain.com` |
+| Backend API | Railway/Render (alternative) | `server/php/` | `https://api.yourdomain.com` |
 | Database + Auth | Supabase | `supabase/migrations/` | `https://project.supabase.co` |
-| PHP Backend | Railway/Render | `server/php/` | `https://api.yourdomain.com` |
 | AI Edge Functions | Supabase | `supabase/functions/` | `https://project.supabase.co/functions/v1/` |
 
 ### Deployment Environment Variables
 
 | Variable | Service | Required | Description |
 |----------|---------|----------|-------------|
-| `VITE_SUPABASE_URL` | Netlify | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Netlify | Yes | Supabase public/anon API key |
-| `VITE_PHP_API_URL` | Netlify | No | PHP backend URL (default: `http://localhost:8080`) |
-| `VITE_AI_PROXY_URL` | Netlify | No | AI edge function URL |
-| `SUPABASE_URL` | Railway/Render | Yes | Supabase project URL (server-side) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Railway/Render | Yes | Service role key for admin access |
-| `SUPABASE_JWT_SECRET` | Railway/Render | Yes | JWT secret for token verification |
+| `VITE_SUPABASE_URL` | Vercel/Netlify | Yes | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Vercel/Netlify | Yes | Supabase public/anon API key |
+| `VITE_API_URL` | Vercel/Netlify | Yes | Backend API URL (Cloudflare Workers or PHP) |
+| `VITE_AI_PROXY_URL` | Vercel/Netlify | No | AI edge function URL |
+| `SUPABASE_URL` | Cloudflare/Railway/Render | Yes | Supabase project URL (server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cloudflare/Railway/Render | Yes | Service role key for admin access |
+| `SUPABASE_JWT_SECRET` | Cloudflare/Railway/Render | Yes | JWT secret for token verification |
 | `SMTP_HOST` | Railway/Render | Yes | SMTP server hostname |
 | `SMTP_PORT` | Railway/Render | Yes | SMTP server port |
 | `SMTP_USER` | Railway/Render | Yes | SMTP auth username |
@@ -398,8 +402,8 @@ To add a new cron task:
 
 ```
 +------------------+     +------------------+     +------------------+
-|   Netlify CDN    |     |    Supabase      |     | Railway/Render   |
-|   (React SPA)    |     | (DB + Auth + Fn) |     |   (PHP API)      |
+|   Vercel CDN     |     |    Supabase      |     | Cloudflare       |
+|   (React SPA)    |     | (DB + Auth + Fn) |     | Workers (API)    |
 +--------+---------+     +--------+---------+     +--------+---------+
          |                        |                        |
          +------------------------+------------------------+
@@ -486,13 +490,22 @@ stockflow-inventory-crm/
 │   ├── services/
 │   │   ├── ai/             # AI provider abstraction, agents, router
 │   │   ├── excel/          # Parser, generator, templates, large-file routing
-│   │   └── php.ts          # PHP API client with JWT forwarding
+│   │   └── api.ts          # Backend API client with JWT forwarding
 │   ├── types/              # TypeScript type definitions
 │   ├── App.tsx             # Root component with routing
 │   ├── index.css           # Tailwind + design system variables
 │   └── main.tsx            # Entry point
+├── workers/                # Cloudflare Workers backend (Hono)
+│   ├── src/
+│   │   ├── index.ts        # Worker entry point and route registration
+│   │   ├── routes/         # API route handlers
+│   │   ├── middleware/     # Auth, CORS, rate limiting
+│   │   └── services/       # Business logic (PDF, Excel, email)
+│   ├── wrangler.toml       # Cloudflare Workers configuration
+│   ├── tsconfig.json
+│   └── package.json
 ├── server/
-│   └── php/                # PHP Slim 4 backend
+│   └── php/                # PHP Slim 4 backend (alternative)
 │       ├── public/         # Entry point
 │       ├── src/            # Controllers, Middleware, Services
 │       ├── cron/           # Scheduled task scripts
@@ -504,9 +517,10 @@ stockflow-inventory-crm/
 │   ├── migrations/         # SQL migration files
 │   └── functions/          # Edge functions (AI proxy)
 ├── .github/
-│   └── workflows/          # CI/CD pipeline (frontend + PHP)
+│   └── workflows/          # CI/CD pipeline (frontend + workers + PHP)
 ├── Dockerfile              # Frontend Docker build
 ├── docker-compose.yml      # Multi-service orchestration
+├── vercel.json             # Vercel deployment config
 ├── netlify.toml
 ├── vite.config.ts
 ├── tsconfig.json
