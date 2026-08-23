@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "fix",
   "description": "Address 3 remaining issues from v2 code review: partial reservation orphan on conflict, unrestricted invoice UPDATE policy, and silent reservation leak on release",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix issue 1 in orders.ts: Add compensating rollback logic in confirmOrder that tracks successful reservations and reverses them if any item fails the optimistic check",
     "Fix issue 2 in migration 006: Add a BEFORE UPDATE trigger on invoices that restricts non-manager updates to only payment-related columns, and document the rationale",
@@ -18,5 +18,5 @@
     "Run pnpm build and confirm zero errors"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 3 v2 review issues fixed. Build passes (tsc -b + vite build). Issue 1: Added rollbackReservations() helper that tracks successful reservations and compensates on conflict. Issue 2: Added BEFORE UPDATE trigger (restrict_invoice_update_columns) that silently resets protected columns for non-manager users. Issue 3: Added .select('id') + length check to both shipOrder and cancelOrder reservation release loops. pnpm install has a supply-chain policy issue with baseline-browser-mapping package but the build commands run directly without issue."
 }
