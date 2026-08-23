@@ -217,7 +217,7 @@ export default function RegisterPage() {
               <Label htmlFor="fullName">Full name</Label>
               <Input
                 id="fullName"
-                placeholder="John Smith"
+                placeholder="Omkar Dattatrey Supe"
                 {...step2Form.register('fullName')}
               />
               {step2Form.formState.errors.fullName && (
@@ -233,7 +233,7 @@ export default function RegisterPage() {
                 <CountryCodePicker value={countryCode} onChange={setCountryCode} />
                 <Input
                   id="phone"
-                  placeholder="9876543210"
+                  placeholder="7666971183"
                   className="rounded-l-none"
                   {...step2Form.register('phone')}
                 />

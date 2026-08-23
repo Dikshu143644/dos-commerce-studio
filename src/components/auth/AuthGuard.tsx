@@ -24,8 +24,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return <LoadingSkeleton />;
   }
 
-  // Check for OAuth callback hash fragments — let auth state settle
-  if (!user && location.hash && location.hash.includes('access_token')) {
+  // Check for OAuth callback — hash fragments OR query code parameter
+  // Supabase may redirect with #access_token=... or ?code=...
+  const hasOAuthCallback =
+    (location.hash && (location.hash.includes('access_token') || location.hash.includes('refresh_token'))) ||
+    (location.search && location.search.includes('code='));
+
+  if (!user && hasOAuthCallback) {
     return <LoadingSkeleton />;
   }
 

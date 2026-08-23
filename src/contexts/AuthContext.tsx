@@ -106,18 +106,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    // Handle OAuth callback - check for hash fragments first
+    // Handle OAuth callback - check for hash fragments OR PKCE code parameter
     const hashParams = window.location.hash;
-    if (hashParams && hashParams.includes('access_token')) {
-      // Supabase will pick up the token from the URL hash automatically
-      // via getSession, so we just need to wait for it
+    const searchParams = window.location.search;
+    const hasOAuthReturn =
+      (hashParams && (hashParams.includes('access_token') || hashParams.includes('refresh_token'))) ||
+      (searchParams && searchParams.includes('code='));
+
+    if (hasOAuthReturn) {
+      // For PKCE flow: Supabase JS automatically exchanges the code for a session
+      // via getSession(). We just need to wait for it to complete.
       supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
         setSession(currentSession);
         const currentUser = currentSession?.user ?? null;
         setUser(currentUser);
         await loadProfile(currentUser);
         setInitialized(true);
-        // Clean up the hash from URL
+        // Clean up the URL (remove hash/code params)
         if (currentUser) {
           window.history.replaceState(null, '', window.location.pathname);
         }
@@ -134,12 +139,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       const newUser = newSession?.user ?? null;
       setUser(newUser);
       await loadProfile(newUser);
-      if (!initialized) setInitialized(true);
+      // Mark initialized on any auth event (covers OAuth SIGNED_IN)
+      setInitialized(true);
+      // Create profile for OAuth users on first sign-in
+      if (event === 'SIGNED_IN' && newUser) {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', newUser.id)
+          .single();
+        if (!existingProfile) {
+          await createProfileForUser(
+            newUser.id,
+            newUser.email || '',
+            newUser.user_metadata?.full_name || newUser.user_metadata?.name || '',
+            newUser.user_metadata?.phone || null
+          );
+        }
+      }
     });
 
     return () => {
