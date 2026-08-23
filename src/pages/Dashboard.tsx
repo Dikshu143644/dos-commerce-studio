@@ -2,13 +2,18 @@ import { motion } from 'motion/react';
 import {
   Package, AlertTriangle, Handshake, DollarSign, ShoppingCart,
   Plus, ArrowRight, TrendingUp, Users, FileText, BarChart3,
-  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, PackageCheck, Repeat2
+  ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Pencil, PackageCheck, Repeat2,
+  UserPlus, CalendarClock,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KPICard } from '@/components/shared/KPICard';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { useHotLeads } from '@/hooks/useLeadPipeline';
+import { usePipelineValue } from '@/hooks/useDealPipeline';
+import { useOverdueFollowUps } from '@/hooks/useFollowUps';
+import { useDeals } from '@/hooks/useDeals';
 
 const revenueData = Array.from({ length: 12 }, (_, i) => {
   const date = subMonths(new Date(), 11 - i);
@@ -97,6 +102,22 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 };
 
 export default function Dashboard() {
+  // CRM hooks for live data
+  const { data: hotLeads } = useHotLeads();
+  const { data: pipelineValue } = usePipelineValue();
+  const { data: overdueFollowUps } = useOverdueFollowUps();
+  const { data: dealsData } = useDeals({ pageSize: 100 });
+
+  // Calculate deals closing this week
+  const now = new Date();
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const dealsClosingThisWeek = (dealsData?.data ?? []).filter((deal) => {
+    if (!deal.expected_close_date) return false;
+    const closeDate = new Date(deal.expected_close_date);
+    return closeDate >= weekStart && closeDate <= weekEnd;
+  });
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -141,6 +162,40 @@ export default function Dashboard() {
           icon={DollarSign}
           trend={{ value: 18, isPositive: true }}
           description="vs last month"
+        />
+      </motion.div>
+
+      {/* CRM Widgets */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <KPICard
+          label="Hot Leads"
+          value={hotLeads?.length ?? 0}
+          icon={UserPlus}
+          description="score > 70"
+        />
+        <KPICard
+          label="Pipeline Value"
+          value={`$${((pipelineValue?.weighted_value ?? 0) / 1000).toFixed(0)}K`}
+          icon={TrendingUp}
+          description="weighted total"
+        />
+        <KPICard
+          label="Overdue Follow-ups"
+          value={overdueFollowUps?.length ?? 0}
+          icon={CalendarClock}
+          description="need attention"
+          className={(overdueFollowUps?.length ?? 0) > 5 ? 'border-amber-500/20' : undefined}
+        />
+        <KPICard
+          label="Deals Closing This Week"
+          value={dealsClosingThisWeek.length}
+          icon={Handshake}
+          description="this week"
         />
       </motion.div>
 
