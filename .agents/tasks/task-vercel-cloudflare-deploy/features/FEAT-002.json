@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Create the Cloudflare Workers backend project under workers/ directory. Includes Hono-based API with all routes, services, middleware, and the full RAG AI chat pipeline replicating the Supabase Edge Function. Also includes Excel AI integration for report generation.",
+  "status": "completed",
+  "steps": [
+    "Create workers/package.json with dependencies: hono, @supabase/supabase-js, jose (JWT), jspdf (PDF generation), xlsx (SheetJS for Excel), and devDependencies: wrangler, @cloudflare/workers-types, typescript. Set scripts: dev (wrangler dev), deploy (wrangler deploy), type-check (tsc --noEmit).",
+    "Create workers/tsconfig.json with strict: true, target ES2022, module ESNext, moduleResolution bundler, types @cloudflare/workers-types, noEmit true.",
+    "Create workers/wrangler.toml with the exact content specified in requirements: name stockflow-api, main src/index.ts, compatibility_date 2024-12-01, compatibility_flags nodejs_compat, vars ENVIRONMENT production, kv_namespaces RATE_LIMIT binding with empty id/preview_id, placement mode smart.",
+    "Create workers/src/types.ts defining: Env interface (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET, OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, AI_PRIMARY_PROVIDER, RESEND_API_KEY, CORS_ORIGIN, RATE_LIMIT KVNamespace, ENVIRONMENT string), and shared request/response types.",
+    "Create workers/src/middleware/cors.ts using Hono's cors middleware configured for localhost:5173 and production Vercel URL (from env CORS_ORIGIN).",
+    "Create workers/src/middleware/auth.ts implementing JWT validation using jose library - verify Supabase JWT tokens, extract user ID, attach to context.",
+    "Create workers/src/middleware/rate-limit.ts implementing rate limiting via Cloudflare KV namespace - 30 requests per minute per user, using KV with TTL.",
+    "Create workers/src/services/supabase.ts - factory function to create Supabase client using service role key from env.",
+    "Create workers/src/services/pdf.ts - invoice PDF generation using jsPDF with dark header, emerald accent (#10b981), GST support, Indian currency formatting (Crore, Lakh, Thousand), matching the PHP InvoiceController design.",
+    "Create workers/src/services/email.ts - email sending via Resend API (POST https://api.resend.com/emails) with templates.",
+    "Create workers/src/services/ai.ts - multi-provider AI service with OpenAI (with function calling/tools), Gemini, and Anthropic support with fallback chain. Port the callOpenAI, callGemini, callAnthropic, and callAIWithFallback functions from supabase/functions/ai-chat/index.ts.",
+    "Create workers/src/templates/invoice.ts - invoice PDF template data structure and rendering logic using jsPDF (dark header with company info, line items table, GST breakdown, amount in words, bank details footer).",
+    "Create workers/src/templates/emails/order-confirmation.ts - HTML email template for order confirmations.",
+    "Create workers/src/templates/emails/low-stock-alert.ts - HTML email template for low stock alerts.",
+    "Create workers/src/templates/emails/payment-reminder.ts - HTML email template for payment reminders.",
+    "Create workers/src/routes/health.ts - GET /api/health route returning { status: 'ok', timestamp, version }.",
+    "Create workers/src/routes/invoices.ts - POST /api/invoices/generate route that fetches order from Supabase, generates PDF using jsPDF service, stores record, returns base64 PDF. POST /api/purchase-orders/pdf for PO generation.",
+    "Create workers/src/routes/email.ts - POST /api/email/send route that sends transactional emails via Resend API using templates.",
+    "Create workers/src/routes/excel.ts - POST /api/excel/import (file upload processing with SheetJS), POST /api/excel/export/inventory (server-side Excel generation), POST /api/excel/ai-generate (AI-triggered report generation accepting { template, filters, format } - queries Supabase for real data based on template and filters, generates Excel using SheetJS, returns base64 encoded file), POST /api/reports/stock (stock report).",
+    "Create workers/src/routes/webhooks.ts - POST /api/payments/create-order, POST /api/payments/verify, POST /api/payments/webhook for Razorpay payment webhook handlers.",
+    "Create workers/src/routes/notifications.ts - POST /api/notifications/whatsapp for WhatsApp/SMS via MSG91/Twilio.",
+    "Create workers/src/routes/ai-chat.ts - Full RAG pipeline port from supabase/functions/ai-chat/index.ts. Include: rate limiting, JWT auth, agent system prompts (inventory, sales, procurement, finance, excel, general), all 10 tool schemas (check_stock, find_low_stock, get_customer_info, get_order_status, get_revenue_summary, get_pipeline_value, search_products, get_overdue_invoices, get_lead_details, get_supplier_performance), tool execution with Supabase queries, knowledge base RAG query with embedding search, SSE streaming support, multi-provider fallback, and the generate_excel_report tool that calls the excel route internally.",
+    "Create workers/src/index.ts - main Hono app entry point that mounts all routes under /api prefix, applies CORS middleware globally, applies auth middleware to protected routes (all except health and CORS preflight), exports default fetch handler for Cloudflare Workers.",
+    "Run npm install in workers/ directory to install all dependencies.",
+    "Run the TypeScript type-check in workers/ to confirm no compilation errors."
+  ],
+  "acceptance_criteria": [
+    "workers/ directory exists with the complete structure specified in requirements",
+    "workers/package.json has all required dependencies",
+    "workers/wrangler.toml matches the specification",
+    "workers/src/index.ts is a valid Hono app entry point",
+    "All routes are implemented: health, invoices, email, excel, webhooks, notifications, ai-chat",
+    "AI chat route includes full RAG pipeline with all 10 tools and generate_excel_report tool",
+    "Excel route includes POST /api/excel/ai-generate endpoint",
+    "JWT auth middleware validates Supabase tokens using jose",
+    "Rate limiting uses KV namespace",
+    "TypeScript compiles without errors in workers/ directory"
+  ],
+  "verification": [
+    "Run cd workers && npx tsc --noEmit to verify TypeScript compilation"
+  ],
+  "blocked_reason": null,
+  "findings": "TypeScript compilation passes with strict mode. All 24 files created. The xlsx package (SheetJS) has a deprecated dependency warning but works fine. npm audit shows vulnerabilities in transitive deps (rollup-plugin-inject) but these are dev-only and do not affect production. The ai.ts service imports TOOL_SCHEMAS from ai-chat route to avoid duplication - circular import avoided by direction of dependency."
+}

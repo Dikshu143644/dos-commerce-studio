@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "chore",
+  "description": "Update CI/CD pipeline with Vercel and Cloudflare deployment jobs. Update documentation (README.md and docs/deployment.md) with the new architecture.",
+  "status": "completed",
+  "steps": [
+    "Add deploy-vercel job to .github/workflows/ci.yml: runs only on push to main, needs build job, uses amondnet/vercel-action@v25 with vercel-token from secrets, vercel-org-id, vercel-project-id, and vercel-args --prod.",
+    "Add deploy-cloudflare job to .github/workflows/ci.yml: runs only on push to main, needs build job, checks out code, sets up Node 22, installs workers/ dependencies, runs type-check, then uses cloudflare/wrangler-action@v3 with apiToken from secrets, workingDirectory workers/.",
+    "Update docs/deployment.md: Add new sections for 'Vercel Setup (Frontend)' and 'Cloudflare Workers Setup (Backend API)'. Include step-by-step instructions for deploying to Vercel (connect repo, configure build, set env vars) and Cloudflare (wrangler login, create KV namespace, set secrets, deploy). Keep existing Netlify/Railway sections but note they are alternatives.",
+    "Update README.md: (1) Add Vercel deploy button alongside existing Netlify button using format [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=...). (2) Update Architecture section to show Vercel + Cloudflare Workers as primary deployment. (3) Update the Quick Start deployment table to include Vercel and Cloudflare Workers. (4) Add workers/ to the Project Structure tree. (5) Add VITE_API_URL to environment variables table. (6) Update the architecture diagram to show Vercel CDN + Cloudflare Workers."
+  ],
+  "acceptance_criteria": [
+    "CI workflow has deploy-vercel and deploy-cloudflare jobs that only run on main branch pushes",
+    "docs/deployment.md has Vercel and Cloudflare Workers sections with complete instructions",
+    "README.md has Vercel deploy button",
+    "README.md architecture diagram shows Vercel + Cloudflare Workers",
+    "README.md project structure includes workers/ directory",
+    "pnpm build still passes (no breaking changes to frontend)"
+  ],
+  "verification": [
+    "Run pnpm build to confirm no breaking changes to the frontend",
+    "Verify .github/workflows/ci.yml is valid YAML by running python3 -c \"import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))\" or similar"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes are documentation and CI config only. pnpm build passes. YAML validated with Python yaml parser. The README project structure still references php.ts in the tree - updated to api.ts to reflect FEAT-001 rename. Added vercel.json to the project structure tree. The existing Netlify and Railway/Render sections in docs/deployment.md were kept but marked as alternatives."
+}
