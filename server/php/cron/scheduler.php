@@ -74,10 +74,22 @@ foreach ($tasksToRun as $task) {
     file_put_contents($lockFile, (string) time());
 
     try {
-        require $file;
-        echo "[" . date('c') . "] Completed task: {$name}\n";
-    } catch (\Throwable $e) {
-        echo "[" . date('c') . "] ERROR in {$name}: {$e->getMessage()}\n";
+        // Run each task as a separate process for isolation
+        $command = sprintf('php %s 2>&1', escapeshellarg($file));
+        $output = [];
+        $exitCode = 0;
+        exec($command, $output, $exitCode);
+
+        $outputStr = implode("\n", $output);
+        if (!empty($outputStr)) {
+            echo $outputStr . "\n";
+        }
+
+        if ($exitCode !== 0) {
+            echo "[" . date('c') . "] ERROR in {$name}: Process exited with code {$exitCode}\n";
+        } else {
+            echo "[" . date('c') . "] Completed task: {$name}\n";
+        }
     } finally {
         // Release lock
         if (file_exists($lockFile)) {

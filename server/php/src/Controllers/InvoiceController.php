@@ -179,7 +179,8 @@ class InvoiceController
 
     /**
      * Generate a unique invoice number.
-     * Uses timestamp-based sequence with uniqueness check to avoid collisions.
+     * Uses a 4-digit random sequence with uniqueness check to avoid collisions.
+     * Format: INV-{year}-{4-digit}
      */
     private function generateInvoiceNumber(): string
     {
@@ -187,11 +188,8 @@ class InvoiceController
         $maxAttempts = 5;
 
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-            // Use date + time components for better distribution than pure random
-            $datePart = date('md'); // Month + day (4 digits)
-            $randomPart = str_pad((string) random_int(0, 99), 2, '0', STR_PAD_LEFT);
-            $timePart = str_pad((string) ((int) date('His') % 100), 2, '0', STR_PAD_LEFT);
-            $sequence = $datePart . $randomPart;
+            // Generate a 4-digit random sequence
+            $sequence = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
 
             $invoiceNumber = "INV-{$year}-{$sequence}";
 
@@ -203,9 +201,9 @@ class InvoiceController
             }
         }
 
-        // Fallback: use full microsecond timestamp for guaranteed uniqueness
-        $microSequence = substr((string) hrtime(true), -8);
-        return "INV-{$year}-{$microSequence}";
+        // Fallback: use random 4-digit sequence matching the primary format (INV-{year}-{4-digit})
+        $fallbackSequence = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        return "INV-{$year}-{$fallbackSequence}";
     }
 
     /**

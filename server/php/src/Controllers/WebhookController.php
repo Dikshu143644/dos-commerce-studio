@@ -69,24 +69,28 @@ class WebhookController
      * POST /api/webhooks/shipping
      *
      * Requires HMAC-SHA256 signature verification via X-Shipping-Signature header.
+     * Rejects all requests when SHIPPING_WEBHOOK_SECRET is not configured (fail closed).
      */
     public function shipping(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $rawBody = (string) $request->getBody();
 
+        // Fail closed: reject requests when webhook secret is not configured
+        if (empty($this->shippingWebhookSecret)) {
+            return Response::error($response, 'Shipping webhook secret is not configured', 503);
+        }
+
         // Verify webhook signature (HMAC-SHA256)
-        if (!empty($this->shippingWebhookSecret)) {
-            $signature = $request->getHeaderLine('X-Shipping-Signature');
+        $signature = $request->getHeaderLine('X-Shipping-Signature');
 
-            if (empty($signature)) {
-                return Response::error($response, 'Missing webhook signature', 400);
-            }
+        if (empty($signature)) {
+            return Response::error($response, 'Missing webhook signature', 400);
+        }
 
-            $expectedSignature = hash_hmac('sha256', $rawBody, $this->shippingWebhookSecret);
+        $expectedSignature = hash_hmac('sha256', $rawBody, $this->shippingWebhookSecret);
 
-            if (!hash_equals($expectedSignature, $signature)) {
-                return Response::error($response, 'Invalid webhook signature', 401);
-            }
+        if (!hash_equals($expectedSignature, $signature)) {
+            return Response::error($response, 'Invalid webhook signature', 401);
         }
 
         $body = (array) json_decode($rawBody, true);

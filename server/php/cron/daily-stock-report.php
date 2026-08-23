@@ -105,7 +105,8 @@ try {
             "<p>Hi,</p><p>Please find attached the daily stock report.</p>" .
             "<p>Summary: {$totalItems} items, Total Value: INR " . number_format($totalValue, 2) .
             ", Low Stock Alerts: " . count($lowStockItems) . "</p>" .
-            "<p>Regards,<br>StockFlow System</p>"
+            "<p>Regards,<br>StockFlow System</p>",
+            [$pdfPath]
         );
         echo "[" . date('c') . "] Report emailed to: {$adminEmail}\n";
     }

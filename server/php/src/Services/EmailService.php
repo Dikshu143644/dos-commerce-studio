@@ -93,8 +93,10 @@ class EmailService
 
     /**
      * Send a raw HTML email (no template).
+     *
+     * @param array<string> $attachments Optional file paths to attach
      */
-    public function sendRaw(string $to, string $subject, string $htmlBody): bool
+    public function sendRaw(string $to, string $subject, string $htmlBody, array $attachments = []): bool
     {
         $mail = new PHPMailer(true);
 
@@ -109,6 +111,13 @@ class EmailService
 
             $mail->setFrom($this->fromEmail, $this->fromName);
             $mail->addAddress($to);
+
+            // Attachments (only from internal callers, not user-supplied paths)
+            foreach ($attachments as $attachment) {
+                if (file_exists($attachment)) {
+                    $mail->addAttachment($attachment);
+                }
+            }
 
             $mail->isHTML(true);
             $mail->Subject = $subject;

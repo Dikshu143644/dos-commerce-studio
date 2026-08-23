@@ -42,7 +42,9 @@ class EmailController
             $template = (string) $body['template'];
             $data = (array) ($body['data'] ?? []);
             $cc = (array) ($body['cc'] ?? []);
-            $attachments = (array) ($body['attachments'] ?? []);
+
+            // Note: attachments parameter is intentionally not accepted from the public API
+            // to prevent arbitrary file read vulnerabilities.
 
             // Validate template exists
             $allowedTemplates = [
@@ -57,7 +59,7 @@ class EmailController
                 return Response::error($response, "Invalid template: {$template}. Allowed: " . implode(', ', $allowedTemplates), 400);
             }
 
-            $this->emailService->send($to, $subject, $template, $data, $cc, $attachments);
+            $this->emailService->send($to, $subject, $template, $data, $cc);
 
             return Response::success($response, [
                 'to' => $to,
