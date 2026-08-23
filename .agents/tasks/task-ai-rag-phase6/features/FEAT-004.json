@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Create all new hooks (useAIChat.ts, useKnowledgeBase.ts) and rewrite the AI Assistant page with world-class chat UX including streaming, tool execution indicators, markdown rendering, conversation history, and RAG context panel. Also create the Knowledge Base management page.",
+  "status": "pending",
+  "steps": [
+    "Create src/hooks/useAIChat.ts with TanStack Query hooks: useConversations (list), useConversation(id) (load single), useSendMessage (mutation calling Edge Function), useStreamMessage (streaming mutation), useCreateConversation, useDeleteConversation. Use supabase client to query ai_conversations table.",
+    "Create src/hooks/useKnowledgeBase.ts with TanStack Query hooks: useKnowledgeEntries(filters), useSearchKnowledge(query), useCreateKnowledgeEntry (create + auto-embed), useUpdateKnowledgeEntry, useDeleteKnowledgeEntry. Use supabase client to query knowledge_base table.",
+    "Complete rewrite of src/pages/ai/AIAssistant.tsx: Left panel with conversation history (past conversations, click to load), Main chat area with user messages (right-aligned glass card) and AI messages (left-aligned with agent avatar, Markdown rendering via react-markdown with bold/lists/tables/code), streaming typewriter effect, tool execution indicators with spinner, source citations. Agent selector tabs at top. Suggested prompts per agent. Multi-line input (Shift+Enter), send button, voice input button (Web Speech API). Collapsible right panel showing RAG context. New Conversation and Export as Markdown buttons. All framer-motion animations.",
+    "Create src/pages/ai/KnowledgeBase.tsx: List knowledge entries with title/category/tags, Add Entry dialog (title, content textarea, category select, tags input), Edit/delete entries, semantic search, category filter tabs, import from markdown file. Card grid with category color badges. Dark glass design.",
+    "Create src/components/ai/FloatingAIWidget.tsx: Small floating button (bottom-right, emerald gradient with pulse animation), click opens mini chat panel, context-aware (detects current page to default relevant agent), can expand to full AI page"
+  ],
+  "acceptance_criteria": [
+    "useAIChat.ts exports all 6 hooks using TanStack Query patterns",
+    "useKnowledgeBase.ts exports all 5 hooks",
+    "AIAssistant.tsx has left panel (conversations), main chat (streaming + markdown + tool indicators), right panel (RAG context)",
+    "KnowledgeBase.tsx has CRUD for knowledge entries with search and category filters",
+    "FloatingAIWidget.tsx renders bottom-right floating button with mini chat panel",
+    "Voice input button uses Web Speech API",
+    "All pages use dark glassmorphism design: bg-background (#0a0a0a), text-foreground (#f4f4f4), accent emerald (#10b981)",
+    "pnpm build passes with zero TypeScript errors"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/stockflow-inventory-crm && eval \"$(mise activate bash)\" && corepack enable && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

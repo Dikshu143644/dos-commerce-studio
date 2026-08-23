@@ -1,0 +1,20 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Install react-markdown dependency and set up environment. Run existing build to confirm baseline is green.",
+  "status": "in_progress",
+  "steps": [
+    "Run mise trust, install node, activate mise, corepack enable, pnpm install to confirm baseline",
+    "Install react-markdown (needed for AI chat markdown rendering): pnpm add react-markdown remark-gfm",
+    "Run pnpm build to verify the project still compiles cleanly with the new dependency"
+  ],
+  "acceptance_criteria": [
+    "pnpm build passes with zero errors after adding react-markdown",
+    "react-markdown and remark-gfm appear in package.json dependencies"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/stockflow-inventory-crm && eval \"$(mise activate bash)\" && corepack enable && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
