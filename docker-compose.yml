@@ -11,10 +11,19 @@ services:
     ports:
       - '3000:80'
     depends_on:
-      - php-backend
+      php-backend:
+        condition: service_healthy
     networks:
       - stockflow
     restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   php-backend:
     build:
@@ -23,6 +32,7 @@ services:
     ports:
       - '8080:80'
     environment:
+      - APP_ENV=production
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
@@ -44,11 +54,19 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - AI_PRIMARY_PROVIDER=${AI_PRIMARY_PROVIDER}
+    env_file:
+      - .env
     volumes:
       - php-storage:/var/www/html/storage
     networks:
       - stockflow
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   cron:
     build:
@@ -56,6 +74,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ['sh', '-c', 'while true; do php /var/www/html/cron/scheduler.php; sleep 60; done']
     environment:
+      - APP_ENV=production
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
@@ -63,13 +82,22 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
+    env_file:
+      - .env
     volumes:
       - php-storage:/var/www/html/storage
     depends_on:
-      - php-backend
+      php-backend:
+        condition: service_healthy
     networks:
       - stockflow
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'pgrep', '-f', 'scheduler']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   stockflow:
@@ -77,3 +105,4 @@ networks:
 
 volumes:
   php-storage:
+    driver: local

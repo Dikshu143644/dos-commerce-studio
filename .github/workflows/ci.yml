@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,54 +7,63 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  lint-and-typecheck:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm type-check
+      - run: pnpm lint
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Type check
-        run: pnpm type-check
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Build
-        run: pnpm build
-
-  php:
+  build:
     runs-on: ubuntu-latest
-
+    needs: lint-and-typecheck
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
-          php-version: '8.2'
-          extensions: mbstring, zip, gd, intl, curl
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  php-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, gd, zip, intl
           tools: composer:v2
-
-      - name: Install Composer dependencies
+      - run: composer install --no-dev --optimize-autoloader
         working-directory: server/php
-        run: composer install --no-interaction --prefer-dist
-
-      - name: PHP syntax check
+      - run: find src -name "*.php" -exec php -l {} \;
         working-directory: server/php
-        run: find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+      - run: vendor/bin/phpunit
+        working-directory: server/php
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [build, php-checks]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frontend Docker image
+        run: docker build -t stockflow-frontend .
+      - name: Build PHP Docker image
+        run: docker build -t stockflow-php-api ./server/php

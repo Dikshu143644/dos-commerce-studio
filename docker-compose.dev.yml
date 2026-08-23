@@ -1,0 +1,40 @@
+# Development override - use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  frontend:
+    build:
+      target: build
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+    ports:
+      - '3000:5173'
+    command: ['pnpm', 'dev', '--host', '0.0.0.0']
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:5173']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  php-backend:
+    volumes:
+      - ./server/php/src:/var/www/html/src
+      - ./server/php/public:/var/www/html/public
+      - ./server/php/cron:/var/www/html/cron
+    environment:
+      - APP_ENV=development
+      - PHP_DISPLAY_ERRORS=1
+    ports:
+      - '8080:80'
+      - '9003:9003'  # Xdebug port
+
+  cron:
+    volumes:
+      - ./server/php/src:/var/www/html/src
+      - ./server/php/cron:/var/www/html/cron
+    environment:
+      - APP_ENV=development

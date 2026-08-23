@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "chore",
   "description": "Enhanced GitHub Actions CI/CD pipeline, Supabase configuration, and production Docker configs",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Rewrite .github/workflows/ci.yml with full CI/CD pipeline: lint-and-typecheck job (checkout, pnpm, node 22, install, type-check, lint), build job (depends on lint, builds and uploads dist artifact), php-checks job (PHP 8.4, extensions, composer install --no-dev, php -l syntax check, phpunit), docker-build job (depends on build+php-checks, only on main, builds both frontend and PHP images)",
     "Create supabase/config.toml with project config, API settings (port 54321, max_rows 1000), auth settings (site_url pointing to netlify app, redirect URLs, JWT expiry 3600, signup enabled), email auth config, Google OAuth placeholder, and ai-chat function config (enabled, verify_jwt)",
