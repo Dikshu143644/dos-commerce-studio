@@ -19,34 +19,60 @@
  * with real API keys.
  */
 
-import type { AIProvider, Message } from './types';
+import type { AIProvider, AgentType, Message } from './types';
+import { supabase } from '@/lib/supabase';
 
-// The proxy URL for production AI calls - set this in your .env file
+// Construct the Edge Function URL from the Supabase URL
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const AI_EDGE_FUNCTION_URL = SUPABASE_URL
+  ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/ai-chat`
+  : undefined;
+
+// Legacy proxy URL support (fallback)
 const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
 
 /**
- * ProxyProvider routes all AI requests through a secure backend endpoint.
+ * ProxyProvider routes all AI requests through the Supabase Edge Function.
+ * Falls back to VITE_AI_PROXY_URL if configured.
  * This is the only provider that should be used in production browser environments.
  */
 class ProxyProvider implements AIProvider {
   name = 'proxy';
+  private agentType: AgentType = 'general';
+  private conversationId: string | undefined;
+
+  setContext(agentType: AgentType, conversationId?: string): void {
+    this.agentType = agentType;
+    this.conversationId = conversationId;
+  }
 
   isConfigured(): boolean {
-    return !!AI_PROXY_URL;
+    return !!(AI_EDGE_FUNCTION_URL || AI_PROXY_URL);
   }
 
   async chat(messages: Message[], systemPrompt: string): Promise<string> {
-    if (!AI_PROXY_URL) {
-      throw new Error('AI proxy URL not configured (VITE_AI_PROXY_URL)');
+    const url = AI_EDGE_FUNCTION_URL || AI_PROXY_URL;
+    if (!url) {
+      throw new Error('AI endpoint not configured. Set VITE_SUPABASE_URL or VITE_AI_PROXY_URL.');
     }
 
-    const response = await fetch(AI_PROXY_URL, {
+    // Get the user's access token for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+      headers,
       body: JSON.stringify({
+        message: lastMessage?.content ?? '',
+        agentType: this.agentType,
+        conversationId: this.conversationId,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         systemPrompt,
       }),

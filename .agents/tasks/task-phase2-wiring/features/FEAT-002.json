@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Create all TanStack Query data hooks in src/hooks/ to wire Supabase to the frontend. Create src/services/php.ts as the PHP API client. Update the AI service providers.ts to call the Supabase Edge Function. Create the Supabase Edge Function at supabase/functions/ai-chat/index.ts.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/hooks/useProducts.ts - CRUD operations on products table using TanStack Query (useQuery for list with pagination/filters, useMutation for create/update/delete, optimistic updates on mutations). Query keys: ['products'], ['products', id]. Supabase queries on 'products' table.",
     "Create src/hooks/useWarehouses.ts - warehouse CRUD + stock summary. Joins with inventory table to get total quantity per warehouse.",
