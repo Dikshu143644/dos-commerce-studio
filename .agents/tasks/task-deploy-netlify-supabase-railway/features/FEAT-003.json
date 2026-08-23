@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "chore",
   "description": "Enhanced GitHub Actions CI/CD pipeline, Supabase configuration, and production Docker configs",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Rewrite .github/workflows/ci.yml with full CI/CD pipeline: lint-and-typecheck job (checkout, pnpm, node 22, install, type-check, lint), build job (depends on lint, builds and uploads dist artifact), php-checks job (PHP 8.4, extensions, composer install --no-dev, php -l syntax check, phpunit), docker-build job (depends on build+php-checks, only on main, builds both frontend and PHP images)",
     "Create supabase/config.toml with project config, API settings (port 54321, max_rows 1000), auth settings (site_url pointing to netlify app, redirect URLs, JWT expiry 3600, signup enabled), email auth config, Google OAuth placeholder, and ai-chat function config (enabled, verify_jwt)",
@@ -24,5 +24,5 @@
     "Run pnpm build to confirm build still passes"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Docker build passes with HEALTHCHECK warning about OCI format (benign, same as FEAT-002). Had to create .npmrc with minimum-release-age=0 and only-built-dependencies settings for pnpm 10 compatibility in Docker. Used --config.minimum-release-age=0 flag in Dockerfile RUN command as belt-and-suspenders. Heredoc syntax in Dockerfile not supported by this Docker builder (buildah), so nginx config was moved to separate nginx.conf file. Pinned pnpm to 10.28.1 in Dockerfile for reproducibility."
 }
