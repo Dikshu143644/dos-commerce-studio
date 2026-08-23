@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Invoice } from '@/types/database';
-import { phpApi } from '@/services/php';
+import { api } from '@/services/api';
 import type {
   EmailInvoiceInput,
   InvoiceFilters,
@@ -26,7 +26,7 @@ export async function generateInvoice(salesOrderId: string): Promise<Invoice> {
   // Call PHP backend to generate the invoice PDF
   let pdfUrl: string | null = null;
   try {
-    const pdfBlob = await phpApi.generateInvoice(salesOrderId);
+    const pdfBlob = await api.generateInvoice(salesOrderId);
     // If we got a blob, the PDF was generated. The PHP backend may return a URL.
     if (pdfBlob && typeof pdfBlob === 'object' && 'url' in (pdfBlob as unknown as Record<string, unknown>)) {
       pdfUrl = (pdfBlob as unknown as { url: string }).url;
@@ -128,7 +128,7 @@ export async function emailInvoice(input: EmailInvoiceInput): Promise<{ success:
   const customerData = (order?.customers as unknown as { company_name: string } | null);
 
   // Send email via PHP backend
-  const result = await phpApi.sendEmail({
+  const result = await api.sendEmail({
     to: input.recipient_email,
     template: 'invoice',
     data: {

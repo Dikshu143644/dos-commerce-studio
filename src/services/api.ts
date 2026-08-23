@@ -1,12 +1,15 @@
 import { supabase } from '@/lib/supabase';
 
-const PHP_API_URL = import.meta.env.VITE_PHP_API_URL || 'http://localhost:8080';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_PHP_API_URL ||
+  'http://localhost:8080';
 
 /**
- * PHP API client that forwards Supabase JWT in Authorization header.
- * Handles communication with the PHP backend for heavy server-side operations.
+ * Generic API client that forwards Supabase JWT in Authorization header.
+ * Works with any backend: Cloudflare Worker, PHP, or Edge Function.
  */
-class PhpApiClient {
+class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
@@ -45,7 +48,7 @@ class PhpApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(errorData.message || `PHP API error: ${response.status}`);
+      throw new Error(errorData.message || `API error: ${response.status}`);
     }
 
     // Check if response is a file download
@@ -85,7 +88,7 @@ class PhpApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(errorData.message || `PHP API error: ${response.status}`);
+      throw new Error(errorData.message || `API error: ${response.status}`);
     }
 
     return response.json();
@@ -164,4 +167,4 @@ class PhpApiClient {
   }
 }
 
-export const phpApi = new PhpApiClient(PHP_API_URL);
+export const api = new ApiClient(API_URL);

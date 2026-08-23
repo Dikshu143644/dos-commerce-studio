@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { SalesOrder, SalesOrderItem } from '@/types/database';
-import { phpApi } from '@/services/php';
+import { api } from '@/services/api';
 import { generateInvoice } from './invoices';
 import type { ShipOrderInput, DeliverOrderInput } from './types';
 
@@ -148,7 +148,7 @@ export async function shipOrder(input: ShipOrderInput): Promise<SalesOrder> {
     const customerData = order.customers as { company_name: string; email: string | null } | null;
     if (customerData?.email) {
       try {
-        await phpApi.sendEmail({
+        await api.sendEmail({
           to: customerData.email,
           template: 'order_shipped',
           data: {

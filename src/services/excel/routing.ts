@@ -1,4 +1,4 @@
-import { phpApi } from '@/services/php';
+import { api } from '@/services/api';
 import { parseExcelFile } from './parser';
 import { generateExcel } from './generator';
 import type { ParsedSheet, ExportConfig } from './types';
@@ -25,8 +25,8 @@ export async function importExcelFile(
     return { clientSide: true, sheets };
   }
 
-  // Large file: upload to PHP backend
-  const serverResult = await phpApi.importExcel(file, type);
+  // Large file: upload to backend
+  const serverResult = await api.importExcel(file, type);
   return { clientSide: false, serverResult };
 }
 
@@ -48,8 +48,8 @@ export async function exportToExcel(
     return { clientSide: true };
   }
 
-  // Large dataset: delegate to PHP backend
-  const blob = await phpApi.exportInventory({
+  // Large dataset: delegate to backend
+  const blob = await api.exportInventory({
     warehouse_id: options?.warehouseId,
     category_id: options?.categoryId,
   });
