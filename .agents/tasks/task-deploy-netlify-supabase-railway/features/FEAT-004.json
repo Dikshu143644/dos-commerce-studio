@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Frontend production hardening: centralized config, monitoring, Vite optimization, and comprehensive documentation",
+  "status": "pending",
+  "steps": [
+    "Create src/lib/config.ts - centralized configuration with runtime validation: validates VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are present, provides typed config object with supabaseUrl, supabaseAnonKey, phpApiUrl, aiProxyUrl. Throws helpful error messages if misconfigured. Use this in src/lib/supabase.ts instead of raw import.meta.env",
+    "Create src/lib/monitoring.ts - error tracking utility: captureException (Sentry-ready with console.error fallback), captureMessage, performance timing helpers (startTimer/endTimer), API call duration tracking wrapper. Should be importable without Sentry installed (graceful fallback).",
+    "Update vite.config.ts with production optimizations: manual chunks (vendor: react/react-dom/react-router-dom, ui: @radix-ui, charts: recharts, query: @tanstack/react-query), rollupOptions output with manualChunks, build.sourcemap for production debugging, comment explaining how to run bundle analysis with rollup-plugin-visualizer",
+    "Create docs/deployment.md - comprehensive deployment guide covering: Netlify setup (connect repo, set env vars, deploy), Supabase setup (create project, run migrations, deploy Edge Functions, set secrets), Railway/Render setup for PHP (deploy from server/php/, env vars, custom domain), DNS config (custom domain + API subdomain), SSL/TLS (automatic), environment variable reference table (all vars, which service, required/optional), post-deployment verification checklist, rollback procedures, monitoring setup",
+    "Create docs/architecture.md - system architecture documentation: ASCII art architecture diagram, data flow diagrams, service communication patterns (frontend->Supabase, frontend->PHP, frontend->Edge Functions), security model (JWT auth, RLS, service role), scaling considerations",
+    "Update README.md - add deployment section with one-click deploy buttons (Netlify Deploy button, Railway Deploy button), quick start for all three services, environment variable table with descriptions, architecture diagram reference, link to docs/deployment.md"
+  ],
+  "acceptance_criteria": [
+    "src/lib/config.ts exports typed config with validation, throws clear errors for missing required vars",
+    "src/lib/monitoring.ts exports captureException, captureMessage, startTimer, endTimer without requiring external deps",
+    "vite.config.ts has manualChunks splitting vendor, ui, charts, query",
+    "docs/deployment.md covers all platforms with step-by-step instructions",
+    "docs/architecture.md has ASCII diagrams and data flow documentation",
+    "README.md has deploy buttons and comprehensive deployment section",
+    "pnpm type-check passes with new TypeScript files",
+    "pnpm build passes with new Vite config"
+  ],
+  "verification": [
+    "Run pnpm type-check to confirm no TypeScript errors",
+    "Run pnpm build to confirm build succeeds with new chunk splitting",
+    "Verify docs/deployment.md and docs/architecture.md exist and have content"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

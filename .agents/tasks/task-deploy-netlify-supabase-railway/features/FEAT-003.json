@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-003",
+  "type": "chore",
+  "description": "Enhanced GitHub Actions CI/CD pipeline, Supabase configuration, and production Docker configs",
+  "status": "pending",
+  "steps": [
+    "Rewrite .github/workflows/ci.yml with full CI/CD pipeline: lint-and-typecheck job (checkout, pnpm, node 22, install, type-check, lint), build job (depends on lint, builds and uploads dist artifact), php-checks job (PHP 8.4, extensions, composer install --no-dev, php -l syntax check, phpunit), docker-build job (depends on build+php-checks, only on main, builds both frontend and PHP images)",
+    "Create supabase/config.toml with project config, API settings (port 54321, max_rows 1000), auth settings (site_url pointing to netlify app, redirect URLs, JWT expiry 3600, signup enabled), email auth config, Google OAuth placeholder, and ai-chat function config (enabled, verify_jwt)",
+    "Create supabase/README.md with Edge Function deployment guide: supabase login, supabase link, supabase functions deploy ai-chat, secrets management (supabase secrets set OPENAI_API_KEY=xxx GEMINI_API_KEY=xxx ANTHROPIC_API_KEY=xxx)",
+    "Rewrite root Dockerfile for production: multi-stage build (node:22-alpine build stage), build args for VITE_ env vars, nginx:alpine production stage with security headers in nginx config, non-root user, HEALTHCHECK instruction, proper signal handling",
+    "Rewrite docker-compose.yml for production: health checks for all containers, restart policies, network config, env_file references. Add environment variable for APP_ENV=production in php-backend",
+    "Create docker-compose.dev.yml as development override: volume mounts for hot reload (src/ mounted into frontend container), debug ports exposed, no production optimizations"
+  ],
+  "acceptance_criteria": [
+    ".github/workflows/ci.yml has 4 jobs (lint-and-typecheck, build, php-checks, docker-build) with correct dependencies",
+    "supabase/config.toml has valid TOML with project, api, auth, and functions sections",
+    "supabase/README.md has clear deployment instructions",
+    "Root Dockerfile has multi-stage build, security headers, non-root user, HEALTHCHECK",
+    "docker-compose.yml has health checks, restart policies, env_file references",
+    "docker-compose.dev.yml has volume mounts for hot reload"
+  ],
+  "verification": [
+    "Run docker build -t stockflow-frontend-test . to confirm frontend Dockerfile builds",
+    "Run pnpm build to confirm build still passes"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

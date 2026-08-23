@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "chore",
+  "description": "PHP backend production deployment configs (Railway, Render) and production-hardened Dockerfile with Nginx config",
+  "status": "pending",
+  "steps": [
+    "Create server/php/railway.json with DOCKERFILE builder, start command (php-fpm -D && nginx -g 'daemon off;'), /api/health healthcheck, ON_FAILURE restart policy",
+    "Create server/php/Procfile with web process: php-fpm -D && nginx -g 'daemon off;'",
+    "Create server/php/render.yaml with docker web service, env vars (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS), and /api/health healthcheck",
+    "Rewrite server/php/Dockerfile to be production-ready: PHP 8.4-fpm-alpine, multi-stage build, install all extensions (gd, zip, mbstring, intl, opcache, curl), configure OPcache, configure PHP-FPM pool (pm.max_children=50, pm.start_servers=5, pm.min_spare_servers=5, pm.max_spare_servers=35), non-root user, HEALTHCHECK instruction, supervisor for nginx+php-fpm",
+    "Create server/php/nginx/default.conf with production Nginx config: /api/* routing to PHP-FPM, security headers, gzip compression, static file caching, client_max_body_size for uploads",
+    "Create server/php/src/Controllers/HealthController.php - enhanced health check verifying PHP process, required extensions loaded, storage directories writable, memory usage within limits. Register it in public/index.php replacing the inline health route"
+  ],
+  "acceptance_criteria": [
+    "server/php/railway.json is valid JSON with correct schema",
+    "server/php/Procfile exists with correct web process definition",
+    "server/php/render.yaml is valid YAML with docker service config",
+    "server/php/Dockerfile is production-ready with PHP 8.4, all extensions, OPcache, non-root user, HEALTHCHECK",
+    "server/php/nginx/default.conf has gzip, security headers, FPM upstream, upload size limit",
+    "HealthController.php exists with enhanced checks and is registered in index.php"
+  ],
+  "verification": [
+    "Run docker build -t stockflow-php-test ./server/php to confirm PHP Dockerfile builds successfully",
+    "Run php -l on HealthController.php to confirm syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

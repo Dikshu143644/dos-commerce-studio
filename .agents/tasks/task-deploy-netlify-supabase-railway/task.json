@@ -1,0 +1,7 @@
+{
+  "task_id": "task-deploy-netlify-supabase-railway",
+  "task_description": "Phase 7: Deploy StockFlow to Netlify (frontend) + Supabase (DB/Auth/Edge Functions) + Railway/Render (PHP backend). Includes production deployment configs, CI/CD pipeline, Docker hardening, monitoring, documentation, and Vite optimization.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

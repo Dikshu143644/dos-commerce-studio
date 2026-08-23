@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Netlify deployment configuration, security headers, and serverless health function",
+  "status": "in_progress",
+  "steps": [
+    "Rewrite netlify.toml with full build config (NODE_VERSION=22, PNPM_VERSION=10), SPA redirect, security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy), and cache headers for /assets/*, /*.js, /*.css",
+    "Create netlify/functions/health.ts - a Netlify serverless function returning JSON health status with timestamp",
+    "Create public/_headers file with security headers including Content-Security-Policy (default-src 'self', script-src 'self' 'unsafe-inline', style-src 'self' 'unsafe-inline' https://fonts.googleapis.com, font-src 'self' https://fonts.gstatic.com, img-src 'self' data: https:, connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://generativelanguage.googleapis.com)"
+  ],
+  "acceptance_criteria": [
+    "netlify.toml has build command, publish dir, NODE_VERSION, PNPM_VERSION, SPA redirect, security headers, and cache headers for static assets",
+    "netlify/functions/health.ts exports a handler that returns 200 JSON response",
+    "public/_headers contains CSP and all security headers"
+  ],
+  "verification": [
+    "Run pnpm build to confirm build still works with netlify.toml present",
+    "Verify netlify.toml is valid TOML syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,29 @@
+{
+  "project_type": "React 18 + Vite 6 + TypeScript SPA with PHP Slim 4 backend and Supabase Edge Functions",
+  "language": "TypeScript (frontend), PHP 8.2+ (backend)",
+  "build_system": "pnpm for frontend, Composer for PHP, Docker for containerized deployment",
+  "test_framework": "ESLint + TypeScript type-check (frontend), PHPUnit (backend)",
+  "build_command": "pnpm build",
+  "test_command": "pnpm type-check && pnpm lint",
+  "verification_instructions": "1. Run pnpm type-check to verify no TS errors. 2. Run pnpm lint to verify no lint errors. 3. Run pnpm build to verify production build. 4. Docker build for frontend Dockerfile. 5. Docker build for server/php/Dockerfile.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pnpm install (frontend), composer install in server/php/ (PHP backend)",
+  "environment_constraints": "OPEN_INTERNET - full network access available. Docker builds feasible.",
+  "contribution_requirements": "TypeScript strict mode, use @/ path aliases, follow existing component patterns, dark glassmorphism theme (#0a0a0a bg, #10b981 accent)",
+  "key_patterns": "Lazy loading already in App.tsx for all routes. PHP uses Slim 4 with DI Container, PSR-4 autoloading under StockFlow namespace. Existing health endpoint at /api/health in index.php. Docker uses supervisord for nginx+php-fpm. Vite config at root level with @/ alias.",
+  "relevant_files": [
+    "netlify.toml",
+    "Dockerfile",
+    "docker-compose.yml",
+    "server/php/Dockerfile",
+    "server/php/public/index.php",
+    "server/php/src/Config/settings.php",
+    ".github/workflows/ci.yml",
+    "vite.config.ts",
+    "src/App.tsx",
+    "src/lib/supabase.ts",
+    ".env.example",
+    "package.json"
+  ],
+  "directory_structure": "Root: React SPA (src/, public/, dist/). server/php/: Slim 4 API (src/Controllers, src/Services, src/Middleware, public/index.php, cron/). supabase/: migrations/ (001-007) and functions/ai-chat/. .github/workflows/ci.yml for CI."
+}
