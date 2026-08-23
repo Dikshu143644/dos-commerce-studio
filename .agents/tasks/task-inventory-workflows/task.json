@@ -1,0 +1,7 @@
+{
+  "task_id": "task-inventory-workflows",
+  "task_description": "Phase 3 of StockFlow: Complete inventory workflows including stock movement engine, warehouse transfers, PO receiving with GRN generation, stock adjustments with reason tracking, low stock alerts, and full UI pages with dark glassmorphism theme",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

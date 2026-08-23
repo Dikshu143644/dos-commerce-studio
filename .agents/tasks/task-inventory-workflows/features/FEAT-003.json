@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "New pages: Transfers, Receiving, Adjustments, LowStock - all with dark glassmorphism theme, motion animations, and full UI implementation including dialogs, tables, and status badges",
+  "status": "pending",
+  "steps": [
+    "Create src/pages/inventory/Transfers.tsx (default export): Full transfer management page with motion/react animations. PageHeader with title 'Transfers' and 'New Transfer' button. DataTable showing all transfers with columns: transfer_number, source warehouse, destination warehouse, status (color-coded Badge - pending=yellow, approved=blue, in_transit=purple, completed=green, rejected=red), requested date, items count. Status filter using Select component. 'New Transfer' Dialog (multi-step): Step 1 select source warehouse, Step 2 select destination warehouse, Step 3 add products with quantities (searchable product select + qty input, add/remove rows), Step 4 notes + submit. Transfer detail expandable/dialog showing: transfer number, status, dates, source->dest, items table, approval action buttons (Approve/Reject if pending), timeline of status changes. Use stepper/progress bar for status flow visualization. Include loading skeletons via Skeleton component, EmptyState for no transfers, toast (sonner) for mutations.",
+    "Create src/pages/inventory/Receiving.tsx (default export): PO receiving page with motion animations. PageHeader 'Receiving'. Two sections: 'Pending POs' list and 'GRN History' (tabs). Pending POs: Card list of POs with status confirmed/partially_received showing PO number, supplier name, items count, progress bar showing % received. 'Receive Items' button per PO opens Dialog: shows all PO line items table with columns (product name, ordered qty, already received qty, remaining qty, input field for qty to receive now, optional rejection qty + reason, optional batch number, optional expiry date). Top fields: supplier invoice number, notes. Submit creates GRN + movements. GRN History tab: DataTable of all GRNs with grn_number, PO reference, received_by, date, items count. Include loading skeletons and empty states.",
+    "Create src/pages/inventory/Adjustments.tsx (default export): Stock adjustment page with motion animations. PageHeader 'Stock Adjustments' with 'New Adjustment' button. Dialog for new adjustment: select warehouse (Select), select product (searchable Command/combobox), display current stock (read-only card), adjustment type toggle (Add/Remove), quantity input, reason dropdown (from useAdjustmentReasons hook), notes textarea (required if reason='other'), submit button. History DataTable with columns: date, product, warehouse, reason badge, quantity (+/- colored), user. Filters: warehouse select, product search, reason select, date range. Include skeletons and empty states.",
+    "Create src/pages/inventory/LowStock.tsx (default export): Low stock alerts dashboard with motion animations. Summary stats row at top using KPICard pattern: total alerts count, critical count (below min_stock), out of stock count (qty=0), estimated reorder value. Grid of product alert cards below, each card (glass bg, rounded-[24px]) showing: product name, SKU, current stock (large number, color-coded: amber if below reorder, red if below min, destructive if 0), reorder point, min stock level, progress bar (current/max). Quick action buttons per card: 'Create PO' (links to /procurement/orders), 'Dismiss'. Filters: severity (all/critical/warning/out-of-stock). Include loading skeleton grid and empty state."
+  ],
+  "acceptance_criteria": [
+    "All four page files exist at src/pages/inventory/ with default exports",
+    "Each page uses motion/react for entry animations",
+    "Dark glassmorphism theme applied consistently: glass cards, primary=#10b981, rounded corners",
+    "Status badges color-coded: pending=yellow/amber, approved=blue, in_transit=purple, completed=green, rejected=red",
+    "Dialog components used for forms (not separate pages)",
+    "Loading skeletons shown during data fetches",
+    "Empty states with icons shown when no data",
+    "Toast notifications (sonner) on mutation success/error",
+    "bun run type-check passes with zero errors",
+    "bun run build passes successfully"
+  ],
+  "verification": [
+    "cd /projects/sandbox/stockflow-inventory-crm && PATH=\"$HOME/.local/share/mise/shims:$PATH\" bun run type-check",
+    "cd /projects/sandbox/stockflow-inventory-crm && PATH=\"$HOME/.local/share/mise/shims:$PATH\" bun run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

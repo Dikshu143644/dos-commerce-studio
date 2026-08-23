@@ -9,6 +9,8 @@ export type POStatus = 'draft' | 'sent' | 'confirmed' | 'partially_received' | '
 export type NotificationType = 'info' | 'warning' | 'success' | 'error' | 'reminder';
 export type CustomerType = 'regular' | 'wholesale' | 'retail' | 'distributor';
 export type AgentType = 'inventory' | 'sales' | 'procurement' | 'finance' | 'excel' | 'general';
+export type TransferStatus = 'pending' | 'approved' | 'in_transit' | 'completed' | 'rejected';
+export type AdjustmentReason = 'damaged' | 'expired' | 'theft' | 'count_correction' | 'quality_reject' | 'sample' | 'other';
 
 // Database table types
 export interface Profile {
@@ -282,4 +284,64 @@ export interface AiConversation {
   }>;
   created_at: string;
   updated_at: string;
+}
+
+// Inventory Workflow Types
+
+export interface StockTransfer {
+  id: string;
+  transfer_number: string;
+  source_warehouse_id: string;
+  destination_warehouse_id: string;
+  status: TransferStatus;
+  requested_by: string;
+  approved_by: string | null;
+  rejected_by: string | null;
+  rejection_reason: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface StockTransferItem {
+  id: string;
+  transfer_id: string;
+  product_id: string;
+  requested_quantity: number;
+  transferred_quantity: number;
+  notes: string | null;
+}
+
+export interface GoodsReceivedNote {
+  id: string;
+  grn_number: string;
+  purchase_order_id: string;
+  warehouse_id: string;
+  received_by: string;
+  supplier_invoice_number: string | null;
+  notes: string | null;
+  received_at: string;
+  created_at: string;
+}
+
+export interface GRNItem {
+  id: string;
+  grn_id: string;
+  purchase_order_item_id: string;
+  product_id: string;
+  quantity_received: number;
+  quantity_rejected: number;
+  rejection_reason: string | null;
+  batch_number: string | null;
+  expiry_date: string | null;
+}
+
+export interface StockAdjustmentReason {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  requires_approval: boolean;
+  is_active: boolean;
 }
