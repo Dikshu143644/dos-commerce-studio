@@ -9,3 +9,4 @@ export {
   salesReportTemplate,
   allTemplates,
 } from './templates';
+export { importExcelFile, exportToExcel } from './routing';

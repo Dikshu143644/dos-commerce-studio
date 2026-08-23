@@ -1,8 +1,78 @@
 services:
-  app:
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - '3000:80'
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_PHP_API_URL=http://php-backend:80
+      - VITE_AI_PROXY_URL=${VITE_AI_PROXY_URL}
+    depends_on:
+      - php-backend
+    networks:
+      - stockflow
     restart: unless-stopped
+
+  php-backend:
+    build:
+      context: ./server/php
+      dockerfile: Dockerfile
+    ports:
+      - '8080:80'
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - MSG91_AUTH_KEY=${MSG91_AUTH_KEY}
+      - MSG91_SENDER_ID=${MSG91_SENDER_ID}
+      - MSG91_TEMPLATE_ID=${MSG91_TEMPLATE_ID}
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AI_PRIMARY_PROVIDER=${AI_PRIMARY_PROVIDER}
+    volumes:
+      - php-storage:/var/www/html/storage
+    networks:
+      - stockflow
+    restart: unless-stopped
+
+  cron:
+    build:
+      context: ./server/php
+      dockerfile: Dockerfile
+    entrypoint: ['sh', '-c', 'while true; do php /var/www/html/cron/scheduler.php; sleep 60; done']
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    volumes:
+      - php-storage:/var/www/html/storage
+    depends_on:
+      - php-backend
+    networks:
+      - stockflow
+    restart: unless-stopped
+
+networks:
+  stockflow:
+    driver: bridge
+
+volumes:
+  php-storage:

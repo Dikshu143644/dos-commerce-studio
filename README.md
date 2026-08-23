@@ -3,6 +3,7 @@
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
 ![React](https://img.shields.io/badge/React-18.3-61dafb)
+![PHP](https://img.shields.io/badge/PHP-8.2-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Overview
@@ -22,11 +23,13 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 | Charts | Recharts | 2.15 |
 | Animations | Motion (Framer Motion) | 12.x |
 | Database | Supabase (PostgreSQL) | 2.x |
-| Excel Processing | SheetJS (xlsx) | 0.18 |
+| Backend | PHP (Slim 4) | 8.2 |
+| Excel Processing | SheetJS (xlsx) / PhpSpreadsheet | 0.18 / 2.x |
 | Icons | Lucide React | 0.511 |
 | Routing | React Router | 7.x |
 | Toasts | Sonner | 2.x |
 | Date Utilities | date-fns | 4.x |
+| Edge Functions | Deno (Supabase) | - |
 
 ## Features
 
@@ -57,6 +60,7 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 - Intent-based routing to appropriate agent
 - Contextual suggested prompts
 - Full chat interface with typing indicators
+- Supabase Edge Function proxy for secure API key handling
 
 ### Reports & Analytics
 - Revenue trend analysis (12-month view)
@@ -66,6 +70,15 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 - Deal pipeline value analysis
 - Excel export with predefined templates
 - File import with column auto-mapping
+
+### PHP Backend Services
+- Invoice PDF generation (DomPDF)
+- Purchase order PDF generation
+- Large Excel file processing (PhpSpreadsheet)
+- Email notifications (PHPMailer via SMTP)
+- WhatsApp notifications (MSG91/Twilio)
+- Razorpay payment integration
+- Scheduled cron jobs for recurring tasks
 
 ### Settings & Administration
 - User management with role-based access
@@ -83,9 +96,14 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 |                  |     |                  |     |                  |
 +--------+---------+     +------------------+     +------------------+
          |
+         |  +------------------+     +------------------+
+         +->|  PHP Backend     |---->|  Cron Service    |
+         |  |  (Slim 4 API)   |     |  (Scheduled Jobs)|
+         |  +------------------+     +------------------+
+         |
          |  +------------------+
-         +->|  AI Service      |
-            |  Router          |
+         +->|  AI Edge Function|
+            |  (Deno/Supabase) |
             +--------+---------+
                      |
          +-----------+-----------+-----------+
@@ -95,12 +113,22 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
     +--------+  +--------+  +---------+  +--------+
 ```
 
+### Request Flow
+
+1. **Frontend** makes requests to Supabase for CRUD operations (auth, data)
+2. **PHP Backend** handles heavy operations: PDF generation, large Excel files, email/SMS
+3. **Supabase Edge Function** proxies AI requests with secure API key handling
+4. **Cron Service** runs scheduled tasks (low stock alerts, report generation, payment reminders)
+
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 22.x or later
 - pnpm 10.x or later
+- PHP 8.2 or later (for backend development)
+- Composer 2.x (PHP package manager)
+- Docker & Docker Compose (optional, for containerized development)
 - Supabase account (for database)
 
 ### Installation
@@ -110,46 +138,222 @@ StockFlow is a production-grade enterprise inventory management and CRM system b
 git clone https://github.com/your-org/stockflow-inventory-crm.git
 cd stockflow-inventory-crm
 
-# Install dependencies
+# Install frontend dependencies
 pnpm install
+
+# Install PHP backend dependencies
+cd server/php
+composer install
+cd ../..
 
 # Copy environment variables
 cp .env.example .env
 
-# Start development server
+# Start frontend development server
 pnpm dev
 ```
 
-### Environment Variables
+### PHP Backend Setup
+
+The PHP backend uses Slim Framework 4 and runs as a separate service:
+
+```bash
+# Navigate to PHP backend
+cd server/php
+
+# Install dependencies
+composer install
+
+# Copy environment config
+cp .env.example .env
+# Edit .env with your credentials (Supabase, SMTP, Razorpay, etc.)
+
+# Start PHP development server
+php -S localhost:8080 -t public/
+
+# Or use Docker
+docker build -t stockflow-php .
+docker run -p 8080:80 stockflow-php
+```
+
+**PHP Backend Structure:**
+
+```
+server/php/
+├── public/
+│   └── index.php          # Entry point (Slim app bootstrap)
+├── src/
+│   ├── Controllers/       # Route controllers
+│   ├── Middleware/         # Auth JWT verification, CORS
+│   ├── Services/          # Business logic (PDF, email, Excel)
+│   └── Models/            # Data models
+├── cron/
+│   ├── scheduler.php      # Cron task runner
+│   ├── low-stock-alerts.php
+│   ├── payment-reminders.php
+│   └── report-generation.php
+├── storage/
+│   ├── pdfs/              # Generated PDF files
+│   └── exports/           # Generated Excel exports
+├── tests/
+├── composer.json
+├── Dockerfile
+└── .env.example
+```
+
+### Docker Development Workflow
+
+The recommended development workflow uses Docker Compose to run all services together:
+
+```bash
+# Start all services (frontend, PHP backend, cron)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# View logs for a specific service
+docker-compose logs -f php-backend
+
+# Rebuild after code changes
+docker-compose up -d --build
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+**Services and Ports:**
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `frontend` | 3000 | Nginx serving built React SPA |
+| `php-backend` | 8080 | PHP-FPM + Nginx (Slim 4 API) |
+| `cron` | - | PHP CLI running scheduled tasks (no exposed port) |
+
+All services share the `stockflow` Docker network and can communicate internally using service names (e.g., `http://php-backend:80`).
+
+## API Documentation (PHP Backend)
+
+### Authentication
+
+All PHP API endpoints require a valid Supabase JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer <supabase_access_token>
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/invoices/generate` | Generate invoice PDF for a sales order |
+| `POST` | `/api/purchase-orders/pdf` | Generate purchase order PDF |
+| `POST` | `/api/reports/stock` | Generate stock report (PDF or Excel) |
+| `POST` | `/api/excel/import` | Import Excel file (server-side processing) |
+| `POST` | `/api/excel/export/inventory` | Export inventory to Excel |
+| `POST` | `/api/email/send` | Send transactional email |
+| `POST` | `/api/notifications/whatsapp` | Send WhatsApp message |
+| `POST` | `/api/payments/create-order` | Create Razorpay payment order |
+| `POST` | `/api/payments/verify` | Verify Razorpay payment signature |
+| `POST` | `/api/payments/webhook` | Razorpay webhook handler |
+| `GET` | `/api/health` | Health check endpoint |
+
+### Example Requests
+
+**Generate Invoice:**
+```bash
+curl -X POST http://localhost:8080/api/invoices/generate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sales_order_id": "uuid-here"}'
+```
+
+**Import Excel (large file):**
+```bash
+curl -X POST http://localhost:8080/api/excel/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@products.xlsx" \
+  -F "type=products"
+```
+
+**Send Email:**
+```bash
+curl -X POST http://localhost:8080/api/email/send \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "customer@example.com",
+    "template": "invoice",
+    "data": {"invoice_number": "INV-001", "amount": 5000}
+  }'
+```
+
+## Cron Job Configuration
+
+The cron service runs a scheduler every 60 seconds that dispatches tasks based on their configured intervals:
+
+| Task | Schedule | Description |
+|------|----------|-------------|
+| Low Stock Alerts | Every 6 hours | Check stock levels against reorder points, send notifications |
+| Payment Reminders | Daily at 9 AM | Send reminders for overdue invoices |
+| Report Generation | Weekly (Monday) | Generate weekly sales and inventory summary reports |
+
+The cron service uses the same Docker image as `php-backend` but overrides the entrypoint to run the scheduler in a loop. It shares the storage volume for generated files.
+
+To add a new cron task:
+1. Create a PHP script in `server/php/cron/`
+2. Register it in `server/php/cron/scheduler.php` with the desired interval
+3. The task will automatically run on the next scheduler cycle
+
+## Environment Variables
+
+### Frontend Variables (Vite)
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL | Yes | - |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes | - |
+| `VITE_PHP_API_URL` | PHP backend URL | No | `http://localhost:8080` |
+| `VITE_AI_PROXY_URL` | AI proxy endpoint URL | No | `http://localhost:3001/api/ai/chat` |
+
+### PHP Backend Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_SUPABASE_URL` | Supabase project URL | Yes |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `VITE_AI_PROVIDER` | Preferred AI provider (openai/gemini/anthropic) | No |
-| `VITE_OPENAI_API_KEY` | OpenAI API key for AI features | No |
-| `VITE_GEMINI_API_KEY` | Google Gemini API key | No |
-| `VITE_ANTHROPIC_API_KEY` | Anthropic API key | No |
+| `SUPABASE_URL` | Supabase project URL (for server-side auth verification) | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (admin access) | Yes |
+| `SUPABASE_JWT_SECRET` | JWT secret for token verification | Yes |
+| `SMTP_HOST` | SMTP server hostname | Yes |
+| `SMTP_PORT` | SMTP server port | Yes |
+| `SMTP_USER` | SMTP authentication username | Yes |
+| `SMTP_PASS` | SMTP authentication password | Yes |
+| `RAZORPAY_KEY_ID` | Razorpay API key ID | For payments |
+| `RAZORPAY_KEY_SECRET` | Razorpay API key secret | For payments |
+| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook verification secret | For payments |
+| `MSG91_AUTH_KEY` | MSG91 authentication key | For SMS/WhatsApp |
+| `MSG91_SENDER_ID` | MSG91 sender ID | For SMS/WhatsApp |
+| `MSG91_TEMPLATE_ID` | MSG91 message template ID | For SMS/WhatsApp |
+| `TWILIO_SID` | Twilio account SID | For WhatsApp |
+| `TWILIO_AUTH_TOKEN` | Twilio authentication token | For WhatsApp |
+| `TWILIO_WHATSAPP_FROM` | Twilio WhatsApp sender number | For WhatsApp |
 
-### Database Setup
+### AI Provider Variables
 
-1. Create a new Supabase project
-2. Run the migration files in order:
-
-```bash
-# Apply migrations to your Supabase database
-psql $DATABASE_URL -f supabase/migrations/001_initial_schema.sql
-psql $DATABASE_URL -f supabase/migrations/002_rls_policies.sql
-psql $DATABASE_URL -f supabase/migrations/003_functions.sql
-```
-
-Or via the Supabase dashboard SQL editor, paste and run each file sequentially.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | OpenAI API key | At least one provider |
+| `GEMINI_API_KEY` | Google Gemini API key | At least one provider |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key | At least one provider |
+| `AI_PRIMARY_PROVIDER` | Primary AI provider (`openai`, `gemini`, `anthropic`) | No (defaults to `openai`) |
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server (port 5173) |
+| `pnpm dev` | Start frontend development server (port 5173) |
 | `pnpm build` | Type-check and build for production |
 | `pnpm preview` | Preview production build locally |
 | `pnpm type-check` | Run TypeScript type checking |
@@ -158,7 +362,19 @@ Or via the Supabase dashboard SQL editor, paste and run each file sequentially.
 
 ## Deployment
 
-### Netlify
+### Docker (Recommended)
+
+Deploy all services with Docker Compose:
+
+```bash
+# Production build and deploy
+docker-compose up -d --build
+
+# The frontend is available at http://localhost:3000
+# The PHP backend is available at http://localhost:8080
+```
+
+### Netlify (Frontend Only)
 
 The project includes a `netlify.toml` configuration:
 
@@ -172,20 +388,23 @@ dist/
 
 SPA redirects are configured automatically.
 
-### Docker
+### Manual Docker Build
 
 ```bash
-# Build the image
-docker build -t stockflow .
+# Build frontend image
+docker build -t stockflow-frontend .
 
-# Run the container
-docker run -p 80:80 stockflow
-```
+# Build PHP backend image
+docker build -t stockflow-php ./server/php
 
-Or with Docker Compose:
+# Run frontend
+docker run -p 3000:80 stockflow-frontend
 
-```bash
-docker-compose up -d
+# Run PHP backend
+docker run -p 8080:80 \
+  -e SUPABASE_URL=... \
+  -e SUPABASE_SERVICE_ROLE_KEY=... \
+  stockflow-php
 ```
 
 ## Project Structure
@@ -200,7 +419,7 @@ stockflow-inventory-crm/
 │   │   ├── shared/         # DataTable, PageHeader, KPICard, etc.
 │   │   └── ui/             # Base UI components (button, card, dialog, etc.)
 │   ├── contexts/           # AuthContext, SidebarContext
-│   ├── hooks/              # useAuth, useDebounce, useMediaQuery
+│   ├── hooks/              # useAuth, useDebounce, useMediaQuery, TanStack Query hooks
 │   ├── lib/                # Utils (cn helper), Supabase client
 │   ├── pages/
 │   │   ├── ai/             # AI Assistant page
@@ -215,17 +434,28 @@ stockflow-inventory-crm/
 │   │   └── NotFound.tsx    # 404 page
 │   ├── services/
 │   │   ├── ai/             # AI provider abstraction, agents, router
-│   │   └── excel/          # Parser, generator, templates
+│   │   ├── excel/          # Parser, generator, templates, large-file routing
+│   │   └── php.ts          # PHP API client with JWT forwarding
 │   ├── types/              # TypeScript type definitions
 │   ├── App.tsx             # Root component with routing
 │   ├── index.css           # Tailwind + design system variables
 │   └── main.tsx            # Entry point
+├── server/
+│   └── php/                # PHP Slim 4 backend
+│       ├── public/         # Entry point
+│       ├── src/            # Controllers, Middleware, Services
+│       ├── cron/           # Scheduled task scripts
+│       ├── storage/        # Generated files (PDFs, exports)
+│       ├── tests/          # PHPUnit tests
+│       ├── Dockerfile
+│       └── composer.json
 ├── supabase/
-│   └── migrations/         # SQL migration files
+│   ├── migrations/         # SQL migration files
+│   └── functions/          # Edge functions (AI proxy)
 ├── .github/
-│   └── workflows/          # CI/CD pipeline
-├── Dockerfile
-├── docker-compose.yml
+│   └── workflows/          # CI/CD pipeline (frontend + PHP)
+├── Dockerfile              # Frontend Docker build
+├── docker-compose.yml      # Multi-service orchestration
 ├── netlify.toml
 ├── vite.config.ts
 ├── tsconfig.json
@@ -258,6 +488,7 @@ StockFlow uses a dark spatial glassmorphism design language:
 - Follow existing component patterns in `src/components/ui/`
 - Use `cn()` utility for conditional class merging
 - All pages should include motion animations on mount
+- PHP code uses strict types and PSR-4 autoloading
 
 ## License
 

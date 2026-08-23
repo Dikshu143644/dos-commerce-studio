@@ -36,3 +36,25 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  php:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, zip, gd, intl, curl
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        working-directory: server/php
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHP syntax check
+        working-directory: server/php
+        run: find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;

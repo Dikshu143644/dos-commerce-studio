@@ -36,5 +36,12 @@ pnpm-debug.log*
 # TypeScript
 *.tsbuildinfo
 
+# PHP Backend
+server/php/vendor/
+server/php/storage/pdfs/*.pdf
+server/php/storage/exports/*.xlsx
+server/php/.env
+server/php/.phpunit.cache/
+
 # Misc
 *.local
