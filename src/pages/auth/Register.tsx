@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CountryCodePicker } from '@/components/auth/CountryCodePicker';
 import { useAuth } from '@/hooks/useAuth';
-import OTPVerification from '@/pages/auth/OTPVerification';
 
 const step1Schema = z
   .object({
@@ -36,7 +35,6 @@ export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [countryCode, setCountryCode] = useState('+91');
-  const [fullPhone, setFullPhone] = useState('');
   const { signup, loading: isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -58,7 +56,6 @@ export default function RegisterPage() {
         const credentials = step1Form.getValues();
         // Build E.164 phone number
         const phoneNumber = `${countryCode}${data.phone.replace(/\D/g, '')}`;
-        setFullPhone(phoneNumber);
 
         // Auto-assign viewer role - no user choice
         await signup(credentials.email, credentials.password, {
@@ -67,8 +64,9 @@ export default function RegisterPage() {
           role: 'viewer',
         });
 
-        // Move to OTP step
-        setStep(3);
+        // Account created successfully — go to dashboard
+        // OTP verification skipped until SMS provider (Twilio/MSG91) is configured
+        navigate('/');
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to create account.';
         // Check for rate limit
@@ -81,14 +79,6 @@ export default function RegisterPage() {
     },
     [step1Form, countryCode, signup]
   );
-
-  const handleOtpVerified = useCallback(() => {
-    navigate('/');
-  }, [navigate]);
-
-  const handleOtpSkip = useCallback(() => {
-    navigate('/');
-  }, [navigate]);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4">
@@ -112,13 +102,7 @@ export default function RegisterPage() {
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
           >
-            {step > 2 ? <Check className="h-4 w-4" /> : '2'}
-          </div>
-          <div className={`h-0.5 w-8 ${step > 2 ? 'bg-primary' : 'bg-border'}`} />
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
-          >
-            3
+            2
           </div>
         </div>
 
@@ -128,7 +112,6 @@ export default function RegisterPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {step === 1 && 'Set up your login credentials'}
             {step === 2 && 'Tell us about yourself'}
-            {step === 3 && 'Verify your phone number'}
           </p>
         </div>
 
@@ -268,24 +251,13 @@ export default function RegisterPage() {
           </motion.form>
         )}
 
-        {/* Step 3: OTP Verification */}
-        {step === 3 && (
-          <OTPVerification
-            phone={fullPhone}
-            onVerified={handleOtpVerified}
-            onSkip={handleOtpSkip}
-          />
-        )}
-
         {/* Login link */}
-        {step < 3 && (
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-primary hover:underline">
-              Sign in
-            </Link>
-          </p>
-        )}
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
