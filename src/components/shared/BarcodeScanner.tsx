@@ -35,6 +35,7 @@ export function BarcodeScanner({
   const scannerElementId = 'barcode-scanner-reader';
   const audioContextRef = useRef<AudioContext | null>(null);
   const tokenRef = useRef<number>(0);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const playBeep = useCallback(() => {
     try {
@@ -64,7 +65,7 @@ export function BarcodeScanner({
       setScanning(false);
       stopScanner().catch(() => {});
       // Brief delay before invoking callback so user sees result
-      setTimeout(() => {
+      scanTimeoutRef.current = setTimeout(() => {
         onScan(result);
       }, 1000);
     },
@@ -102,6 +103,10 @@ export function BarcodeScanner({
       }, 300);
       return () => clearTimeout(timer);
     } else {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = undefined;
+      }
       stopScanner().catch(() => {});
       setScanning(false);
       setLastResult(null);

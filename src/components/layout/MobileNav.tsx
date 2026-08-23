@@ -37,7 +37,7 @@ export function MobileNav() {
 
     viewport.addEventListener('scroll', handleScroll, { passive: true });
     return () => viewport.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [location.pathname]);
 
   if (!isMobile) return null;
 

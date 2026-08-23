@@ -40,12 +40,12 @@ export function useDashboard() {
       let inventoryQuery = supabase.from('inventory').select('quantity, product_id, products(min_stock_level)');
 
       // Apply branch filter when a specific branch is selected
+      // Note: customers are global and not filtered by branch
       if (activeBranchId) {
         productsQuery = productsQuery.eq('branch_id', activeBranchId);
         dealsQuery = dealsQuery.eq('branch_id', activeBranchId);
         revenueQuery = revenueQuery.eq('branch_id', activeBranchId);
         pendingOrdersQuery = pendingOrdersQuery.eq('branch_id', activeBranchId);
-        customersQuery = customersQuery.eq('branch_id', activeBranchId);
         warehousesQuery = warehousesQuery.eq('branch_id', activeBranchId);
         leadsQuery = leadsQuery.eq('branch_id', activeBranchId);
         inventoryQuery = inventoryQuery.eq('branch_id', activeBranchId);

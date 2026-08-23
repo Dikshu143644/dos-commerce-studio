@@ -36,3 +36,21 @@ CREATE POLICY "Auth manage branch access" ON user_branch_access FOR ALL USING (a
 CREATE INDEX idx_user_branch_access_user ON user_branch_access(user_id);
 CREATE INDEX idx_user_branch_access_branch ON user_branch_access(branch_id);
 CREATE INDEX idx_branch_settings_branch ON branch_settings(branch_id);
+
+-- Add branch_id column to core entity tables for multi-branch filtering
+ALTER TABLE products ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE sales_orders ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE deals ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+ALTER TABLE inventory ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES branches(id) ON DELETE SET NULL;
+
+-- Indexes for branch_id on each table
+CREATE INDEX IF NOT EXISTS idx_products_branch ON products(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_stock_movements_branch ON stock_movements(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sales_orders_branch ON sales_orders(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_branch ON purchase_orders(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_deals_branch ON deals(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_leads_branch ON leads(branch_id) WHERE branch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_inventory_branch ON inventory(branch_id) WHERE branch_id IS NOT NULL;
