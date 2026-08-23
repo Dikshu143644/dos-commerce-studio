@@ -25,9 +25,11 @@ services:
       - ./server/php/src:/var/www/html/src
       - ./server/php/public:/var/www/html/public
       - ./server/php/cron:/var/www/html/cron
+      - ./server/php/dev/opcache-dev.ini:/usr/local/etc/php/conf.d/zzz-opcache-dev.ini:ro
     environment:
       - APP_ENV=development
       - PHP_DISPLAY_ERRORS=1
+      - PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
     ports:
       - '8080:80'
       - '9003:9003'  # Xdebug port
