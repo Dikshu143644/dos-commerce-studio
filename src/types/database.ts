@@ -186,6 +186,8 @@ export interface Lead {
   assigned_to: string | null;
   notes: string | null;
   converted_customer_id: string | null;
+  score: number | null;
+  last_scored_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -204,6 +206,8 @@ export interface Deal {
   won_at: string | null;
   lost_at: string | null;
   lost_reason: string | null;
+  converted_from_lead_id: string | null;
+  sales_order_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -343,5 +347,55 @@ export interface StockAdjustmentReason {
   name: string;
   description: string | null;
   requires_approval: boolean;
+  is_active: boolean;
+}
+
+// CRM Workflow Types
+
+export interface LeadScore {
+  id: string;
+  lead_id: string;
+  score: number;
+  breakdown: {
+    source: number;
+    value: number;
+    engagement: number;
+    recency: number;
+    size: number;
+  };
+  calculated_at: string;
+}
+
+export interface FollowUpRule {
+  id: string;
+  name: string;
+  trigger_event: string;
+  trigger_condition: Record<string, unknown> | null;
+  action_type: string;
+  action_config: {
+    delay_days: number;
+    activity_type: string;
+    subject_template: string;
+  };
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface EmailSequence {
+  id: string;
+  name: string;
+  description: string | null;
+  trigger: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface EmailSequenceStep {
+  id: string;
+  sequence_id: string;
+  step_number: number;
+  delay_days: number;
+  email_template: string;
+  subject: string;
   is_active: boolean;
 }

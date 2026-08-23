@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Create new TanStack Query hooks for CRM pipeline: useLeadPipeline, useDealPipeline, useFollowUps, and useActivityFeed. These hooks wrap the CRM service layer and existing hooks with pipeline-specific queries.",
+  "status": "pending",
+  "steps": [
+    "Create src/hooks/useLeadPipeline.ts with: useLeadsByStage() (query all leads grouped by status for Kanban display), useLeadScore(leadId) (query current score + breakdown from lead_scores table), useConvertLead() (mutation calling conversion service), useHotLeads() (query leads with score > 70), useBulkAssignLeads() (mutation for bulk reassignment). Use @tanstack/react-query patterns matching existing hooks like useLeads.ts.",
+    "Create src/hooks/useDealPipeline.ts with: useDealsByStage() (query all deals grouped by stage for Kanban), usePipelineValue() (total weighted pipeline value from deals), useAdvanceDeal() (mutation to move deal to next stage), useCloseDeal() (mutation for won/lost with reason), useConvertDealToOrder() (mutation to create sales order from won deal).",
+    "Create src/hooks/useFollowUps.ts with: useUpcomingFollowUps() (activities of type follow_up, scheduled_at within next 7 days, not completed), useOverdueFollowUps() (follow_up activities past due, not completed), useScheduleFollowUp() (mutation), useSnoozeFollowUp() (mutation to update scheduled_at), useFollowUpRules() (query followup_rules table), useToggleRule() (mutation to toggle is_active on a rule).",
+    "Create src/hooks/useActivityFeed.ts with: useActivityFeed(entityType?, entityId?) (paginated activities with optional entity filter, ordered by created_at desc), useCreateActivity() (mutation that auto-schedules follow-up via service), useCompleteActivity() (mutation that triggers next follow-up), useTodayActivities() (activities scheduled for today, not completed)."
+  ],
+  "acceptance_criteria": [
+    "src/hooks/useLeadPipeline.ts exports useLeadsByStage, useLeadScore, useConvertLead, useHotLeads, useBulkAssignLeads",
+    "src/hooks/useDealPipeline.ts exports useDealsByStage, usePipelineValue, useAdvanceDeal, useCloseDeal, useConvertDealToOrder",
+    "src/hooks/useFollowUps.ts exports useUpcomingFollowUps, useOverdueFollowUps, useScheduleFollowUp, useSnoozeFollowUp, useFollowUpRules, useToggleRule",
+    "src/hooks/useActivityFeed.ts exports useActivityFeed, useCreateActivity, useCompleteActivity, useTodayActivities",
+    "All hooks use proper TanStack Query patterns with queryKey arrays and proper typing",
+    "bun run build passes with zero TypeScript errors"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/stockflow-inventory-crm && bun run build' and confirm successful build with no TypeScript errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

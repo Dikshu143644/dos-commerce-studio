@@ -1,0 +1,7 @@
+{
+  "task_id": "task-crm-pipeline-phase4",
+  "task_description": "Build Phase 4 of StockFlow - CRM Pipeline with lead-to-deal-to-customer conversion, activity automation, follow-up scheduling, lead scoring, new pages (FollowUps, ConversionFunnel), and complete rewrite of CRM pages to use real Supabase data instead of mock arrays.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
