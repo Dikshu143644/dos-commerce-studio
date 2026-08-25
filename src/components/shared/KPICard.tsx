@@ -25,9 +25,12 @@ export function KPICard({ label, value, icon: Icon, trend, description, classNam
           <img
             src={bgImage}
             alt=""
-            className="w-full h-full object-cover opacity-8 filter saturate-150 group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover opacity-25 filter saturate-150 group-hover:scale-110 transition-transform duration-700"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/40" />
         </div>
       )}
 

@@ -24,7 +24,39 @@ class ADKOrchestrator:
         self.excel_agent = ExcelAutomationAgent()
 
     def route_and_execute(self, user_query: str) -> Dict[str, Any]:
-        query_lower = user_query.lower()
+        query_lower = user_query.strip().lower()
+
+        # 0. Greetings & Conversational Inquiries
+        if query_lower in ["hi", "hello", "hey"] or query_lower.startswith("hello") or query_lower.startswith("hi ") or query_lower.startswith("hey "):
+            return {
+                "agent": "StockFlow General Copilot",
+                "status": "success",
+                "message": (
+                    "### 👋 Hello! Welcome to StockFlow Enterprise Copilot\n\n"
+                    "I am your **AI Multi-Agent Assistant**, integrated directly into the StockFlow inventory, supply chain, and CRM platform.\n\n"
+                    "**Here is what you can ask me to do:**\n"
+                    "- 📦 **\"Show me all products and stock availability\"**\n"
+                    "- ⚠️ **\"Which items are running low on stock?\"**\n"
+                    "- 💼 **\"Give me a breakdown of our high priority deals & CRM leads\"**\n"
+                    "- 🏬 **\"Check warehouse capacity across Mumbai and Delhi\"**\n"
+                    "- 📊 **\"What is our revenue and gross margin this month?\"**\n\n"
+                    "How can I help you today?"
+                )
+            }
+
+        if any(w in query_lower for w in ["about your web", "about this web", "what is stockflow", "tell me about stockflow", "features", "how does this work"]):
+            return {
+                "agent": "StockFlow General Copilot",
+                "status": "success",
+                "message": (
+                    "### 🌐 StockFlow Enterprise Platform Overview\n\n"
+                    "**StockFlow** unifies **multi-warehouse inventory management** with an **intelligent CRM deal pipeline** and **autonomous Python ADK multi-agent workflows**.\n\n"
+                    "- 📦 **Multi-Warehouse Stock Tracking**: Real-time telemetry across 6 regional hubs (*Mumbai, Delhi, Bangalore, Kolkata, Pune, Ahmedabad*).\n"
+                    "- 💼 **CRM Deals & Pipelines**: Visual Kanban stages, deal velocity calculations, and client lifetime value metrics.\n"
+                    "- 🤖 **Python ADK Automation**: Background predictive reorder PO drafting and Excel reports.\n"
+                    "- 🛡️ **Opal SMS OTP Security**: Real-time 6-digit cryptographic verification with SHA-256 validation."
+                )
+            }
 
         # 1. Excel / Report / Import Intent
         if any(w in query_lower for w in ["excel", "export", "import", "spreadsheet", "csv", "xlsx", "download report"]):

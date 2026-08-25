@@ -546,6 +546,159 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Multi-Warehouse Facilities Visual Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.35 }}
+        className="space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span className="text-orange-500">🏬</span> Multi-Warehouse Facility Telemetry
+            </h2>
+            <p className="text-xs text-slate-500">Live operational capacity and stock distribution across all 6 strategic hubs</p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-slate-200 text-xs font-bold text-orange-600 hover:bg-orange-50">
+            <Link to="/inventory/warehouses">
+              Manage All Hubs <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { code: 'WH-MUM', name: 'Mumbai Central Logistics Hub', city: 'Mumbai, MH', capacity: 84, items: 480, img: '/images/warehouses/warehouse-mumbai.jpg', status: 'Operational' },
+            { code: 'WH-DEL', name: 'Delhi NCR Regional Depot', city: 'Delhi NCR', capacity: 68, items: 320, img: '/images/warehouses/warehouse-delhi.jpg', status: 'Operational' },
+            { code: 'WH-BLR', name: 'Bangalore Tech Hub', city: 'Bangalore, KA', capacity: 92, items: 290, img: '/images/warehouses/warehouse-bangalore.jpg', status: 'High Capacity' },
+            { code: 'WH-KOL', name: 'Kolkata Eastern Port Hub', city: 'Kolkata, WB', capacity: 45, items: 160, img: '/images/warehouses/warehouse-kolkata.jpg', status: 'Operational' },
+            { code: 'WH-PUN', name: 'Pune Industrial Park', city: 'Pune, MH', capacity: 76, items: 210, img: '/images/warehouses/warehouse-pune.jpg', status: 'Operational' },
+            { code: 'WH-AMD', name: 'Ahmedabad Commercial Center', city: 'Ahmedabad, GJ', capacity: 58, items: 145, img: '/images/warehouses/warehouse-ahmedabad.jpg', status: 'Operational' },
+          ].map((wh) => (
+            <div key={wh.code} className="group relative overflow-hidden rounded-[22px] bg-white border border-slate-200 shadow-xs hover:border-orange-400 hover:shadow-lg transition-all">
+              {/* Photo Banner with Overlay */}
+              <div className="relative h-32 w-full overflow-hidden bg-slate-900">
+                <img
+                  src={wh.img}
+                  alt={wh.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute top-3 left-3">
+                  <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[11px] font-black text-slate-900 shadow-xs">
+                    {wh.code}
+                  </span>
+                </div>
+                <div className="absolute top-3 right-3">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md text-white ${
+                    wh.capacity > 90 ? 'bg-amber-500/80' : 'bg-emerald-500/80'
+                  }`}>
+                    {wh.status}
+                  </span>
+                </div>
+                <div className="absolute bottom-2.5 left-3 right-3">
+                  <h3 className="text-sm font-bold text-white truncate">{wh.name}</h3>
+                  <p className="text-[11px] text-slate-300">{wh.city}</p>
+                </div>
+              </div>
+
+              {/* Telemetry Metrics */}
+              <div className="p-4 space-y-2.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500 font-medium">Capacity Utilization</span>
+                  <span className="font-bold text-slate-900">{wh.capacity}%</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      wh.capacity > 90 ? 'bg-amber-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                    }`}
+                    style={{ width: `${wh.capacity}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                  <span>Tracked SKUs: <strong className="text-slate-800">{wh.items} items</strong></span>
+                  <Link to="/inventory/movements" className="text-orange-600 font-bold hover:underline">
+                    View Stock →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Fast-Moving High-Demand Hardware Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <span className="text-orange-500">⚡</span> High-Demand Hardware & Fast-Moving SKUs
+            </h2>
+            <p className="text-xs text-slate-500">Top-velocity inventory units actively moving across distribution networks</p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-slate-200 text-xs font-bold text-orange-600 hover:bg-orange-50">
+            <Link to="/inventory/products">
+              Explore Full Catalog <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          {[
+            { sku: 'PCB-PRO-001', name: 'Circuit Board Pro X1', price: '₹10,250', stock: 142, img: '/images/products/circuit-board-pro.jpg', status: 'In Stock' },
+            { sku: 'SRV-750W-002', name: 'AC Servo Motor ISM-200', price: '₹28,400', stock: 38, img: '/images/products/servo-motor.jpg', status: 'Healthy' },
+            { sku: 'HYD-PMP-200', name: 'Hydraulic Pump HP-200', price: '₹45,000', stock: 24, img: '/images/products/hydraulic-pump.jpg', status: 'Healthy' },
+            { sku: 'LED-PAN-60W', name: 'Ultra-Bright LED Panel 60W', price: '₹5,400', stock: 95, img: '/images/products/led-panel.jpg', status: 'In Stock' },
+            { sku: 'WIR-COP-250', name: 'Copper Wire 2.5mm Reel', price: '₹7,200', stock: 280, img: '/images/products/copper-wire.jpg', status: 'In Stock' },
+            { sku: 'BRG-STL-800', name: 'Precision Steel Bearings', price: '₹3,700', stock: 18, img: '/images/products/steel-bearings.jpg', status: 'Low Stock' },
+          ].map((prod) => (
+            <div key={prod.sku} className="group rounded-[20px] bg-white border border-slate-200/90 p-3 shadow-xs hover:border-orange-400 hover:shadow-md transition-all flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="relative aspect-square w-full rounded-[14px] overflow-hidden bg-slate-100 border border-slate-100">
+                  <img
+                    src={prod.img}
+                    alt={prod.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-1.5 right-1.5">
+                    <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold ${
+                      prod.status === 'Low Stock' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
+                    }`}>
+                      {prod.status}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono text-slate-400 font-bold uppercase">{prod.sku}</p>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                    {prod.name}
+                  </h4>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-400">Unit Price</p>
+                  <p className="text-xs font-black text-slate-900">{prod.price}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400">In Stock</p>
+                  <p className={`text-xs font-bold font-mono ${prod.stock < 20 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                    {prod.stock} pcs
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 }
