@@ -41,57 +41,65 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
-      <div className="gradient-orb absolute -top-32 -left-32 h-96 w-96" />
-      <div className="gradient-orb absolute -bottom-32 -right-32 h-80 w-80 opacity-10" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#FDFBF7] px-4 py-12">
+      {/* Warm Ambient Warehouse Background Overlay */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <img
+          src="/images/backgrounds/warehouse-sunset-drone.jpg"
+          alt="StockFlow Logistics Facility"
+          className="w-full h-full object-cover filter brightness-[0.95] contrast-[1.02]"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2000&q=85';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-amber-950/20 to-black/40" />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="glass w-full max-w-md rounded-[24px] p-8"
+        className="relative z-10 w-full max-w-md rounded-[32px] bg-white/95 backdrop-blur-2xl p-8 sm:p-10 border border-white/60 shadow-[0_25px_80px_rgba(0,0,0,0.25)] text-slate-900"
       >
         {!isSubmitted ? (
           <>
             <div className="mb-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Mail className="h-6 w-6 text-primary" />
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 border border-orange-200 shadow-xs">
+                <Mail className="h-7 w-7 text-orange-500" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">Forgot password?</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                No worries, we&apos;ll send you reset instructions.
+              <h1 className="text-2xl font-extrabold text-slate-900">Forgot password?</h1>
+              <p className="mt-1 text-xs text-slate-500 font-medium">
+                Enter your verified work email for secure password recovery.
               </p>
             </div>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-600 font-medium">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-bold text-slate-700">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder="admin@stockflow.com"
+                  className="h-11 bg-slate-50 border-slate-200 text-slate-900 rounded-xl focus:border-orange-500"
                   {...register('email')}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
+                  <p className="text-xs text-rose-500">{errors.email.message}</p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Sending...
-                  </span>
-                ) : (
-                  'Reset password'
-                )}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold shadow-md shadow-orange-500/20"
+              >
+                {isLoading ? 'Sending Instructions...' : 'Send Reset Link'}
               </Button>
             </form>
           </>
@@ -99,23 +107,20 @@ export default function ForgotPasswordPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
+            className="text-center space-y-4"
           >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/20">
-              <CheckCircle2 className="h-7 w-7 text-primary" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-xs">
+              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Check your email</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              We sent a password reset link to
-            </p>
-            <p className="mt-1 text-sm font-medium text-foreground">{getValues('email')}</p>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Didn&apos;t receive the email? Check your spam folder or try again.
+            <h2 className="text-xl font-bold text-slate-900">Check your email</h2>
+            <p className="text-xs text-slate-500">
+              We&apos;ve sent password recovery instructions to{' '}
+              <span className="font-bold text-slate-900">{getValues('email')}</span>
             </p>
             <Button
               variant="outline"
-              className="mt-6 w-full"
               onClick={() => setIsSubmitted(false)}
+              className="w-full h-11 rounded-xl border-slate-200 text-slate-700"
             >
               Try another email
             </Button>
@@ -125,10 +130,9 @@ export default function ForgotPasswordPage() {
         <div className="mt-6 text-center">
           <Link
             to="/login"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to sign in
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to Sign In
           </Link>
         </div>
       </motion.div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +24,12 @@ export function TopNav() {
   const { user, profile, logout, userRole, loginDemo } = useAuth();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [searchOpen, setSearchOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/landing', { replace: true });
+  };
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || 'DOS-APP';
   const initials = displayName
@@ -169,7 +176,7 @@ export function TopNav() {
               👤 Client (Orders & Invoices)
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
