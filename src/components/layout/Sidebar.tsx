@@ -182,7 +182,7 @@ function SidebarContent() {
             {filteredSections.map((section) => (
               <div key={section.title} className="space-y-1">
                 {!isCollapsed && (
-                  <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
                     {section.title}
                   </p>
                 )}
@@ -194,12 +194,12 @@ function SidebarContent() {
                       className={cn(
                         'flex items-center gap-3 rounded-[12px] px-3 py-2 text-sm font-medium transition-all duration-200',
                         active
-                          ? 'bg-primary/15 text-primary'
-                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                          ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                          : 'text-slate-300 hover:bg-white/[0.08] hover:text-white',
                         isCollapsed && 'justify-center px-2'
                       )}
                     >
-                      <item.icon className={cn('h-4 w-4 shrink-0', active && 'text-primary')} />
+                      <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-emerald-400' : 'text-slate-400')} />
                       {!isCollapsed && <span>{item.title}</span>}
                     </Link>
                   );
@@ -221,22 +221,22 @@ function SidebarContent() {
         </ScrollArea>
 
         {/* User profile & collapse toggle */}
-        <div className="border-t border-border p-3">
+        <div className="border-t border-white/10 p-3 bg-black/20">
           {!isCollapsed && (
-            <div className="flex items-center gap-3 rounded-[12px] px-3 py-2 mb-2">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs bg-primary/20 text-primary">{initials}</AvatarFallback>
+            <div className="flex items-center gap-3 rounded-[12px] px-3 py-2 mb-2 bg-white/[0.04] border border-white/5">
+              <Avatar className="h-8 w-8 border border-emerald-500/30">
+                <AvatarFallback className="text-xs bg-emerald-500/20 text-emerald-300 font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
-                <p className="text-xs text-muted-foreground truncate">{roleName}</p>
+                <p className="text-sm font-bold text-white truncate">{displayName}</p>
+                <p className="text-xs text-slate-400 font-medium truncate">{roleName}</p>
               </div>
             </div>
           )}
           <Button
             variant="ghost"
             size={isCollapsed ? 'icon' : 'sm'}
-            className={cn('w-full', !isCollapsed && 'justify-start gap-2')}
+            className={cn('w-full text-slate-300 hover:text-white hover:bg-white/10', !isCollapsed && 'justify-start gap-2')}
             onClick={toggle}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -262,7 +262,7 @@ export function Sidebar() {
   if (isMobile) {
     return (
       <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar-background backdrop-blur-xl">
+        <SheetContent side="left" className="w-64 p-0 bg-[#0B1120] border-r border-white/10">
           <SidebarContent />
         </SheetContent>
       </Sheet>
@@ -272,7 +272,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col h-screen border-r border-border bg-sidebar-background backdrop-blur-xl transition-all duration-300',
+        'hidden md:flex flex-col h-screen border-r border-white/10 bg-[#0B1120] z-30 transition-all duration-300',
         isCollapsed ? 'w-[68px]' : 'w-64'
       )}
     >

@@ -124,7 +124,7 @@ export default function Dashboard() {
   return (
     <div className="relative space-y-6">
       {/* Cinematic Mountain Sunset Backdrop bleeding through at 12% opacity (Image 3 Screen 01) */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="absolute -inset-6 pointer-events-none z-0 overflow-hidden rounded-[32px]">
         <img
           src="/images/backgrounds/mountain-sunset.jpg"
           alt=""
