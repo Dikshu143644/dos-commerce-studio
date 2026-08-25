@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -25,19 +25,21 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { KPICard } from '@/components/shared/KPICard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDismissAlert } from '@/hooks/useLowStock';
+import { cn } from '@/lib/utils';
 
-// Mock low stock products
+// Mock low stock products matching Screenshot 1
 const mockLowStockProducts = [
   {
     id: '1',
     product_name: 'Industrial Servo Motor',
     sku: 'ISM-200',
-    current_stock: 3,
+    current_stock: 0,
     reorder_point: 10,
     min_stock_level: 5,
     max_stock_level: 50,
     unit_cost: 8500,
     warehouse: 'WH-DEL',
+    image: '/images/products/servo-motor.jpg',
   },
   {
     id: '2',
@@ -49,6 +51,7 @@ const mockLowStockProducts = [
     max_stock_level: 20,
     unit_cost: 15000,
     warehouse: 'WH-BLR',
+    image: '/images/products/hydraulic-pump.jpg',
   },
   {
     id: '3',
@@ -60,6 +63,7 @@ const mockLowStockProducts = [
     max_stock_level: 60,
     unit_cost: 1200,
     warehouse: 'WH-KOL',
+    image: '/images/products/steel-bearings.jpg',
   },
   {
     id: '4',
@@ -71,6 +75,7 @@ const mockLowStockProducts = [
     max_stock_level: 100,
     unit_cost: 1200,
     warehouse: 'WH-MUM',
+    image: '/images/products/circuit-board-pro.jpg',
   },
   {
     id: '5',
@@ -82,6 +87,7 @@ const mockLowStockProducts = [
     max_stock_level: 200,
     unit_cost: 450,
     warehouse: 'WH-AHM',
+    image: '/images/products/copper-wire.jpg',
   },
   {
     id: '6',
@@ -93,28 +99,31 @@ const mockLowStockProducts = [
     max_stock_level: 30,
     unit_cost: 12000,
     warehouse: 'WH-DEL',
+    image: '/images/products/office-chair.jpg',
   },
   {
     id: '7',
     product_name: 'Wireless Mouse BT500',
     sku: 'WM-BT500',
-    current_stock: 2,
-    reorder_point: 20,
+    current_stock: 6,
+    reorder_point: 25,
     min_stock_level: 10,
-    max_stock_level: 80,
-    unit_cost: 650,
+    max_stock_level: 150,
+    unit_cost: 850,
     warehouse: 'WH-MUM',
+    image: '/images/products/wireless-mouse.jpg',
   },
   {
     id: '8',
-    product_name: 'LED Panel 60W',
-    sku: 'LED-60W',
-    current_stock: 6,
-    reorder_point: 15,
-    min_stock_level: 8,
-    max_stock_level: 50,
-    unit_cost: 2400,
+    product_name: 'Packaging Tape 48mm',
+    sku: 'PT-48',
+    current_stock: 15,
+    reorder_point: 60,
+    min_stock_level: 30,
+    max_stock_level: 500,
+    unit_cost: 120,
     warehouse: 'WH-BLR',
+    image: '/images/products/packaging-tape.jpg',
   },
 ];
 
@@ -261,7 +270,7 @@ export default function LowStockPage() {
         </Select>
       </div>
 
-      {/* Product Cards Grid */}
+      {/* Product Cards Grid - Spatial Bento Grid */}
       {filteredProducts.length === 0 ? (
         <EmptyState
           icon={Package}
@@ -269,7 +278,7 @@ export default function LowStockPage() {
           description="All products are above their reorder points. Your inventory levels are healthy."
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {filteredProducts.map((product, idx) => {
             const severity = getSeverity(product);
             const badge = getSeverityBadge(severity);
@@ -277,77 +286,118 @@ export default function LowStockPage() {
               100,
               Math.round((product.current_stock / product.max_stock_level) * 100)
             );
+            const reorderUnits = Math.max(0, product.reorder_point * 2 - product.current_stock);
+            const estimatedValue = reorderUnits * product.unit_cost;
 
             return (
               <motion.div
                 key={product.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: idx * 0.05 }}
+                transition={{ duration: 0.25, delay: idx * 0.04 }}
               >
-                <Card className="bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.06)] rounded-[24px] hover:border-primary/30 transition-colors">
-                  <CardContent className="p-5 space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
+                <Card className={cn(
+                  "relative overflow-hidden rounded-[24px] border glass transition-all duration-300 group hover:shadow-xl",
+                  severity === 'out_of_stock' ? "border-red-500/30 hover:border-red-500/60" :
+                  severity === 'critical' ? "border-amber-500/30 hover:border-amber-500/60" :
+                  "border-emerald-500/30 hover:border-emerald-500/60"
+                )}>
+                  {/* Subtle Background Glow Vignette */}
+                  <div className={cn(
+                    "absolute -right-16 -top-16 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20",
+                    severity === 'out_of_stock' ? "bg-red-500" :
+                    severity === 'critical' ? "bg-amber-500" : "bg-emerald-500"
+                  )} />
+
+                  <div className="flex flex-col sm:flex-row items-stretch gap-5 p-5 relative z-10">
+                    {/* Left: Full High-Clarity Square Product Photo */}
+                    <div className="relative w-full sm:w-44 h-48 sm:h-auto rounded-[18px] overflow-hidden bg-black/60 border border-border/50 flex-shrink-0">
+                      {product.image && (
+                        <img
+                          src={product.image}
+                          alt={product.product_name}
+                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent sm:hidden" />
+                      
+                      {/* Warehouse Badge */}
+                      <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1.5 shadow-md">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[11px] font-mono font-medium text-white">{product.warehouse}</span>
+                      </div>
+                    </div>
+
+                    {/* Right: Technical Information & Actions */}
+                    <div className="flex-1 flex flex-col justify-between space-y-3">
                       <div>
-                        <h3 className="font-semibold text-foreground text-sm leading-tight">
-                          {product.product_name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">{product.sku}</p>
-                      </div>
-                      <Badge className={`${badge.color} border-0 text-xs`}>{badge.label}</Badge>
-                    </div>
+                        {/* Title & Severity Badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-bold text-base text-foreground group-hover:text-emerald-400 transition-colors leading-tight">
+                              {product.product_name}
+                            </h3>
+                            <p className="text-xs font-mono text-muted-foreground mt-0.5">{product.sku}</p>
+                          </div>
+                          <Badge className={cn("text-xs font-semibold px-2.5 py-0.5 shadow-sm border-0", badge.color)}>
+                            {badge.label}
+                          </Badge>
+                        </div>
 
-                    {/* Stock Level */}
-                    <div className="text-center py-2">
-                      <p className={`text-3xl font-bold ${getSeverityColor(severity)}`}>
-                        {product.current_stock}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">current stock</p>
-                    </div>
+                        {/* Telemetry Metrics Bento Row */}
+                        <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                          <div className="bg-secondary/40 border border-border/50 rounded-[12px] p-2.5">
+                            <p className="text-[11px] text-muted-foreground">Current</p>
+                            <p className={cn("text-xl font-extrabold tracking-tight", getSeverityColor(severity))}>
+                              {product.current_stock}
+                            </p>
+                          </div>
+                          <div className="bg-secondary/40 border border-border/50 rounded-[12px] p-2.5">
+                            <p className="text-[11px] text-muted-foreground">Reorder At</p>
+                            <p className="text-xl font-bold text-foreground">
+                              {product.reorder_point}
+                            </p>
+                          </div>
+                          <div className="bg-secondary/40 border border-border/50 rounded-[12px] p-2.5">
+                            <p className="text-[11px] text-muted-foreground">Reorder Val</p>
+                            <p className="text-sm font-bold text-emerald-400 mt-1">
+                              ₹{(estimatedValue / 1000).toFixed(0)}K
+                            </p>
+                          </div>
+                        </div>
 
-                    {/* Progress */}
-                    <div className="space-y-1.5">
-                      <Progress value={stockPct} className="h-2" />
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>0</span>
-                        <span>{product.max_stock_level}</span>
+                        {/* Stock Capacity Progress Meter */}
+                        <div className="space-y-1 mt-3">
+                          <div className="flex justify-between text-[11px] text-muted-foreground">
+                            <span>Stock Buffer: {stockPct}%</span>
+                            <span>Max: {product.max_stock_level} units</span>
+                          </div>
+                          <Progress value={stockPct} className="h-1.5 bg-secondary" />
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          size="sm"
+                          className="flex-1 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium shadow-md shadow-emerald-500/20"
+                          onClick={() => handleCreatePO(product.product_name)}
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          Create Purchase Order
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => handleDismiss(product.id)}
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          Dismiss
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Info */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-[8px] bg-secondary/50 p-2">
-                        <p className="text-muted-foreground">Reorder Point</p>
-                        <p className="font-medium text-foreground">{product.reorder_point}</p>
-                      </div>
-                      <div className="rounded-[8px] bg-secondary/50 p-2">
-                        <p className="text-muted-foreground">Min Stock</p>
-                        <p className="font-medium text-foreground">{product.min_stock_level}</p>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={() => handleCreatePO(product.product_name)}
-                      >
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                        Create PO
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        onClick={() => handleDismiss(product.id)}
-                      >
-                        <XCircle className="h-3.5 w-3.5" />
-                        Dismiss
-                      </Button>
-                    </div>
-                  </CardContent>
+                  </div>
                 </Card>
               </motion.div>
             );

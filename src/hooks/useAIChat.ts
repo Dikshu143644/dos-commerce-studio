@@ -37,21 +37,53 @@ function rowToConversation(row: ConversationRow): Conversation {
   };
 }
 
+const LOCAL_CONV_KEY = 'stockflow_local_conversations';
+
+function getLocalConversations(): Conversation[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_CONV_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed.map((c: any) => ({
+      ...c,
+      createdAt: new Date(c.createdAt),
+      updatedAt: new Date(c.updatedAt),
+      messages: (c.messages || []).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalConversations(convs: Conversation[]) {
+  try {
+    localStorage.setItem(LOCAL_CONV_KEY, JSON.stringify(convs));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function useConversations() {
   return useQuery({
     queryKey: ['conversations'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('ai_conversations')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false });
 
-      const { data, error } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      return (data as ConversationRow[]).map(rowToConversation);
+          if (!error && data && data.length > 0) {
+            return (data as ConversationRow[]).map(rowToConversation);
+          }
+        }
+      } catch {
+        // Fall back to local
+      }
+      return getLocalConversations();
     },
   });
 }
@@ -61,14 +93,21 @@ export function useConversation(id: string | undefined) {
     queryKey: ['conversations', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('ai_conversations')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error) throw error;
-      return rowToConversation(data as ConversationRow);
+        if (!error && data) {
+          return rowToConversation(data as ConversationRow);
+        }
+      } catch {
+        // Fall back to local
+      }
+      const local = getLocalConversations();
+      return local.find((c) => c.id === id) || null;
     },
     enabled: !!id,
   });
@@ -79,23 +118,41 @@ export function useCreateConversation() {
 
   return useMutation({
     mutationFn: async ({ title, agentType }: { title: string; agentType: AgentType }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('ai_conversations')
+            .insert({
+              user_id: user.id,
+              agent_type: agentType,
+              title,
+              messages: [],
+              total_tokens: 0,
+            })
+            .select()
+            .single();
 
-      const { data, error } = await supabase
-        .from('ai_conversations')
-        .insert({
-          user_id: user.id,
-          agent_type: agentType,
-          title,
-          messages: [],
-          total_tokens: 0,
-        })
-        .select()
-        .single();
+          if (!error && data) {
+            return rowToConversation(data as ConversationRow);
+          }
+        }
+      } catch {
+        // Fallback to local
+      }
 
-      if (error) throw error;
-      return rowToConversation(data as ConversationRow);
+      // Create resilient local conversation
+      const newConv: Conversation = {
+        id: crypto.randomUUID(),
+        title,
+        agentType,
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const existing = getLocalConversations();
+      saveLocalConversations([newConv, ...existing]);
+      return newConv;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
@@ -128,22 +185,36 @@ export function useSendMessage() {
 
       const updatedMessages = [...existingMessages, userMessage];
 
-      const { error } = await supabase
-        .from('ai_conversations')
-        .update({
-          messages: updatedMessages.map((m) => ({
-            ...m,
-            timestamp: m.timestamp.toISOString(),
-          })),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', conversationId);
+      // Update Supabase if reachable
+      try {
+        await supabase
+          .from('ai_conversations')
+          .update({
+            messages: updatedMessages.map((m) => ({
+              ...m,
+              timestamp: m.timestamp.toISOString(),
+            })),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', conversationId);
+      } catch {
+        // Fallback local update
+      }
 
-      if (error) throw error;
+      // Update local storage
+      const local = getLocalConversations();
+      const idx = local.findIndex((c) => c.id === conversationId);
+      if (idx !== -1) {
+        local[idx].messages = updatedMessages;
+        local[idx].updatedAt = new Date();
+        saveLocalConversations(local);
+      }
+
       return { conversationId, userMessage, updatedMessages };
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations', variables.conversationId] });
     },
   });
 }

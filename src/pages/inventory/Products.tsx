@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Plus, Package, ScanLine } from 'lucide-react';
+import { Plus, Package, ScanLine, LayoutGrid, List, ArrowUpRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,17 +19,212 @@ import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { ScanResult } from '@/services/barcode/types';
 
-const mockProducts = [
-  { id: '1', sku: 'SKU-1001', name: 'Circuit Board Pro X1', category: 'Electronics', stock: 145, price: 89.99, status: 'active' },
-  { id: '2', sku: 'SKU-1002', name: 'Industrial Servo Motor', category: 'Industrial Parts', stock: 8, price: 345.00, status: 'active' },
-  { id: '3', sku: 'SKU-1003', name: 'Copper Wire 2.5mm (100m)', category: 'Raw Materials', stock: 234, price: 42.50, status: 'active' },
-  { id: '4', sku: 'SKU-1004', name: 'LED Panel 60W Commercial', category: 'Electronics', stock: 67, price: 124.99, status: 'active' },
-  { id: '5', sku: 'SKU-1005', name: 'Steel Bearings Set (10pc)', category: 'Industrial Parts', stock: 5, price: 78.00, status: 'active' },
-  { id: '6', sku: 'SKU-1006', name: 'Office Chair Ergonomic', category: 'Office Supplies', stock: 42, price: 299.99, status: 'active' },
-  { id: '7', sku: 'SKU-1007', name: 'Thermal Paste TG-7', category: 'Electronics', stock: 312, price: 12.99, status: 'active' },
-  { id: '8', sku: 'SKU-1008', name: 'Hydraulic Pump HP-200', category: 'Industrial Parts', stock: 3, price: 1249.00, status: 'inactive' },
-  { id: '9', sku: 'SKU-1009', name: 'Packaging Tape (48mm)', category: 'Packaging', stock: 890, price: 4.99, status: 'active' },
-  { id: '10', sku: 'SKU-1010', name: 'Wireless Mouse BT500', category: 'Electronics', stock: 156, price: 34.99, status: 'active' },
+export interface ProductItem {
+  id: string;
+  sku: string;
+  name: string;
+  category: string;
+  stock: number;
+  price: number;
+  reorderPoint: number;
+  image: string;
+  status: 'active' | 'inactive';
+  description: string;
+}
+
+const mockProducts: ProductItem[] = [
+  {
+    id: '30000000-0000-0000-0000-000000000001',
+    sku: 'PCB-PRO-001',
+    name: 'Circuit Board Pro X1',
+    category: 'Electronics',
+    stock: 142,
+    price: 125.00,
+    reorderPoint: 25,
+    image: '/images/products/circuit-board-pro.jpg',
+    status: 'active',
+    description: 'Multi-layer high frequency printed circuit board for edge computing and IoT gateway controllers',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000002',
+    sku: 'SRV-750W-002',
+    name: 'Industrial Servo Motor 750W',
+    category: 'Industrial Parts',
+    stock: 38,
+    price: 340.00,
+    reorderPoint: 10,
+    image: '/images/products/servo-motor.jpg',
+    status: 'active',
+    description: 'High-torque AC brushless servo motor with integrated 24-bit magnetic absolute encoder',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000003',
+    sku: 'WIR-COP-250',
+    name: 'Copper Wire 2.5mm Reel (100m)',
+    category: 'Raw Materials',
+    stock: 280,
+    price: 88.00,
+    reorderPoint: 30,
+    image: '/images/products/copper-wire.jpg',
+    status: 'active',
+    description: 'Pure oxygen-free electrolytic copper wire with double insulation for industrial automation',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000004',
+    sku: 'LED-PAN-60W',
+    name: 'Ultra-Bright LED Panel 60W',
+    category: 'Electronics',
+    stock: 95,
+    price: 65.00,
+    reorderPoint: 15,
+    image: '/images/products/led-panel.jpg',
+    status: 'active',
+    description: 'Energy-efficient high CRI industrial cleanroom and factory LED lighting panel with PWM dimming',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000005',
+    sku: 'BRG-STL-800',
+    name: 'Precision Steel Bearings Set',
+    category: 'Industrial Parts',
+    stock: 18,
+    price: 45.00,
+    reorderPoint: 40,
+    image: '/images/products/steel-bearings.jpg',
+    status: 'active',
+    description: 'ABEC-9 graded stainless steel deep groove ball bearings for high-RPM rotary machinery',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000006',
+    sku: 'THM-PST-007',
+    name: 'Thermal Paste TG-7 Extreme',
+    category: 'Electronics',
+    stock: 115,
+    price: 22.50,
+    reorderPoint: 50,
+    image: '/images/products/thermal-paste.jpg',
+    status: 'active',
+    description: 'High thermal conductivity 14.5 W/mK non-conductive thermal interface compound (50g)',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000007',
+    sku: 'CON-PCB-12P',
+    name: 'PCB Terminal Connector 12-Pin',
+    category: 'Wiring',
+    stock: 450,
+    price: 15.00,
+    reorderPoint: 100,
+    image: '/images/products/pcb-connector.jpg',
+    status: 'active',
+    description: 'Screwless push-in DIN-rail mountable terminal connector blocks with gold-plated pins',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000008',
+    sku: 'ALU-SHT-3MM',
+    name: 'Anodized Aluminum Sheet 3mm',
+    category: 'Raw Materials',
+    stock: 64,
+    price: 110.00,
+    reorderPoint: 20,
+    image: '/images/products/aluminum-sheet.jpg',
+    status: 'active',
+    description: '6061-T6 aerospace-grade brushed aluminum enclosure panel sheets (1000mm x 500mm)',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000009',
+    sku: 'RES-PCK-10K',
+    name: 'Precision Resistor Pack 10K Ohm',
+    category: 'Electronics',
+    stock: 82,
+    price: 32.00,
+    reorderPoint: 25,
+    image: '/images/products/resistor-pack.jpg',
+    status: 'active',
+    description: '0.1% tolerance thin-film surface mount resistors reel of 1000 pieces',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000010',
+    sku: 'HP-200-IND',
+    name: 'Hydraulic Pump HP-200',
+    category: 'Industrial Parts',
+    stock: 24,
+    price: 850.00,
+    reorderPoint: 5,
+    image: '/images/products/hydraulic-pump.jpg',
+    status: 'active',
+    description: 'High-pressure cast iron hydraulic power unit for heavy manufacturing and pneumatic automation',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000011',
+    sku: 'OCE-100-PRO',
+    name: 'Executive Ergonomic Chair OCE-100',
+    category: 'Office Supplies',
+    stock: 45,
+    price: 320.00,
+    reorderPoint: 10,
+    image: '/images/products/office-chair.jpg',
+    status: 'active',
+    description: 'Commercial ergonomic chair with 4D adjustable armrests, breathable lumbar mesh, and aluminum base',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000012',
+    sku: 'WM-BT500-RGB',
+    name: 'Wireless Ergonomic Mouse BT500',
+    category: 'Electronics',
+    stock: 120,
+    price: 48.00,
+    reorderPoint: 25,
+    image: '/images/products/wireless-mouse.jpg',
+    status: 'active',
+    description: 'Multi-device Bluetooth and 2.4GHz wireless mouse with stealth black ergonomic grip and 4000 DPI sensor',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000013',
+    sku: 'PKG-TPE-48M',
+    name: 'Industrial Packaging Tape 48mm',
+    category: 'Packaging',
+    stock: 350,
+    price: 8.50,
+    reorderPoint: 60,
+    image: '/images/products/packaging-tape.jpg',
+    status: 'active',
+    description: 'Heavy duty high-adhesion carton sealing tape rolls with handheld dispenser',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000014',
+    sku: 'SAF-HLM-PRO',
+    name: 'Industrial Safety Helmet & Visor',
+    category: 'Safety Equipment',
+    stock: 85,
+    price: 55.00,
+    reorderPoint: 20,
+    image: '/images/products/safety-helmet.jpg',
+    status: 'active',
+    description: 'Impact-resistant polycarbonate industrial hard hat with integrated eye shield and reflective decals',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000015',
+    sku: 'VLV-PNM-24V',
+    name: 'Pneumatic Solenoid Valve Block',
+    category: 'Industrial Parts',
+    stock: 42,
+    price: 210.00,
+    reorderPoint: 12,
+    image: '/images/products/pneumatic-valves.jpg',
+    status: 'active',
+    description: '5-way 2-position 24V DC solenoid directional control manifold with brass push-in fittings',
+  },
+  {
+    id: '30000000-0000-0000-0000-000000000016',
+    sku: 'PWR-DIN-24V',
+    name: 'DIN-Rail 24V 120W Power Supply',
+    category: 'Electronics',
+    stock: 95,
+    price: 92.00,
+    reorderPoint: 15,
+    image: '/images/products/power-supply.jpg',
+    status: 'active',
+    description: 'High-efficiency industrial switching power supply with overload protection and LED status',
+  },
 ];
 
 const productSchema = z.object({
@@ -52,6 +247,8 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -61,7 +258,6 @@ export default function ProductsPage() {
   });
 
   const handleBarcodeScan = (result: ScanResult) => {
-    // Look up product by barcode value, navigate to detail
     const product = mockProducts.find(
       (p) => p.sku === result.value || p.name.toLowerCase().includes(result.value.toLowerCase())
     );
@@ -74,6 +270,9 @@ export default function ProductsPage() {
   const filteredProducts = mockProducts.filter((p) => {
     if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+    if (searchQuery.trim() && !p.name.toLowerCase().includes(searchQuery.toLowerCase()) && !p.sku.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
     return true;
   });
 
@@ -125,7 +324,8 @@ export default function ProductsPage() {
     >
       <PageHeader
         title="Products"
-        description="Manage your product catalog and inventory"
+        description="Manage your enterprise product catalog, specifications, and real-time inventory"
+        bannerImage="/images/pages/banner-products.jpg"
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setScannerOpen(true)}>
@@ -138,41 +338,160 @@ export default function ProductsPage() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="Electronics">Electronics</SelectItem>
-            <SelectItem value="Industrial Parts">Industrial Parts</SelectItem>
-            <SelectItem value="Raw Materials">Raw Materials</SelectItem>
-            <SelectItem value="Office Supplies">Office Supplies</SelectItem>
-            <SelectItem value="Packaging">Packaging</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Controls & Filters Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          <Input
+            placeholder="Search products by name, SKU..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-xs"
+          />
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Electronics">Electronics</SelectItem>
+              <SelectItem value="Industrial Parts">Industrial Parts</SelectItem>
+              <SelectItem value="Raw Materials">Raw Materials</SelectItem>
+              <SelectItem value="Wiring">Wiring</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* View Mode Switcher */}
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
+          <Button
+            size="sm"
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            className="h-8 px-3 rounded-lg text-xs"
+            onClick={() => setViewMode('grid')}
+          >
+            <LayoutGrid className="h-3.5 w-3.5 mr-1.5" /> Visual Grid
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            className="h-8 px-3 rounded-lg text-xs"
+            onClick={() => setViewMode('table')}
+          >
+            <List className="h-3.5 w-3.5 mr-1.5" /> Data Table
+          </Button>
+        </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={filteredProducts as unknown as Record<string, unknown>[]}
-        selectable
-        searchPlaceholder="Search products by name, SKU..."
-        onRowClick={(row) => navigate(`/inventory/products/${row.id}`)}
-      />
+      {/* Grid View */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((p) => {
+            const isLowStock = p.stock <= p.reorderPoint;
+            return (
+              <motion.div
+                key={p.id}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                onClick={() => navigate(`/inventory/products/${p.id}`)}
+                className="group relative flex flex-col glass rounded-2xl border border-border overflow-hidden cursor-pointer hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all"
+              >
+                {/* Product Realistic Image Box */}
+                <div className="relative w-full h-52 overflow-hidden bg-black/40">
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
+                  
+                  {/* Category Pill */}
+                  <div className="absolute top-3 left-3">
+                    <Badge variant="secondary" className="glass text-xs font-semibold px-2.5 py-0.5 border border-white/10">
+                      {p.category}
+                    </Badge>
+                  </div>
+
+                  {/* Stock Status Pill */}
+                  <div className="absolute top-3 right-3">
+                    {isLowStock ? (
+                      <Badge className="bg-amber-500/90 text-white font-medium flex items-center gap-1 text-[11px] px-2 py-0.5 shadow-md">
+                        <AlertTriangle className="h-3 w-3" /> Low Stock
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-emerald-500/90 text-white font-medium flex items-center gap-1 text-[11px] px-2 py-0.5 shadow-md">
+                        <CheckCircle2 className="h-3 w-3" /> In Stock
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Price Tag */}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="text-xl font-bold text-white tracking-tight drop-shadow-md">
+                      ${p.price.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Quick Action Button */}
+                  <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground font-mono tracking-wider">{p.sku}</div>
+                    <h3 className="font-semibold text-base text-foreground group-hover:text-emerald-400 transition-colors line-clamp-1">
+                      {p.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                      {p.description}
+                    </p>
+                  </div>
+
+                  {/* Stock Progress & Info */}
+                  <div className="pt-2 border-t border-border/50">
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="text-muted-foreground">Available Quantity:</span>
+                      <span className={`font-bold ${isLowStock ? 'text-amber-400' : 'text-foreground'}`}>
+                        {p.stock} units
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isLowStock ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(100, (p.stock / (p.reorderPoint * 3)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredProducts as unknown as Record<string, unknown>[]}
+          selectable
+          searchPlaceholder="Filter table results..."
+          onRowClick={(row) => navigate(`/inventory/products/${row.id}`)}
+        />
+      )}
 
       {/* Add Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

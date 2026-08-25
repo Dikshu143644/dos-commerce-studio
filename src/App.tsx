@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/auth/AuthGuard';
+// AuthGuard disabled during development — login bypassed
+// import { AuthGuard } from '@/components/auth/AuthGuard';
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
@@ -38,6 +39,7 @@ const RolesPage = lazy(() => import('@/pages/settings/RolesPage'));
 const AuditLog = lazy(() => import('@/pages/settings/AuditLog'));
 const Branches = lazy(() => import('@/pages/settings/Branches'));
 const Login = lazy(() => import('@/pages/auth/Login'));
+const Landing = lazy(() => import('@/pages/Landing'));
 const Register = lazy(() => import('@/pages/auth/Register'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
 const StaffLogin = lazy(() => import('@/pages/auth/StaffLogin'));
@@ -48,19 +50,14 @@ function App() {
     <Suspense fallback={<LoadingSkeleton />}>
       <Routes>
         {/* Public routes */}
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/staff-login" element={<StaffLogin />} />
 
-        {/* Protected routes */}
-        <Route
-          element={
-            <AuthGuard>
-              <AppShell />
-            </AuthGuard>
-          }
-        >
+        {/* All routes accessible without auth during development */}
+        <Route element={<AppShell />}>
           <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
           <Route path="inventory/products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
           <Route path="inventory/products/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />

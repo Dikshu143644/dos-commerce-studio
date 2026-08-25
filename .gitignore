@@ -12,6 +12,10 @@ dist-ssr/
 .env.test.local
 .env.production.local
 
+# Agent / AI folders
+.agents/
+.codex/
+
 # Editor directories and files
 .vscode/
 !.vscode/extensions.json

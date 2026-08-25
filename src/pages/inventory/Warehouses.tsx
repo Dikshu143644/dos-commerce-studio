@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Warehouse, MapPin, User } from 'lucide-react';
+import { Plus, MapPin, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,12 +14,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { PageHeader } from '@/components/shared/PageHeader';
 
 const mockWarehouses = [
-  { id: '1', name: 'Main Warehouse', code: 'WH-MUM', city: 'Mumbai', state: 'Maharashtra', capacity: 10000, used: 7500, products: 1240, manager: 'Rajesh Kumar', isActive: true },
-  { id: '2', name: 'North Distribution Hub', code: 'WH-DEL', city: 'Delhi', state: 'Delhi NCR', capacity: 8000, used: 5200, products: 890, manager: 'Vikram Singh', isActive: true },
-  { id: '3', name: 'South Tech Center', code: 'WH-BLR', city: 'Bangalore', state: 'Karnataka', capacity: 6000, used: 4800, products: 720, manager: 'Anita Sharma', isActive: true },
-  { id: '4', name: 'East Wing Storage', code: 'WH-KOL', city: 'Kolkata', state: 'West Bengal', capacity: 5000, used: 1800, products: 345, manager: 'Suresh Das', isActive: true },
-  { id: '5', name: 'West Port Facility', code: 'WH-AHM', city: 'Ahmedabad', state: 'Gujarat', capacity: 7000, used: 6300, products: 680, manager: 'Mehul Patel', isActive: true },
-  { id: '6', name: 'Overflow Storage B2', code: 'WH-PUN', city: 'Pune', state: 'Maharashtra', capacity: 3000, used: 450, products: 110, manager: 'Deepak Joshi', isActive: false },
+  { id: '1', name: 'Main Warehouse', code: 'WH-MUM', city: 'Mumbai', state: 'Maharashtra', capacity: 10000, used: 7500, products: 1240, manager: 'Rajesh Kumar', isActive: true, image: '/images/warehouses/warehouse-mumbai.jpg' },
+  { id: '2', name: 'North Distribution Hub', code: 'WH-DEL', city: 'Delhi', state: 'Delhi NCR', capacity: 8000, used: 5200, products: 890, manager: 'Vikram Singh', isActive: true, image: '/images/warehouses/warehouse-delhi.jpg' },
+  { id: '3', name: 'South Tech Center', code: 'WH-BLR', city: 'Bangalore', state: 'Karnataka', capacity: 6000, used: 4800, products: 720, manager: 'Anita Sharma', isActive: true, image: '/images/warehouses/warehouse-bangalore.jpg' },
+  { id: '4', name: 'East Wing Storage', code: 'WH-KOL', city: 'Kolkata', state: 'West Bengal', capacity: 5000, used: 1800, products: 345, manager: 'Suresh Das', isActive: true, image: '/images/warehouses/warehouse-kolkata.jpg' },
+  { id: '5', name: 'West Port Facility', code: 'WH-AHM', city: 'Ahmedabad', state: 'Gujarat', capacity: 7000, used: 6300, products: 680, manager: 'Mehul Patel', isActive: true, image: '/images/warehouses/warehouse-ahmedabad.jpg' },
+  { id: '6', name: 'Overflow Storage B2', code: 'WH-PUN', city: 'Pune', state: 'Maharashtra', capacity: 3000, used: 450, products: 110, manager: 'Deepak Joshi', isActive: false, image: '/images/warehouses/warehouse-pune.jpg' },
 ];
 
 const warehouseSchema = z.object({
@@ -57,7 +57,8 @@ export default function WarehousesPage() {
     >
       <PageHeader
         title="Warehouses"
-        description="Manage your storage locations and capacity"
+        description="Manage your storage locations, automated distribution hubs, and real-time facility capacity"
+        bannerImage="/images/pages/banner-warehouses.jpg"
         actions={
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add Warehouse
@@ -75,51 +76,55 @@ export default function WarehousesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className="hover:border-primary/30 transition-colors cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary/10">
-                        <Warehouse className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">{wh.name}</h3>
-                        <p className="text-xs text-muted-foreground">{wh.code}</p>
-                      </div>
-                    </div>
-                    <Badge variant={wh.isActive ? 'default' : 'secondary'}>
+              <Card className="hover:border-emerald-500/40 transition-all cursor-pointer glass border border-border overflow-hidden group">
+                {/* Facility Photographic Banner */}
+                <div className="relative h-44 w-full overflow-hidden bg-black/50">
+                  <img
+                    src={wh.image}
+                    alt={wh.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                  
+                  <div className="absolute top-3 right-3">
+                    <Badge variant={wh.isActive ? 'default' : 'secondary'} className="shadow-md">
                       {wh.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {wh.city}, {wh.state}
+                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-base text-white drop-shadow-md">{wh.name}</h3>
+                      <p className="text-xs text-emerald-400 font-mono font-medium">{wh.code}</p>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Capacity</span>
-                        <span className={`font-medium ${getCapacityColor(usagePercent)}`}>
-                          {usagePercent}%
-                        </span>
-                      </div>
-                      <Progress value={usagePercent} className="h-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {wh.used.toLocaleString()} / {wh.capacity.toLocaleString()} units
-                      </p>
-                    </div>
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-400" />
+                    {wh.city}, {wh.state}
+                  </div>
 
-                    <div className="flex items-center justify-between border-t border-border pt-3">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        {wh.manager}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {wh.products} products
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Capacity</span>
+                      <span className={`font-semibold ${getCapacityColor(usagePercent)}`}>
+                        {usagePercent}%
                       </span>
                     </div>
+                    <Progress value={usagePercent} className="h-2" />
+                    <p className="text-[11px] text-muted-foreground">
+                      {wh.used.toLocaleString()} / {wh.capacity.toLocaleString()} units
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                      <span>{wh.manager}</span>
+                    </div>
+                    <span className="text-muted-foreground font-medium">{wh.products} products</span>
                   </div>
                 </CardContent>
               </Card>

@@ -322,8 +322,9 @@ export default function DealsPage() {
       className="space-y-6"
     >
       <PageHeader
-        title="Deals Pipeline"
-        description="Track opportunities through your sales process"
+        title="CRM Deals Pipeline"
+        description="Track enterprise revenue opportunities, stage probabilities, and active contract negotiations"
+        bannerImage="/images/backgrounds/ocean-sunset.jpg"
         actions={
           <div className="flex items-center gap-2">
             <div className="flex rounded-[12px] border border-border overflow-hidden">
@@ -340,7 +341,7 @@ export default function DealsPage() {
                 <List className="h-4 w-4" />
               </button>
             </div>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button onClick={() => setDialogOpen(true)} className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium">
               <Plus className="mr-2 h-4 w-4" /> Add Deal
             </Button>
           </div>

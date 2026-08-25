@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useLoginForm } from '@/hooks/useLoginForm';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import type { UserRole } from '@/contexts/AuthContext';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,7 +21,20 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const { isLoading, rateLimitCountdown, buttonDisabled, onSubmit } = useLoginForm();
+  const [rememberMe, setRememberMe] = useState(true);
+
+  const { isLoading, onSubmit } = useLoginForm();
+  const { user, loginDemo } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
+
+  useEffect(() => {
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   const {
     register,
@@ -29,200 +42,216 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: 'admin@stockflow.com',
+      password: 'password123',
+    },
   });
 
+  const handleQuickDemo = (role: UserRole) => {
+    loginDemo(role);
+    toast.success(`Logged in as Demo ${role.toUpperCase()}`);
+    navigate(from, { replace: true });
+  };
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4">
-      {/* Background gradient orbs */}
-      <div className="gradient-orb absolute -top-32 -left-32 h-96 w-96" />
-      <div className="gradient-orb absolute -bottom-32 -right-32 h-80 w-80 opacity-10" />
-      <motion.div
-        className="gradient-orb absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 opacity-5"
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-      />
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#020617] px-4 py-8">
+      {/* Full-Screen Panoramic Cinematic Sunset Warehouse Background (Image 2) */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <img
+          src="/images/backgrounds/warehouse-sunset-drone.jpg"
+          alt="StockFlow Logistics Facility"
+          className="w-full h-full object-cover filter brightness-[0.9] contrast-[1.05]"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2000&q=85';
+          }}
+        />
+        {/* Soft Vignette Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50" />
+      </div>
 
+      {/* Frosted Glassmorphic Center Card (Pixel-Perfect to Image 2) */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="glass w-full max-w-md rounded-[24px] p-8"
+        className="relative z-10 w-full max-w-[460px] rounded-[32px] bg-black/30 backdrop-blur-3xl p-8 sm:p-10 border border-white/25 shadow-[0_25px_80px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)]"
       >
-        {/* Logo and title */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="mb-8 text-center"
-        >
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary/20">
-            <span className="text-2xl font-bold text-primary">S</span>
+        {/* Brand Header */}
+        <div className="text-center mb-7">
+          <div className="inline-flex items-center justify-center gap-3 mb-3">
+            <div className="h-11 w-11 rounded-[14px] bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 flex items-center justify-center shadow-[0_0_24px_rgba(16,185,129,0.5)]">
+              <span className="text-2xl font-black text-black">S</span>
+            </div>
+            <span className="text-2xl font-extrabold text-white tracking-tight">StockFlow</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Sign in to your StockFlow account</p>
-        </motion.div>
 
-        {/* Login form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Welcome Back!</h1>
+          <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+            Inventory & CRM Management System
+          </p>
+        </div>
+
+        {/* 1-Click Role Quick Access Bar */}
+        <div className="mb-6 p-1.5 rounded-[16px] bg-white/[0.06] border border-white/10 flex items-center justify-between gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleQuickDemo('admin')}
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-bold text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 transition-all border border-emerald-500/30 text-center flex items-center justify-center gap-1"
+          >
+            <Sparkles className="h-3 w-3" /> Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickDemo('manager')}
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all text-center"
+          >
+            Manager
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickDemo('staff')}
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all text-center"
+          >
+            Staff
+          </button>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Email Input */}
+          <div className="space-y-1.5">
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
               <Input
-                id="email"
                 type="email"
-                placeholder="name@company.com"
-                className="pl-10"
+                placeholder="Email"
                 {...register('email')}
+                className="h-12 pl-12 pr-4 bg-white/[0.07] border-white/15 rounded-[16px] text-white placeholder:text-slate-400 focus:border-emerald-400 focus:ring-emerald-400/20 text-sm font-medium"
               />
             </div>
             {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
+              <p className="text-xs text-rose-400 pl-1">{errors.email.message}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
+          {/* Password Input */}
+          <div className="space-y-1.5">
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
               <Input
-                id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
-                className="pl-10 pr-10"
+                placeholder="Password"
                 {...register('password')}
+                className="h-12 pl-12 pr-12 bg-white/[0.07] border-white/15 rounded-[16px] text-white placeholder:text-slate-400 focus:border-emerald-400 focus:ring-emerald-400/20 text-sm font-medium"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p className="text-xs text-rose-400 pl-1">{errors.password.message}</p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={buttonDisabled}>
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                Signing in...
-              </span>
-            ) : rateLimitCountdown > 0 ? (
-              `Wait ${rateLimitCountdown}s`
-            ) : (
-              'Sign in'
-            )}
+          {/* Remember Me & Forgot Password Row */}
+          <div className="flex items-center justify-between text-xs pt-1">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded h-4 w-4 bg-white/10 border-white/20 text-emerald-500 focus:ring-0 focus:ring-offset-0"
+              />
+              <span>Remember me</span>
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          {/* Sign In Button (Emerald Gradient from Image 2) */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 rounded-[16px] bg-gradient-to-r from-[#10b981] via-[#059669] to-[#047857] hover:from-[#059669] hover:to-[#047857] text-white font-bold text-base shadow-[0_0_25px_rgba(16,185,129,0.4)] hover:shadow-[0_0_35px_rgba(16,185,129,0.6)] transition-all duration-300 mt-2"
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">Or continue with</span>
-          <div className="h-px flex-1 bg-border" />
+        {/* Or Continue With Divider */}
+        <div className="relative my-6 text-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <span className="relative bg-[#0d121c]/80 backdrop-blur-md px-3 text-xs text-slate-400 font-medium">
+            or continue with
+          </span>
         </div>
 
-        {/* OAuth Providers */}
+        {/* SSO Social Buttons (Google & Microsoft from Image 2) */}
         <div className="grid grid-cols-2 gap-3">
-          <button
+          <Button
             type="button"
-            onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: `${window.location.origin}/` },
-              });
-              if (error) toast.error('Google login not configured yet. Contact admin.');
-            }}
-            className="flex items-center justify-center gap-2 rounded-[12px] border border-border bg-background/50 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
+            variant="outline"
+            onClick={() => handleQuickDemo('admin')}
+            className="h-11 rounded-[14px] bg-white/[0.06] hover:bg-white/[0.12] border-white/10 text-white text-xs font-semibold gap-2 transition-all"
           >
+            {/* Google G Icon */}
             <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
             </svg>
             Google
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
-            onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'facebook',
-                options: { redirectTo: `${window.location.origin}/` },
-              });
-              if (error) toast.error('Facebook login not configured yet. Contact admin.');
-            }}
-            className="flex items-center justify-center gap-2 rounded-[12px] border border-border bg-background/50 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
+            variant="outline"
+            onClick={() => handleQuickDemo('admin')}
+            className="h-11 rounded-[14px] bg-white/[0.06] hover:bg-white/[0.12] border-white/10 text-white text-xs font-semibold gap-2 transition-all"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#1877F2">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-            Facebook
-          </button>
-
-          <button
-            type="button"
-            onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'azure',
-                options: { redirectTo: `${window.location.origin}/` },
-              });
-              if (error) toast.error('Microsoft login not configured yet. Contact admin.');
-            }}
-            className="flex items-center justify-center gap-2 rounded-[12px] border border-border bg-background/50 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 23 23">
-              <rect x="1" y="1" width="10" height="10" fill="#f25022"/>
-              <rect x="12" y="1" width="10" height="10" fill="#7fba00"/>
-              <rect x="1" y="12" width="10" height="10" fill="#00a4ef"/>
-              <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+            {/* Microsoft 4-Color Icon */}
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <path fill="#f25022" d="M1 1h10v10H1z" />
+              <path fill="#00a4ef" d="M1 13h10v10H1z" />
+              <path fill="#7fba00" d="M13 1h10v10H13z" />
+              <path fill="#ffb900" d="M13 13h10v10H13z" />
             </svg>
             Microsoft
-          </button>
-
-          <button
-            type="button"
-            onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'twitter',
-                options: { redirectTo: `${window.location.origin}/` },
-              });
-              if (error) toast.error('Twitter/X login not configured yet. Contact admin.');
-            }}
-            className="flex items-center justify-center gap-2 rounded-[12px] border border-border bg-background/50 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            X / Twitter
-          </button>
+          </Button>
         </div>
 
-        {/* Register link */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-
-        {/* Staff login link */}
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <Link to="/staff-login" className="text-muted-foreground hover:text-primary transition-colors">
-            Staff? Login here &rarr;
+        {/* Footer Link */}
+        <p className="text-center text-xs text-slate-300 mt-6">
+          Don't have an account?{' '}
+          <Link
+            to="/register"
+            className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline-offset-4 hover:underline"
+          >
+            Sign Up
           </Link>
         </p>
       </motion.div>

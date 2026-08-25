@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 export function TopNav() {
   const { setMobileOpen } = useSidebar();
-  const { user, logout } = useAuth();
+  const { user, logout, userRole, loginDemo } = useAuth();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -125,27 +125,53 @@ export function TopNav() {
           </Badge>
         </Button>
 
+        {/* Active role badge */}
+        <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="capitalize">{userRole}</span>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
+            <Button variant="ghost" size="icon" className="rounded-full ring-1 ring-primary/20" aria-label="User menu">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">{initials}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{user?.user_metadata?.full_name || 'User'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email || 'user@example.com'}</p>
+                <div className="pt-1">
+                  <span className="inline-flex items-center rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary capitalize">
+                    Role: {userRole}
+                  </span>
+                </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+              Switch Demo Perspective:
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => loginDemo('admin')} className="cursor-pointer">
+              👑 Admin (Full Access)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => loginDemo('manager')} className="cursor-pointer">
+              💼 Manager (CRM & Inventory)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => loginDemo('staff')} className="cursor-pointer">
+              📦 Staff (Operations)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => loginDemo('client')} className="cursor-pointer">
+              👤 Client (Orders & Invoices)
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
