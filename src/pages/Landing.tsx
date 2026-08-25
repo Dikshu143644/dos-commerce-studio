@@ -8,17 +8,13 @@ import {
   Package,
   TrendingUp,
   Sparkles,
-  ShieldCheck,
   Building2,
   Truck,
   Boxes,
-  HelpCircle,
   ChevronDown,
   X,
   Maximize2,
   Volume2,
-  RotateCcw,
-  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
