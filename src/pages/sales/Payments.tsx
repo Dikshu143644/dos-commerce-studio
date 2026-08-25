@@ -62,21 +62,32 @@ export default function PaymentsPage() {
   const { data: outstandingData } = useOutstandingInvoices();
   const recordPayment = useRecordPayment();
 
-  const allInvoices = (invoicesData as Invoice[] | undefined) ?? [];
-  const outstandingInvoices = (outstandingData as Invoice[] | undefined) ?? [];
+  const allInvoices = useMemo<Invoice[]>(() => {
+    if (Array.isArray(invoicesData)) return invoicesData as Invoice[];
+    if (Array.isArray((invoicesData as any)?.data)) return (invoicesData as any).data as Invoice[];
+    return [];
+  }, [invoicesData]);
+
+  const outstandingInvoices = useMemo<Invoice[]>(() => {
+    if (Array.isArray(outstandingData)) return outstandingData as Invoice[];
+    if (Array.isArray((outstandingData as any)?.data)) return (outstandingData as any).data as Invoice[];
+    return [];
+  }, [outstandingData]);
 
   // Compute KPI stats
   const stats = useMemo(() => {
     const now = new Date();
-    const totalReceived = allInvoices.reduce((sum, inv) => sum + inv.amount_paid, 0);
-    const totalOutstanding = allInvoices.reduce(
-      (sum, inv) => sum + (inv.total_amount - inv.amount_paid),
+    const invList = Array.isArray(allInvoices) ? allInvoices : [];
+    const outList = Array.isArray(outstandingInvoices) ? outstandingInvoices : [];
+    const totalReceived = invList.reduce((sum: number, inv: Invoice) => sum + (inv?.amount_paid || 0), 0);
+    const totalOutstanding = invList.reduce(
+      (sum: number, inv: Invoice) => sum + ((inv?.total_amount || 0) - (inv?.amount_paid || 0)),
       0
     );
-    const overdueAmount = outstandingInvoices
-      .filter((inv) => inv.due_date && new Date(inv.due_date) < now)
-      .reduce((sum, inv) => sum + (inv.total_amount - inv.amount_paid), 0);
-    const totalInvoiced = allInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const overdueAmount = outList
+      .filter((inv: Invoice) => inv?.due_date && new Date(inv.due_date) < now)
+      .reduce((sum: number, inv: Invoice) => sum + ((inv?.total_amount || 0) - (inv?.amount_paid || 0)), 0);
+    const totalInvoiced = invList.reduce((sum: number, inv: Invoice) => sum + (inv?.total_amount || 0), 0);
     const collectionRate = totalInvoiced > 0 ? (totalReceived / totalInvoiced) * 100 : 0;
 
     return { totalReceived, totalOutstanding, overdueAmount, collectionRate };

@@ -56,12 +56,17 @@ export default function InvoicesPage() {
   const recordPayment = useRecordPayment();
   const emailInvoice = useEmailInvoice();
 
-  const invoices = (invoicesData as Invoice[] | undefined) ?? [];
+  const invoices = useMemo<Invoice[]>(() => {
+    if (Array.isArray(invoicesData)) return invoicesData as Invoice[];
+    if (Array.isArray((invoicesData as any)?.data)) return (invoicesData as any).data as Invoice[];
+    return [];
+  }, [invoicesData]);
 
   // Summary stats
   const stats = useMemo(() => {
-    const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.total_amount, 0);
-    const totalCollected = invoices.reduce((sum, inv) => sum + inv.amount_paid, 0);
+    const list = Array.isArray(invoices) ? invoices : [];
+    const totalInvoiced = list.reduce((sum: number, inv: Invoice) => sum + (inv?.total_amount || 0), 0);
+    const totalCollected = list.reduce((sum: number, inv: Invoice) => sum + (inv?.amount_paid || 0), 0);
     const totalOutstanding = totalInvoiced - totalCollected;
     return { totalInvoiced, totalCollected, totalOutstanding };
   }, [invoices]);
