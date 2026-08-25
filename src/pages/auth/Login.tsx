@@ -118,63 +118,63 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#020617] px-4 py-8">
-      {/* Full-Screen Panoramic Cinematic Sunset Warehouse Background (Image 2) */}
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#FDFBF7] px-4 py-8">
+      {/* Warm Ambient Warehouse Background Overlay (Image 1 & 2 fusion) */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <img
           src="/images/backgrounds/warehouse-sunset-drone.jpg"
           alt="StockFlow Logistics Facility"
-          className="w-full h-full object-cover filter brightness-[0.9] contrast-[1.05]"
+          className="w-full h-full object-cover filter brightness-[0.95] contrast-[1.02]"
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2000&q=85';
           }}
         />
-        {/* Soft Vignette Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50" />
+        {/* Warm Golden Sunlight Vignette Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-amber-950/20 to-black/40" />
       </div>
 
-      {/* Frosted Glassmorphic Center Card (Pixel-Perfect to Image 2) */}
+      {/* Clean White Frosted Glass Center Card in White/Orange Style */}
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-[460px] rounded-[32px] bg-black/30 backdrop-blur-3xl p-8 sm:p-10 border border-white/25 shadow-[0_25px_80px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)]"
+        className="relative z-10 w-full max-w-[460px] rounded-[32px] bg-white/95 backdrop-blur-2xl p-8 sm:p-10 border border-white/60 shadow-[0_25px_80px_rgba(0,0,0,0.25)] text-slate-900"
       >
         {/* Brand Header */}
-        <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center gap-3 mb-3">
-            <div className="h-11 w-11 rounded-[14px] bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 flex items-center justify-center shadow-[0_0_24px_rgba(16,185,129,0.5)]">
-              <span className="text-2xl font-black text-black">S</span>
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center gap-2.5 mb-2.5">
+            <div className="h-11 w-11 rounded-[14px] bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/25">
+              <span className="text-2xl font-black text-white">S</span>
             </div>
-            <span className="text-2xl font-extrabold text-white tracking-tight">StockFlow</span>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">StockFlow</span>
           </div>
 
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Welcome Back!</h1>
-          <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back!</h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             Inventory & CRM Management System
           </p>
         </div>
 
-        {/* 1-Click Role Quick Access Bar */}
-        <div className="mb-6 p-1.5 rounded-[16px] bg-white/[0.06] border border-white/10 flex items-center justify-between gap-1.5">
+        {/* 1-Click Role Quick Access Bar in White/Orange Style */}
+        <div className="mb-6 p-1.5 rounded-[16px] bg-slate-100/80 border border-slate-200/80 flex items-center justify-between gap-1.5">
           <button
             type="button"
             onClick={() => handleQuickDemo('admin')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-bold text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 transition-all border border-emerald-500/30 text-center flex items-center justify-center gap-1"
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-bold text-orange-600 bg-white hover:bg-orange-50 transition-all border border-orange-200/80 shadow-xs text-center flex items-center justify-center gap-1"
           >
-            <Sparkles className="h-3 w-3" /> Admin
+            <Sparkles className="h-3 w-3 text-orange-500" /> Admin
           </button>
           <button
             type="button"
             onClick={() => handleQuickDemo('manager')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all text-center"
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all text-center"
           >
             Manager
           </button>
           <button
             type="button"
             onClick={() => handleQuickDemo('staff')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all text-center"
+            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all text-center"
           >
             Staff
           </button>
@@ -190,11 +190,11 @@ export default function LoginPage() {
                 type="email"
                 placeholder="Email"
                 {...register('email')}
-                className="h-12 pl-12 pr-4 bg-white/[0.07] border-white/15 rounded-[16px] text-white placeholder:text-slate-400 focus:border-emerald-400 focus:ring-emerald-400/20 text-sm font-medium"
+                className="h-12 pl-12 pr-4 bg-slate-50 border-slate-200/90 rounded-[16px] text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 text-sm font-medium"
               />
             </div>
             {errors.email && (
-              <p className="text-xs text-rose-400 pl-1">{errors.email.message}</p>
+              <p className="text-xs text-rose-500 pl-1 font-medium">{errors.email.message}</p>
             )}
           </div>
 
@@ -206,69 +206,68 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 {...register('password')}
-                className="h-12 pl-12 pr-12 bg-white/[0.07] border-white/15 rounded-[16px] text-white placeholder:text-slate-400 focus:border-emerald-400 focus:ring-emerald-400/20 text-sm font-medium"
+                className="h-12 pl-12 pr-12 bg-slate-50 border-slate-200/90 rounded-[16px] text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 text-sm font-medium"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-xs text-rose-400 pl-1">{errors.password.message}</p>
+              <p className="text-xs text-rose-500 pl-1 font-medium">{errors.password.message}</p>
             )}
           </div>
 
           {/* Remember Me & Forgot Password Row */}
           <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-900 select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded h-4 w-4 bg-white/10 border-white/20 text-emerald-500 focus:ring-0 focus:ring-offset-0"
+                className="rounded h-4 w-4 bg-slate-100 border-slate-300 text-orange-500 focus:ring-0 focus:ring-offset-0"
               />
-              <span>Remember me</span>
+              <span className="font-medium">Remember me</span>
             </label>
             <Link
               to="/forgot-password"
-              className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+              className="text-slate-500 hover:text-orange-600 transition-colors font-semibold"
             >
               Forgot password?
             </Link>
           </div>
 
-          {/* Sign In Button (Emerald Gradient from Image 2) */}
+          {/* Sign In Button (Radiant Warm Orange Gradient) */}
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 rounded-[16px] bg-gradient-to-r from-[#10b981] via-[#059669] to-[#047857] hover:from-[#059669] hover:to-[#047857] text-white font-bold text-base shadow-[0_0_25px_rgba(16,185,129,0.4)] hover:shadow-[0_0_35px_rgba(16,185,129,0.6)] transition-all duration-300 mt-2"
+            className="w-full h-12 rounded-[16px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-base shadow-lg shadow-orange-500/25 transition-all duration-300 mt-2"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
 
         {/* Or Continue With Divider */}
-        <div className="relative my-6 text-center">
+        <div className="relative my-5 text-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10" />
+            <div className="w-full border-t border-slate-200" />
           </div>
-          <span className="relative bg-[#0d121c]/80 backdrop-blur-md px-3 text-xs text-slate-400 font-medium">
+          <span className="relative bg-white px-3 text-xs text-slate-400 font-medium">
             or continue with
           </span>
         </div>
 
-        {/* SSO Social Buttons (Google & Microsoft from Image 2) */}
+        {/* SSO Social Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => handleQuickDemo('admin')}
-            className="h-11 rounded-[14px] bg-white/[0.06] hover:bg-white/[0.12] border-white/10 text-white text-xs font-semibold gap-2 transition-all"
+            className="h-11 rounded-[14px] bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 text-xs font-bold gap-2 transition-all"
           >
-            {/* Google G Icon */}
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -294,14 +293,13 @@ export default function LoginPage() {
             type="button"
             variant="outline"
             onClick={() => handleQuickDemo('admin')}
-            className="h-11 rounded-[14px] bg-white/[0.06] hover:bg-white/[0.12] border-white/10 text-white text-xs font-semibold gap-2 transition-all"
+            className="h-11 rounded-[14px] bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 text-xs font-bold gap-2 transition-all"
           >
-            {/* Microsoft 4-Color Icon */}
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path fill="#f25022" d="M1 1h10v10H1z" />
               <path fill="#00a4ef" d="M1 13h10v10H1z" />
-              <path fill="#7fba00" d="M13 1h10v10H13z" />
-              <path fill="#ffb900" d="M13 13h10v10H13z" />
+              <path fill="#7fba00" d="M13 1h10v10H1z" />
+              <path fill="#ffb900" d="M13 13h10v10H1z" />
             </svg>
             Microsoft
           </Button>
@@ -313,35 +311,35 @@ export default function LoginPage() {
             type="button"
             variant="outline"
             onClick={() => setShowOtpModal(true)}
-            className="w-full h-10 rounded-[14px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold gap-2 transition-all"
+            className="w-full h-11 rounded-[14px] bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-600 text-xs font-bold gap-2 transition-all"
           >
-            <PhoneCall className="h-3.5 w-3.5" /> Sign In via SMS / WhatsApp OTP
+            <PhoneCall className="h-4 w-4" /> Sign In via SMS / WhatsApp OTP
           </Button>
         </div>
 
         {/* Footer Link */}
-        <p className="text-center text-xs text-slate-300 mt-6">
+        <p className="text-center text-xs text-slate-500 mt-6">
           Don't have an account?{' '}
           <Link
             to="/register"
-            className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline-offset-4 hover:underline"
+            className="text-orange-600 hover:text-orange-700 font-bold transition-colors underline-offset-4 hover:underline"
           >
             Sign Up
           </Link>
         </p>
       </motion.div>
 
-      {/* Opal SMS OTP Verification Modal */}
+      {/* Opal SMS OTP Verification Modal in Clean White/Orange Style */}
       <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
-        <DialogContent className="sm:max-w-[420px] rounded-[28px] bg-[#0F172A]/95 border border-white/20 backdrop-blur-2xl text-white p-6 shadow-2xl">
+        <DialogContent className="sm:max-w-[420px] rounded-[28px] bg-white border border-slate-200 text-slate-900 p-6 shadow-2xl">
           <DialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 border border-orange-200 shadow-xs">
+              <ShieldCheck className="h-7 w-7 text-orange-500" />
             </div>
-            <DialogTitle className="text-xl font-bold text-center text-white">
+            <DialogTitle className="text-xl font-black text-center text-slate-900">
               Opal SMS Verification
             </DialogTitle>
-            <DialogDescription className="text-xs text-center text-slate-300">
+            <DialogDescription className="text-xs text-center text-slate-500">
               Authenticate securely via real-time cryptographic SMS OTP
             </DialogDescription>
           </DialogHeader>
@@ -350,13 +348,13 @@ export default function LoginPage() {
             {!otpSent ? (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Mobile Phone Number</label>
+                  <label className="text-xs font-bold text-slate-700">Mobile Phone Number</label>
                   <Input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="h-11 bg-white/5 border-white/15 rounded-xl text-white text-sm"
+                    className="h-11 bg-slate-50 border-slate-200 rounded-xl text-slate-900 text-sm font-medium focus:border-orange-500"
                   />
                 </div>
 
@@ -365,7 +363,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => handleSendOtp('sms')}
                     disabled={isSendingOtp}
-                    className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5"
+                    className="h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold gap-1.5 shadow-md shadow-orange-500/20"
                   >
                     <PhoneCall className="h-3.5 w-3.5" /> Send SMS OTP
                   </Button>
@@ -374,7 +372,7 @@ export default function LoginPage() {
                     variant="outline"
                     onClick={() => handleSendOtp('whatsapp')}
                     disabled={isSendingOtp}
-                    className="h-10 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-bold gap-1.5"
+                    className="h-10 rounded-xl border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-bold gap-1.5"
                   >
                     WhatsApp OTP
                   </Button>
@@ -382,24 +380,24 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
-                  <p className="text-xs text-emerald-300 font-medium">
-                    Code dispatched to <span className="font-bold text-white">{phone}</span>
+                <div className="rounded-xl bg-orange-50 border border-orange-200 p-3 text-center">
+                  <p className="text-xs text-orange-800 font-bold">
+                    Code dispatched to <span className="text-slate-900">{phone}</span>
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
                     Valid for {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')} min
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Enter 6-Digit Code</label>
+                  <label className="text-xs font-bold text-slate-700">Enter 6-Digit Code</label>
                   <Input
                     type="text"
                     maxLength={6}
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                     placeholder="123456"
-                    className="h-12 bg-white/5 border-white/20 rounded-xl text-center text-xl font-mono tracking-[0.4em] font-bold text-emerald-400"
+                    className="h-12 bg-orange-50/50 border-orange-300 rounded-xl text-center text-2xl font-mono tracking-[0.4em] font-black text-orange-600 focus:border-orange-500 focus:ring-orange-500/20"
                   />
                 </div>
 
@@ -407,7 +405,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handleVerifyOtp}
                   disabled={isVerifyingOtp || otpCode.length < 4}
-                  className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25"
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm shadow-md shadow-orange-500/25"
                 >
                   {isVerifyingOtp ? 'Verifying...' : 'Verify & Log In'}
                 </Button>
@@ -416,7 +414,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setOtpSent(false)}
-                    className="text-slate-400 hover:text-white"
+                    className="text-slate-500 hover:text-slate-800 font-medium"
                   >
                     Change Number
                   </button>
@@ -424,7 +422,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => handleSendOtp('sms')}
                     disabled={timer > 240}
-                    className="text-emerald-400 hover:text-emerald-300 font-semibold disabled:opacity-50"
+                    className="text-orange-600 hover:text-orange-700 font-bold disabled:opacity-50"
                   >
                     Resend Code
                   </button>

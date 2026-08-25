@@ -491,21 +491,21 @@ export default function CustomersPage() {
                   className="rounded-[24px] glass border border-border hover:border-emerald-500/40 transition-all duration-300 p-5 group cursor-pointer relative overflow-hidden hover:shadow-xl"
                 >
                   {/* Ambient Glow */}
-                  <div className="absolute -right-12 -top-12 w-36 h-36 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-colors" />
+                  <div className="absolute -right-12 -top-12 w-36 h-36 rounded-full bg-orange-500/10 blur-2xl pointer-events-none group-hover:bg-orange-500/20 transition-colors" />
 
                   {/* Header Row: Avatar & Company */}
                   <div className="flex items-start justify-between gap-3 relative z-10">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-[16px] bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+                      <div className="h-10 w-10 rounded-[12px] bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center font-extrabold text-white text-base shadow-xs shadow-orange-500/20">
                         {(cust.name || 'C').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-bold text-foreground text-base group-hover:text-emerald-400 transition-colors leading-tight">
+                        <h3 className="font-bold text-slate-900 text-base group-hover:text-orange-600 transition-colors leading-tight">
                           {cust.name || 'Unnamed Client'}
                         </h3>
                         {cust.company && (
-                          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
-                            <Building2 className="h-3 w-3 text-emerald-400/80" /> {cust.company}
+                          <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                            <Building2 className="h-3 w-3 text-orange-500" /> {cust.company}
                           </p>
                         )}
                       </div>
@@ -516,45 +516,45 @@ export default function CustomersPage() {
                   </div>
 
                   {/* Contact Info Pills */}
-                  <div className="space-y-1.5 my-4 text-xs text-muted-foreground relative z-10">
+                  <div className="space-y-1.5 my-4 text-xs text-slate-600 relative z-10">
                     {cust.email && (
                       <p className="flex items-center gap-2 truncate">
-                        <Mail className="h-3.5 w-3.5 text-emerald-400/70 shrink-0" />
+                        <Mail className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                         <span className="truncate">{cust.email}</span>
                       </p>
                     )}
                     {cust.phone && (
                       <p className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5 text-emerald-400/70 shrink-0" />
+                        <Phone className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                         <span>{cust.phone}</span>
                       </p>
                     )}
                     {cust.city && (
                       <p className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-emerald-400/70 shrink-0" />
+                        <MapPin className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                         <span>{cust.city}, {cust.country}</span>
                       </p>
                     )}
                   </div>
 
                   {/* Financial & Order Telemetry Bento Row */}
-                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/40 text-center relative z-10">
-                    <div className="bg-secondary/40 border border-border/40 rounded-[12px] p-2.5">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Lifetime Value</p>
-                      <p className="text-base font-extrabold text-emerald-400 font-mono mt-0.5">
+                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/80 text-center relative z-10">
+                    <div className="bg-orange-50/60 border border-orange-100 rounded-[12px] p-2.5">
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Lifetime Value</p>
+                      <p className="text-base font-extrabold text-orange-600 font-mono mt-0.5">
                         ${(cust.total_spent || 0).toLocaleString()}
                       </p>
                     </div>
-                    <div className="bg-secondary/40 border border-border/40 rounded-[12px] p-2.5">
-                      <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Orders</p>
-                      <p className="text-base font-extrabold text-foreground font-mono mt-0.5">
+                    <div className="bg-slate-50 border border-slate-200 rounded-[12px] p-2.5">
+                      <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Orders</p>
+                      <p className="text-base font-extrabold text-slate-900 font-mono mt-0.5">
                         {cust.total_orders || 0} fulfilled
                       </p>
                     </div>
                   </div>
 
                   {/* Footer Action */}
-                  <div className="mt-3 flex items-center justify-between text-xs text-emerald-400 font-medium pt-2 group-hover:translate-x-1 transition-transform">
+                  <div className="mt-3 flex items-center justify-between text-xs text-orange-600 font-bold pt-2 group-hover:translate-x-1 transition-transform">
                     <span>View Client Profile</span>
                     <ArrowUpRight className="h-4 w-4" />
                   </div>

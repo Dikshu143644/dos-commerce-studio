@@ -20,22 +20,22 @@ import { cn } from '@/lib/utils';
 
 export function TopNav() {
   const { setMobileOpen } = useSidebar();
-  const { user, logout, userRole, loginDemo } = useAuth();
+  const { user, profile, logout, userRole, loginDemo } = useAuth();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-    : 'U';
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || 'DOS-APP';
+  const initials = displayName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   // Full-screen search overlay for mobile
   if (isMobile && searchOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md p-4">
+      <div className="fixed inset-0 z-50 flex flex-col bg-white/98 backdrop-blur-md p-4">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -49,7 +49,7 @@ export function TopNav() {
             autoFocus
             type="text"
             placeholder="Search..."
-            className="flex-1 h-10 rounded-lg border border-border bg-secondary/50 px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="flex-1 h-10 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
             onKeyDown={(e) => {
               if (e.key === 'Escape') setSearchOpen(false);
             }}
@@ -60,7 +60,7 @@ export function TopNav() {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-background/60 backdrop-blur-md px-4 md:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 md:px-6">
       <Button
         variant="ghost"
         size="icon"

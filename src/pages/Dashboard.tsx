@@ -122,91 +122,73 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="relative space-y-6">
-      {/* Cinematic Mountain Sunset Backdrop bleeding through at 12% opacity (Image 3 Screen 01) */}
-      <div className="absolute -inset-6 pointer-events-none z-0 overflow-hidden rounded-[32px]">
-        <img
-          src="/images/backgrounds/mountain-sunset.jpg"
-          alt=""
-          className="w-full h-full object-cover opacity-12 filter saturate-150 brightness-75"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=85';
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/95 to-background" />
-      </div>
-
-      <div className="relative z-10 space-y-6">
-        {/* Top Header Banner matching Image 3 Screen 01 */}
-        <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#0F172A]/70 backdrop-blur-xl p-6 md:p-8 shadow-xl">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                Good morning, Admin 👋
-              </h1>
-              <p className="text-sm text-slate-300 font-medium mt-1">
-                Here's what's happening with your enterprise business today.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 mt-4 sm:mt-0">
-              <Button variant="outline" size="sm" asChild className="rounded-xl border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs">
-                <Link to="/reports/export">
-                  <BarChart3 className="mr-2 h-4 w-4 text-emerald-400" /> Export Report
-                </Link>
-              </Button>
-              <Button size="sm" asChild className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold shadow-lg shadow-emerald-500/25">
-                <Link to="/inventory/products">
-                  <Plus className="mr-2 h-4 w-4" /> Add Product
-                </Link>
-              </Button>
-            </div>
+    <div className="space-y-6">
+      {/* Top Header Banner in White/Orange landing style */}
+      <div className="relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-6 md:p-8 shadow-xs">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+              Good morning, Admin 👋
+            </h1>
+            <p className="text-sm text-slate-600 font-medium mt-1">
+              Here's what's happening with your enterprise inventory and CRM today.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-4 sm:mt-0">
+            <Button variant="outline" size="sm" asChild className="rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold">
+              <Link to="/reports/export">
+                <BarChart3 className="mr-2 h-4 w-4 text-orange-500" /> Export Report
+              </Link>
+            </Button>
+            <Button size="sm" asChild className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20">
+              <Link to="/inventory/products">
+                <Plus className="mr-2 h-4 w-4" /> Add Product
+              </Link>
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* 4 Main 4K KPI Cards matching Image 3 Screen 01 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <KPICard
-            label="Total Revenue"
-            value="₹24,56,600"
-            icon={DollarSign}
-            trend={{ value: 18.4, isPositive: true }}
-            description="vs last month"
-            bgImage="/images/cards/card-revenue-bg.jpg"
-            className="rounded-[20px] bg-[#0F172A]/60 backdrop-blur-xl border border-white/10"
-          />
-          <KPICard
-            label="Total Orders"
-            value="1,245"
-            icon={ShoppingCart}
-            trend={{ value: 12.2, isPositive: true }}
-            description="vs last month"
-            bgImage="/images/cards/card-logistics-bg.jpg"
-            className="rounded-[20px] bg-[#0F172A]/60 backdrop-blur-xl border border-white/10"
-          />
-          <KPICard
-            label="Active Customers"
-            value="856"
-            icon={Users}
-            trend={{ value: 8.6, isPositive: true }}
-            description="verified accounts"
-            bgImage="/images/cards/card-crm-bg.jpg"
-            className="rounded-[20px] bg-[#0F172A]/60 backdrop-blur-xl border border-white/10"
-          />
-          <KPICard
-            label="Inventory Valuation"
-            value="₹12,45,680"
-            icon={Package}
-            trend={{ value: 4.8, isPositive: true }}
-            description="1,266 products active"
-            bgImage="/images/cards/card-products-bg.jpg"
-            className="rounded-[20px] bg-[#0F172A]/60 backdrop-blur-xl border border-white/10"
-          />
-        </motion.div>
+      {/* 4 Main KPI Cards in White/Orange style */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <KPICard
+          label="Total Revenue"
+          value="₹24,56,600"
+          icon={DollarSign}
+          trend={{ value: 18.4, isPositive: true }}
+          description="vs last month"
+          bgImage="/images/cards/card-revenue-bg.jpg"
+        />
+        <KPICard
+          label="Total Orders"
+          value="1,245"
+          icon={ShoppingCart}
+          trend={{ value: 12.2, isPositive: true }}
+          description="vs last month"
+          bgImage="/images/cards/card-logistics-bg.jpg"
+        />
+        <KPICard
+          label="Active Customers"
+          value="856"
+          icon={Users}
+          trend={{ value: 8.6, isPositive: true }}
+          description="verified accounts"
+          bgImage="/images/cards/card-crm-bg.jpg"
+        />
+        <KPICard
+          label="Inventory Valuation"
+          value="₹12,45,680"
+          icon={Package}
+          trend={{ value: 4.8, isPositive: true }}
+          description="1,266 products active"
+          bgImage="/images/cards/card-products-bg.jpg"
+        />
+      </motion.div>
 
       {/* CRM Widgets */}
       <motion.div
@@ -564,7 +546,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </motion.div>
-      </div>
     </div>
   );
 }
