@@ -1,59 +1,59 @@
 @import 'tailwindcss';
 
 @theme inline {
-  --color-background: #FDFBF7;
+  --color-background: #FAFAFA;
   --color-foreground: #0F172A;
   --color-card: #FFFFFF;
   --color-card-foreground: #0F172A;
-  --color-primary: #F97316;
+  --color-primary: #7C3AED;
   --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F1F5F9;
-  --color-secondary-foreground: #334155;
+  --color-secondary: #F4F4F5;
+  --color-secondary-foreground: #18181B;
   --color-muted: #F8FAFC;
   --color-muted-foreground: #64748B;
-  --color-accent: #F59E0B;
+  --color-accent: #F97316;
   --color-accent-foreground: #FFFFFF;
   --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
-  --color-border: #E2E8F0;
+  --color-border: #E4E4E7;
   --color-input: #FFFFFF;
-  --color-ring: #F97316;
+  --color-ring: #7C3AED;
   --color-sidebar-background: #FFFFFF;
   --color-sidebar-foreground: #0F172A;
-  --color-sidebar-border: #E2E8F0;
-  --color-chart-1: #F97316;
-  --color-chart-2: #F59E0B;
-  --color-chart-3: #FB923C;
+  --color-sidebar-border: #E4E4E7;
+  --color-chart-1: #7C3AED;
+  --color-chart-2: #F97316;
+  --color-chart-3: #EC4899;
   --color-chart-4: #3B82F6;
   --color-chart-5: #10B981;
-  --radius: 1.25rem;
+  --radius: 1rem;
 }
 
 :root {
-  --background: #FDFBF7;
+  --background: #FAFAFA;
   --foreground: #0F172A;
   --card: #FFFFFF;
   --card-foreground: #0F172A;
-  --primary: #F97316;
+  --primary: #7C3AED;
   --primary-foreground: #FFFFFF;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #334155;
+  --secondary: #F4F4F5;
+  --secondary-foreground: #18181B;
   --muted: #F8FAFC;
   --muted-foreground: #64748B;
-  --accent: #F59E0B;
+  --accent: #F97316;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
+  --border: #E4E4E7;
   --input: #FFFFFF;
-  --ring: #F97316;
-  --radius: 1.25rem;
+  --ring: #7C3AED;
+  --radius: 1rem;
   --sidebar-background: #FFFFFF;
   --sidebar-foreground: #0F172A;
-  --sidebar-border: #E2E8F0;
-  --chart-1: #F97316;
-  --chart-2: #F59E0B;
-  --chart-3: #FB923C;
+  --sidebar-border: #E4E4E7;
+  --chart-1: #7C3AED;
+  --chart-2: #F97316;
+  --chart-3: #EC4899;
   --chart-4: #3B82F6;
   --chart-5: #10B981;
 }
@@ -71,6 +71,7 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family:
+    'Plus Jakarta Sans',
     'Inter',
     -apple-system,
     BlinkMacSystemFont,

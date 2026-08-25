@@ -161,17 +161,20 @@ function SidebarContent() {
         {/* Logo */}
         <div className={cn('flex h-16 items-center border-b border-slate-200 px-4 bg-white', isCollapsed && 'justify-center px-2')}>
           {isCollapsed ? (
-            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-tr from-amber-500 to-orange-500 shadow-sm shadow-orange-500/20">
-              <span className="text-sm font-black text-white">S</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-sm shadow-purple-600/20">
+              <span className="text-sm font-black text-white">D</span>
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-tr from-amber-500 to-orange-500 shadow-sm shadow-orange-500/20">
-                <span className="text-sm font-black text-white">S</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-sm shadow-purple-600/20">
+                <span className="text-sm font-black text-white">D</span>
               </div>
-              <span className="text-lg font-black tracking-tight text-slate-900">
-                Stock<span className="text-orange-500">Flow</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
+                  DOS<span className="text-purple-600">CRM</span>
+                </span>
+                <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">ERP Enterprise</span>
+              </div>
             </div>
           )}
         </div>
@@ -194,12 +197,12 @@ function SidebarContent() {
                       className={cn(
                         'flex items-center gap-3 rounded-[12px] px-3 py-2 text-sm font-medium transition-all duration-200',
                         active
-                          ? 'bg-orange-50 text-orange-600 font-bold border border-orange-200/80 shadow-xs'
+                          ? 'bg-purple-50 text-purple-700 font-bold border border-purple-200/80 shadow-xs'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
                         isCollapsed && 'justify-center px-2'
                       )}
                     >
-                      <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-orange-500' : 'text-slate-400')} />
+                      <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-purple-600' : 'text-slate-400')} />
                       {!isCollapsed && <span>{item.title}</span>}
                     </Link>
                   );
@@ -224,8 +227,8 @@ function SidebarContent() {
         <div className="border-t border-slate-200 p-3 bg-slate-50/50">
           {!isCollapsed && (
             <div className="flex items-center gap-3 rounded-[12px] px-3 py-2 mb-2 bg-white border border-slate-200/80 shadow-xs">
-              <Avatar className="h-8 w-8 border border-orange-200">
-                <AvatarFallback className="text-xs bg-orange-100 text-orange-600 font-bold">{initials}</AvatarFallback>
+              <Avatar className="h-8 w-8 border border-purple-200">
+                <AvatarFallback className="text-xs bg-purple-100 text-purple-700 font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>

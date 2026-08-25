@@ -79,8 +79,8 @@ export function TopNav() {
       </Button>
 
       {/* Mobile: show app title */}
-      <span className="md:hidden text-sm font-semibold text-foreground truncate">
-        StockFlow
+      <span className="md:hidden text-sm font-bold text-foreground truncate">
+        DOS<span className="text-purple-600">CRM</span>
       </span>
 
       <div className="hidden md:block">
@@ -103,7 +103,7 @@ export function TopNav() {
         <Button
           variant="outline"
           size="sm"
-          className="hidden md:flex gap-2 text-muted-foreground"
+          className="hidden md:flex gap-2 text-muted-foreground border-slate-200"
           onClick={() => {
             const event = new KeyboardEvent('keydown', {
               key: 'k',
@@ -125,16 +125,30 @@ export function TopNav() {
           <BranchSwitcher />
         </div>
 
+        {/* Language selector in TopNav */}
+        <div className="hidden lg:flex items-center gap-1 bg-slate-100/80 rounded-full px-2 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
+          <span className="text-[10px] uppercase text-purple-600 font-extrabold">i18n:</span>
+          {(['en', 'es', 'fr'] as const).map((lang) => (
+            <button
+              key={lang}
+              onClick={() => localStorage.setItem('dos_lang', lang)}
+              className="px-1.5 py-0.5 rounded text-[11px] uppercase hover:text-purple-600 transition-colors"
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
+
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+          <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-purple-600">
             3
           </Badge>
         </Button>
 
         {/* Active role badge */}
-        <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-purple-500/20 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse" />
           <span className="capitalize">{userRole}</span>
         </div>
 
