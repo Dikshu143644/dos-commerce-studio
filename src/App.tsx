@@ -29,7 +29,6 @@ const SalesOrders = lazy(() => import('@/pages/sales/SalesOrders'));
 const Invoices = lazy(() => import('@/pages/sales/Invoices'));
 const Returns = lazy(() => import('@/pages/sales/Returns'));
 const Payments = lazy(() => import('@/pages/sales/Payments'));
-const FeeReminders = lazy(() => import('@/pages/sales/FeeReminders'));
 const Analytics = lazy(() => import('@/pages/reports/Analytics'));
 const ExcelExport = lazy(() => import('@/pages/reports/ExcelExport'));
 const AIAssistant = lazy(() => import('@/pages/ai/AIAssistant'));
@@ -81,7 +80,6 @@ function App() {
           <Route path="sales/invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
           <Route path="sales/returns" element={<ErrorBoundary><Returns /></ErrorBoundary>} />
           <Route path="sales/payments" element={<ErrorBoundary><Payments /></ErrorBoundary>} />
-          <Route path="sales/fee-reminders" element={<ErrorBoundary><FeeReminders /></ErrorBoundary>} />
           <Route path="reports/analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
           <Route path="reports/export" element={<ErrorBoundary><ExcelExport /></ErrorBoundary>} />
           <Route path="ai" element={<ErrorBoundary><AIAssistant /></ErrorBoundary>} />
