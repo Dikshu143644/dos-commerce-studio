@@ -32,6 +32,7 @@ import {
   RotateCcw,
   CreditCard,
   Building2,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,7 @@ const navSections: NavSection[] = [
       { title: 'Invoices', href: '/sales/invoices', icon: FileText },
       { title: 'Returns', href: '/sales/returns', icon: RotateCcw },
       { title: 'Payments', href: '/sales/payments', icon: CreditCard },
+      { title: 'Fee Reminders', href: '/sales/fee-reminders', icon: Bell },
     ],
   },
   {

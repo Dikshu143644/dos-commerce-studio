@@ -9,6 +9,7 @@ if current_dir not in sys.path:
 
 from agents.orchestrator import ADKOrchestrator
 from agents.auth_otp_agent import auth_otp_agent
+from agents.fee_reminder_agent import fee_reminder_agent
 
 orchestrator = ADKOrchestrator()
 
@@ -36,6 +37,7 @@ class ADKServerHandler(BaseHTTPRequestHandler):
                 {"name": "StockFlow Procurement Agent", "domain": "Suppliers & POs", "status": "active"},
                 {"name": "StockFlow Finance Agent", "domain": "Revenue & KPIs", "status": "active"},
                 {"name": "StockFlow Auth OTP Agent", "domain": "Opal SMS & Security", "status": "active"},
+                {"name": "StockFlow Fee Reminder Agent", "domain": "Opal FeeAlert & SMS Notifications", "status": "active"},
             ]
             self.wfile.write(json.dumps({"agents": agents_info}).encode('utf-8'))
         elif self.path.startswith('/api/v1/auth/otp-status/'):
@@ -43,6 +45,10 @@ class ADKServerHandler(BaseHTTPRequestHandler):
             status_res = auth_otp_agent.get_otp_status(phone)
             self._set_headers(200)
             self.wfile.write(json.dumps(status_res).encode('utf-8'))
+        elif self.path in ['/api/automations/fee-reminders', '/api/v1/automations/fee-reminders']:
+            analysis = fee_reminder_agent.process_fee_data()
+            self._set_headers(200)
+            self.wfile.write(json.dumps(analysis).encode('utf-8'))
         else:
             self._set_headers(404)
             self.wfile.write(json.dumps({"error": "Endpoint not found"}).encode('utf-8'))
@@ -82,6 +88,25 @@ class ADKServerHandler(BaseHTTPRequestHandler):
             result = auth_otp_agent.verify_otp(phone=phone, otp_code=otp_code)
             status_code = 200 if result.get("status") == "success" else 400
             self._set_headers(status_code)
+            self.wfile.write(json.dumps(result).encode('utf-8'))
+
+        elif self.path in ['/api/automations/fee-reminders', '/api/v1/automations/fee-reminders']:
+            # Trigger batch fee reminder SMS
+            result = fee_reminder_agent.trigger_batch_reminders()
+            self._set_headers(200)
+            self.wfile.write(json.dumps(result).encode('utf-8'))
+
+        elif self.path in ['/api/automations/fee-reminders/send-single']:
+            student_id = body.get('student_id', '')
+            result = fee_reminder_agent.send_single_reminder(student_id)
+            status_code = 200 if result.get("status") == "success" else 400
+            self._set_headers(status_code)
+            self.wfile.write(json.dumps(result).encode('utf-8'))
+
+        elif self.path in ['/api/automations/fee-reminders/upload-csv']:
+            csv_content = body.get('csv_content', '')
+            result = fee_reminder_agent.parse_csv_upload(csv_content)
+            self._set_headers(200)
             self.wfile.write(json.dumps(result).encode('utf-8'))
 
         else:
