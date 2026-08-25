@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock, Sparkles, PhoneCall, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Sparkles, PhoneCall, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
