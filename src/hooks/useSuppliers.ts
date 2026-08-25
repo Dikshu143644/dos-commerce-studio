@@ -32,12 +32,17 @@ export function useSuppliers(filters: SupplierFilters = {}) {
 
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      query = query.range(from, to).order('name');
+      query = query.range(from, to).order('created_at', { ascending: false });
 
       const { data, error, count } = await query;
       if (error) throw error;
+      const formatted = ((data ?? []) as any[]).map((s) => ({
+        ...s,
+        name: s.name || s.company_name || 'Vendor',
+        contact_name: s.contact_name || s.contact_person || 'Contact',
+      }));
       return {
-        data: data as Supplier[],
+        data: formatted as Supplier[],
         count: count ?? 0,
         page,
         pageSize,
@@ -58,7 +63,12 @@ export function useSupplier(id: string | undefined) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Supplier;
+      const raw = data as any;
+      return {
+        ...raw,
+        name: raw.name || raw.company_name || 'Vendor',
+        contact_name: raw.contact_name || raw.contact_person || 'Contact',
+      } as Supplier;
     },
     enabled: !!id,
   });
@@ -68,10 +78,25 @@ export function useCreateSupplier() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (supplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (supplier: any) => {
+      const payload = {
+        name: supplier.name || supplier.company_name || 'Supplier Inc',
+        company_name: supplier.company_name || supplier.name || 'Supplier Inc',
+        contact_name: supplier.contact_name || supplier.contact_person || 'Contact Person',
+        contact_person: supplier.contact_person || supplier.contact_name || 'Contact Person',
+        email: supplier.email || null,
+        phone: supplier.phone || null,
+        address: supplier.address || null,
+        city: supplier.city || null,
+        state: supplier.state || null,
+        gst_number: supplier.gst_number || null,
+        payment_terms: supplier.payment_terms || 'Net 30',
+        rating: supplier.rating !== undefined ? supplier.rating : 3,
+        is_active: supplier.is_active !== undefined ? supplier.is_active : true,
+      };
       const { data, error } = await supabase
         .from('suppliers')
-        .insert(supplier)
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;

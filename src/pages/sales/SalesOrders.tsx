@@ -108,11 +108,35 @@ export default function SalesOrdersPage() {
   const cancelOrder = useCancelOrder();
   const recordPayment = useRecordPayment();
 
-  const orders = ordersResult?.data ?? [];
-  const allOrders = allOrdersResult?.data ?? [];
-  const customers = customersResult?.data ?? [];
-  const products = productsResult?.data ?? [];
-  const warehouses = warehousesResult?.data ?? [];
+  const orders = useMemo(() => {
+    if (Array.isArray(ordersResult)) return ordersResult;
+    if (Array.isArray((ordersResult as any)?.data)) return (ordersResult as any).data;
+    return [];
+  }, [ordersResult]);
+
+  const allOrders = useMemo(() => {
+    if (Array.isArray(allOrdersResult)) return allOrdersResult;
+    if (Array.isArray((allOrdersResult as any)?.data)) return (allOrdersResult as any).data;
+    return [];
+  }, [allOrdersResult]);
+
+  const customers = useMemo(() => {
+    if (Array.isArray(customersResult)) return customersResult;
+    if (Array.isArray((customersResult as any)?.data)) return (customersResult as any).data;
+    return [];
+  }, [customersResult]);
+
+  const products = useMemo(() => {
+    if (Array.isArray(productsResult)) return productsResult;
+    if (Array.isArray((productsResult as any)?.data)) return (productsResult as any).data;
+    return [];
+  }, [productsResult]);
+
+  const warehouses = useMemo(() => {
+    if (Array.isArray(warehousesResult)) return warehousesResult;
+    if (Array.isArray((warehousesResult as any)?.data)) return (warehousesResult as any).data;
+    return [];
+  }, [warehousesResult]);
 
   // Count per status
   const statusCounts = useMemo(() => {
@@ -128,7 +152,7 @@ export default function SalesOrdersPage() {
     if (!productSearch) return products.slice(0, 10);
     const lower = productSearch.toLowerCase();
     return products.filter(
-      (p) => p.name.toLowerCase().includes(lower) || p.sku.toLowerCase().includes(lower)
+      (p: any) => (p.name || '').toLowerCase().includes(lower) || (p.sku || '').toLowerCase().includes(lower)
     ).slice(0, 10);
   }, [products, productSearch]);
 
@@ -147,22 +171,28 @@ export default function SalesOrdersPage() {
   }, [orderItems]);
 
   const addProductToOrder = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
+    const product = products.find((p: any) => p.id === productId);
     if (!product) return;
-    if (orderItems.find((i) => i.product_id === productId)) {
-      toast.error('Product already added');
-      return;
+
+    const existing = orderItems.find((item) => item.product_id === productId);
+    if (existing) {
+      setOrderItems(
+        orderItems.map((item) =>
+          item.product_id === productId ? { ...item, quantity: item.quantity + 1 } : item
+        )
+      );
+    } else {
+      setOrderItems([
+        ...orderItems,
+        {
+          product_id: product.id,
+          product_name: product.name,
+          quantity: 1,
+          unit_price: product.unit_price,
+          discount_percent: 0,
+        },
+      ]);
     }
-    setOrderItems([
-      ...orderItems,
-      {
-        product_id: product.id,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.unit_price,
-        discount_percent: 0,
-      },
-    ]);
     setProductSearch('');
   };
 
@@ -187,17 +217,12 @@ export default function SalesOrdersPage() {
         order: {
           customer_id: selectedCustomerId,
           warehouse_id: selectedWarehouseId,
-          status: 'draft',
-          order_date: new Date().toISOString(),
+          status: 'confirmed',
           total_amount: orderTotals.total,
           tax_amount: orderTotals.tax,
           discount_amount: orderTotals.discount,
           shipping_address: null,
           notes: null,
-          created_by: userId,
-          shipped_at: null,
-          delivered_at: null,
-          invoice_id: null,
         },
         items: orderItems.map((item) => ({
           product_id: item.product_id,
@@ -695,9 +720,9 @@ export default function SalesOrdersPage() {
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((c) => (
+                    {customers.map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name} {c.company ? `(${c.company})` : ''}
+                        {c.name || c.contact_person || c.company_name || 'Client'} {c.company || c.company_name ? `(${c.company || c.company_name})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -716,7 +741,7 @@ export default function SalesOrdersPage() {
                     <SelectValue placeholder="Select warehouse" />
                   </SelectTrigger>
                   <SelectContent>
-                    {warehouses.map((w) => (
+                    {warehouses.map((w: any) => (
                       <SelectItem key={w.id} value={w.id}>
                         {w.name} ({w.code})
                       </SelectItem>
@@ -741,14 +766,14 @@ export default function SalesOrdersPage() {
               </div>
               {productSearch && (
                 <div className="max-h-32 overflow-y-auto rounded-[12px] border border-border">
-                  {filteredProducts.map((p) => (
+                  {filteredProducts.map((p: any) => (
                     <button
                       key={p.id}
                       className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-secondary/50 text-left"
                       onClick={() => addProductToOrder(p.id)}
                     >
                       <span className="text-foreground">{p.name}</span>
-                      <span className="text-muted-foreground">${p.unit_price.toFixed(2)}</span>
+                      <span className="text-muted-foreground">${(p.unit_price || 0).toFixed(2)}</span>
                     </button>
                   ))}
                 </div>
@@ -831,13 +856,13 @@ export default function SalesOrdersPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Customer</span>
                 <span className="text-foreground">
-                  {customers.find((c) => c.id === selectedCustomerId)?.name ?? '-'}
+                  {customers.find((c: any) => c.id === selectedCustomerId)?.name ?? '-'}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Warehouse</span>
                 <span className="text-foreground">
-                  {warehouses.find((w) => w.id === selectedWarehouseId)?.name ?? '-'}
+                  {warehouses.find((w: any) => w.id === selectedWarehouseId)?.name ?? '-'}
                 </span>
               </div>
               <div className="flex justify-between text-sm">

@@ -65,9 +65,23 @@ export default function ReturnsPage() {
   const initiateReturn = useInitiateReturn();
   const approveReturn = useApproveReturn();
 
-  const returns = (returnsData as SalesReturn[] | undefined) ?? [];
-  const warehouses = warehousesResult?.data ?? [];
-  const deliveredOrdersList = deliveredOrders?.data ?? [];
+  const returns = useMemo<SalesReturn[]>(() => {
+    if (Array.isArray(returnsData)) return returnsData as SalesReturn[];
+    if (Array.isArray((returnsData as any)?.data)) return (returnsData as any).data as SalesReturn[];
+    return [];
+  }, [returnsData]);
+
+  const warehouses = useMemo(() => {
+    if (Array.isArray(warehousesResult)) return warehousesResult;
+    if (Array.isArray((warehousesResult as any)?.data)) return (warehousesResult as any).data;
+    return [];
+  }, [warehousesResult]);
+
+  const deliveredOrdersList = useMemo(() => {
+    if (Array.isArray(deliveredOrders)) return deliveredOrders;
+    if (Array.isArray((deliveredOrders as any)?.data)) return (deliveredOrders as any).data;
+    return [];
+  }, [deliveredOrders]);
 
   // When order is selected, populate return items
   const handleOrderSelect = (orderId: string) => {
@@ -176,7 +190,7 @@ export default function ReturnsPage() {
       key: 'status',
       title: 'Status',
       render: (row: Record<string, unknown>) => {
-        const status = row.status as string;
+        const status = (row.status as string) || 'pending';
         return (
           <Badge variant={returnStatusVariants[status] || 'secondary'}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -260,21 +274,21 @@ export default function ReturnsPage() {
                     <div>
                       <span className="text-muted-foreground">Status</span>
                       <p>
-                        <Badge variant={returnStatusVariants[selectedReturn.status] || 'secondary'}>
-                          {selectedReturn.status.charAt(0).toUpperCase() + selectedReturn.status.slice(1)}
+                        <Badge variant={returnStatusVariants[selectedReturn.status || 'pending'] || 'secondary'}>
+                          {(selectedReturn.status || 'pending').charAt(0).toUpperCase() + (selectedReturn.status || 'pending').slice(1)}
                         </Badge>
                       </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Refund Amount</span>
                       <p className="font-medium text-foreground">
-                        ${selectedReturn.total_refund_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ${(selectedReturn.total_refund_amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Reason</span>
                       <p className="font-medium text-foreground capitalize">
-                        {selectedReturn.reason.replace('_', ' ')}
+                        {(selectedReturn.reason || 'customer_request').replace('_', ' ')}
                       </p>
                     </div>
                     {selectedReturn.notes && (
@@ -299,7 +313,7 @@ export default function ReturnsPage() {
                         <SelectValue placeholder="Select warehouse" />
                       </SelectTrigger>
                       <SelectContent>
-                        {warehouses.map((w) => (
+                        {warehouses.map((w: any) => (
                           <SelectItem key={w.id} value={w.id}>
                             {w.name} ({w.code})
                           </SelectItem>
@@ -363,9 +377,9 @@ export default function ReturnsPage() {
                   <SelectValue placeholder="Select a delivered order" />
                 </SelectTrigger>
                 <SelectContent>
-                  {deliveredOrdersList.map((order) => (
+                  {deliveredOrdersList.map((order: any) => (
                     <SelectItem key={order.id} value={order.id}>
-                      {order.order_number} - ${order.total_amount.toLocaleString()}
+                      {order.order_number} - ${(order.total_amount || 0).toLocaleString()}
                     </SelectItem>
                   ))}
                 </SelectContent>

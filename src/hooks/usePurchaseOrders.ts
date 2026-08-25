@@ -82,20 +82,36 @@ export function useCreatePurchaseOrder() {
 
   return useMutation({
     mutationFn: async (input: {
-      order: Omit<PurchaseOrder, 'id' | 'created_at' | 'updated_at' | 'order_number'>;
-      items: Omit<PurchaseOrderItem, 'id' | 'purchase_order_id'>[];
+      order: any;
+      items: any[];
     }) => {
+      const po_number = input.order.po_number || `PO-${Date.now().toString().slice(-6)}`;
+      const orderPayload = {
+        po_number,
+        supplier_id: input.order.supplier_id,
+        status: input.order.status || 'draft',
+        total_amount: input.order.total_amount || 0,
+        tax_amount: input.order.tax_amount || 0,
+        discount_amount: input.order.discount_amount || 0,
+        expected_delivery: input.order.expected_delivery || input.order.expected_delivery_date || null,
+        notes: input.order.notes || null,
+      };
+
       const { data: po, error: poError } = await supabase
         .from('purchase_orders')
-        .insert(input.order)
+        .insert(orderPayload)
         .select()
         .single();
       if (poError) throw poError;
 
-      if (input.items.length > 0) {
+      if (input.items && input.items.length > 0) {
         const itemsWithPOId = input.items.map((item) => ({
-          ...item,
           purchase_order_id: po.id,
+          product_id: item.product_id,
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price || 0,
+          received_quantity: 0,
+          total: (item.quantity || 1) * (item.unit_price || 0),
         }));
         const { error: itemsError } = await supabase
           .from('purchase_order_items')

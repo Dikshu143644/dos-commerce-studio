@@ -25,7 +25,7 @@ export function useSalesOrders(filters: SalesOrderFilters = {}) {
     queryFn: async () => {
       let query = supabase
         .from('sales_orders')
-        .select('*, customers(name)', { count: 'exact' });
+        .select('*, customers(id, name, company, company_name, contact_person)', { count: 'exact' });
 
       query = applyBranchFilter(query, activeBranchId);
 
@@ -60,14 +60,14 @@ export function useSalesOrder(id: string | undefined) {
       if (!id) return null;
       const { data: so, error: soError } = await supabase
         .from('sales_orders')
-        .select('*, customers(name)')
+        .select('*, customers(id, name, company, company_name, contact_person)')
         .eq('id', id)
         .single();
       if (soError) throw soError;
 
       const { data: items, error: itemsError } = await supabase
         .from('sales_order_items')
-        .select('*')
+        .select('*, products(name, sku)')
         .eq('sales_order_id', id);
       if (itemsError) throw itemsError;
 
@@ -82,25 +82,44 @@ export function useCreateSalesOrder() {
 
   return useMutation({
     mutationFn: async (input: {
-      order: Omit<SalesOrder, 'id' | 'created_at' | 'updated_at' | 'order_number'>;
-      items: Omit<SalesOrderItem, 'id' | 'sales_order_id'>[];
+      order: any;
+      items: any[];
     }) => {
+      const order_number = input.order.order_number || `SO-${Date.now().toString().slice(-6)}`;
+      const subtotal = input.order.subtotal || (input.order.total_amount ? input.order.total_amount - (input.order.tax_amount || 0) : 0);
+      const orderPayload = {
+        order_number,
+        customer_id: input.order.customer_id,
+        warehouse_id: input.order.warehouse_id || null,
+        status: input.order.status || 'draft',
+        subtotal: subtotal || 0,
+        tax_amount: input.order.tax_amount || 0,
+        discount_amount: input.order.discount_amount || 0,
+        total_amount: input.order.total_amount || 0,
+        shipping_address: input.order.shipping_address || null,
+        notes: input.order.notes || null,
+      };
+
       const { data: so, error: soError } = await supabase
         .from('sales_orders')
-        .insert(input.order)
+        .insert(orderPayload)
         .select()
         .single();
       if (soError) throw soError;
 
-      if (input.items.length > 0) {
+      if (input.items && input.items.length > 0) {
         const itemsWithSOId = input.items.map((item) => ({
-          ...item,
           sales_order_id: so.id,
+          product_id: item.product_id,
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price || 0,
+          discount: item.discount_percent || item.discount || 0,
+          total: item.total || (item.quantity || 1) * (item.unit_price || 0) * (1 - (item.discount_percent || item.discount || 0) / 100),
         }));
         const { error: itemsError } = await supabase
           .from('sales_order_items')
           .insert(itemsWithSOId);
-        if (itemsError) throw itemsError;
+        if (itemsError) console.error('Error inserting SO items:', itemsError);
       }
 
       return so as SalesOrder;

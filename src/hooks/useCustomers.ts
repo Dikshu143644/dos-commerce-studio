@@ -36,8 +36,13 @@ export function useCustomers(filters: CustomerFilters = {}) {
 
       const { data, error, count } = await query;
       if (error) throw error;
+      const formattedData = ((data ?? []) as any[]).map((c) => ({
+        ...c,
+        name: c.name || c.contact_person || c.company_name || 'Client',
+        company: c.company || c.company_name || 'Company',
+      }));
       return {
-        data: data as Customer[],
+        data: formattedData as Customer[],
         count: count ?? 0,
         page,
         pageSize,
@@ -58,7 +63,12 @@ export function useCustomer(id: string | undefined) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Customer;
+      const raw = data as any;
+      return {
+        ...raw,
+        name: raw.name || raw.contact_person || raw.company_name || 'Client',
+        company: raw.company || raw.company_name || 'Company',
+      } as Customer;
     },
     enabled: !!id,
   });
@@ -68,10 +78,24 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'total_orders' | 'total_spent'>) => {
+    mutationFn: async (customer: any) => {
+      const payload = {
+        name: customer.name || customer.contact_person || customer.company || 'Customer',
+        company: customer.company || customer.company_name || customer.name || 'Company',
+        company_name: customer.company_name || customer.company || customer.name || 'Company',
+        contact_person: customer.contact_person || customer.name || 'Contact Person',
+        email: customer.email || null,
+        phone: customer.phone || null,
+        customer_type: customer.customer_type || 'regular',
+        address: customer.address || null,
+        city: customer.city || null,
+        country: customer.country || 'India',
+        notes: customer.notes || null,
+        is_active: customer.is_active !== undefined ? customer.is_active : true,
+      };
       const { data, error } = await supabase
         .from('customers')
-        .insert(customer)
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
