@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Sparkles, PhoneCall, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useLoginForm } from '@/hooks/useLoginForm';
 import { useAuth } from '@/hooks/useAuth';
+import { sendOtp, verifyOtp } from '@/services/auth/otpService';
 import type { UserRole } from '@/contexts/AuthContext';
 
 const loginSchema = z.object({
@@ -22,6 +24,13 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [phone, setPhone] = useState('+91 98765 43210');
+  const [otpCode, setOtpCode] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [timer, setTimer] = useState(300);
 
   const { isLoading, onSubmit } = useLoginForm();
   const { user, loginDemo } = useAuth();
@@ -35,6 +44,60 @@ export default function LoginPage() {
       navigate(from, { replace: true });
     }
   }, [user, navigate, from]);
+
+  useEffect(() => {
+    let interval: any;
+    if (otpSent && timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpSent, timer]);
+
+  const handleSendOtp = async (channel: 'sms' | 'whatsapp') => {
+    setIsSendingOtp(true);
+    try {
+      const res = await sendOtp({ phone, channel });
+      if (res.status === 'success') {
+        setOtpSent(true);
+        setTimer(300);
+        if (res.otp_code) {
+          setOtpCode(res.otp_code);
+          toast.success(`[Opal OTP] Code sent: ${res.otp_code}`, { duration: 8000 });
+        } else {
+          toast.success(`Verification code sent via ${channel.toUpperCase()}`);
+        }
+      } else {
+        toast.error(res.message || 'Failed to send OTP');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send OTP');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length < 4) {
+      toast.error('Please enter the 6-digit OTP code');
+      return;
+    }
+    setIsVerifyingOtp(true);
+    try {
+      const res = await verifyOtp({ phone, otp_code: otpCode });
+      if (res.status === 'success') {
+        toast.success('Security verification passed! Logging in as DOS-APP...');
+        setShowOtpModal(false);
+        loginDemo('admin');
+        navigate(from, { replace: true });
+      } else {
+        toast.error(res.message || 'Invalid verification code');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Verification failed');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   const {
     register,
@@ -244,6 +307,18 @@ export default function LoginPage() {
           </Button>
         </div>
 
+        {/* Opal SMS OTP Instant Access */}
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowOtpModal(true)}
+            className="w-full h-10 rounded-[14px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold gap-2 transition-all"
+          >
+            <PhoneCall className="h-3.5 w-3.5" /> Sign In via SMS / WhatsApp OTP
+          </Button>
+        </div>
+
         {/* Footer Link */}
         <p className="text-center text-xs text-slate-300 mt-6">
           Don't have an account?{' '}
@@ -255,6 +330,110 @@ export default function LoginPage() {
           </Link>
         </p>
       </motion.div>
+
+      {/* Opal SMS OTP Verification Modal */}
+      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
+        <DialogContent className="sm:max-w-[420px] rounded-[28px] bg-[#0F172A]/95 border border-white/20 backdrop-blur-2xl text-white p-6 shadow-2xl">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-center text-white">
+              Opal SMS Verification
+            </DialogTitle>
+            <DialogDescription className="text-xs text-center text-slate-300">
+              Authenticate securely via real-time cryptographic SMS OTP
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            {!otpSent ? (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Mobile Phone Number</label>
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="h-11 bg-white/5 border-white/15 rounded-xl text-white text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleSendOtp('sms')}
+                    disabled={isSendingOtp}
+                    className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1.5"
+                  >
+                    <PhoneCall className="h-3.5 w-3.5" /> Send SMS OTP
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleSendOtp('whatsapp')}
+                    disabled={isSendingOtp}
+                    className="h-10 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-bold gap-1.5"
+                  >
+                    WhatsApp OTP
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+                  <p className="text-xs text-emerald-300 font-medium">
+                    Code dispatched to <span className="font-bold text-white">{phone}</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Valid for {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')} min
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300">Enter 6-Digit Code</label>
+                  <Input
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    className="h-12 bg-white/5 border-white/20 rounded-xl text-center text-xl font-mono tracking-[0.4em] font-bold text-emerald-400"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={isVerifyingOtp || otpCode.length < 4}
+                  className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25"
+                >
+                  {isVerifyingOtp ? 'Verifying...' : 'Verify & Log In'}
+                </Button>
+
+                <div className="flex justify-between items-center text-xs pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    Change Number
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendOtp('sms')}
+                    disabled={timer > 240}
+                    className="text-emerald-400 hover:text-emerald-300 font-semibold disabled:opacity-50"
+                  >
+                    Resend Code
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
