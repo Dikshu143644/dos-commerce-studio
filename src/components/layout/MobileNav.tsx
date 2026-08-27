@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, ShoppingCart, Bot } from 'lucide-react';
+import { LayoutDashboard, Store, Users, Building2, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useAuth } from '@/hooks/useAuth';
 
 const tabs = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { label: 'Inventory', icon: Package, path: '/inventory' },
+  { label: 'Hub', icon: LayoutDashboard, path: '/' },
+  { label: 'Commerce', icon: Store, path: '/store' },
   { label: 'CRM', icon: Users, path: '/crm' },
-  { label: 'Sales', icon: ShoppingCart, path: '/sales' },
+  { label: 'ERP', icon: Building2, path: '/erp' },
   { label: 'AI', icon: Bot, path: '/ai' },
 ];
 
@@ -16,6 +17,7 @@ export function MobileNav() {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const location = useLocation();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
@@ -41,10 +43,21 @@ export function MobileNav() {
 
   if (!isMobile) return null;
 
-  const activeTab = tabs.find((tab) => {
-    if (tab.path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(tab.path);
-  });
+  const activePath = location.pathname.startsWith('/store') || location.pathname.startsWith('/portal')
+    ? '/store'
+    : location.pathname.startsWith('/crm')
+      ? '/crm'
+      : ['/erp', '/inventory', '/sales', '/procurement', '/finance', '/reports'].some((prefix) => location.pathname.startsWith(prefix))
+        ? '/erp'
+        : location.pathname.startsWith('/ai')
+          ? '/ai'
+          : '/';
+  const availableTabs = userRole === 'client'
+    ? tabs.filter((tab) => ['/', '/store', '/ai'].includes(tab.path))
+    : userRole === 'viewer'
+      ? tabs.filter((tab) => tab.path !== '/crm')
+      : tabs;
+  const activeTab = availableTabs.find((tab) => tab.path === activePath);
 
   return (
     <nav
@@ -56,7 +69,7 @@ export function MobileNav() {
       )}
     >
       <div className="flex items-center justify-around h-16">
-        {tabs.map((tab) => {
+        {availableTabs.map((tab) => {
           const isActive = activeTab?.path === tab.path;
           const Icon = tab.icon;
           return (

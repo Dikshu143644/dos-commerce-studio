@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Trash2,
@@ -24,86 +24,49 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-
-interface CartItem {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  unit_price: number;
-  quantity: number;
-}
-
-const initialCartItems: CartItem[] = [
-  {
-    id: 'prod-1',
-    name: 'Circuit Board Pro X1',
-    sku: 'PCB-PRO-001',
-    category: 'Electronics',
-    unit_price: 10000,
-    quantity: 15,
-  },
-  {
-    id: 'prod-2',
-    name: 'Industrial Servo Motor 750W',
-    sku: 'SRV-750W-002',
-    category: 'Industrial Parts',
-    unit_price: 27200,
-    quantity: 4,
-  },
-];
+import { useCommerce, type CommerceOrder } from '@/contexts/CommerceContext';
 
 export default function Cart() {
-  useDocumentTitle('Procurement Order Cart | StockFlow');
+  useDocumentTitle('Procurement Order Cart | DOS ONE');
+  const { cart: items, cartTotals: totals, updateQuantity, removeProduct, placeOrder } = useCommerce();
 
-  const [items, setItems] = useState<CartItem[]>(initialCartItems);
   const [poNumber, setPoNumber] = useState('PO-APEX-2026-0891');
   const [shippingAddress, setShippingAddress] = useState('Plot 42, Sector 8, Whitefield Tech Park, Bangalore 560066');
   const [shippingMethod, setShippingMethod] = useState('Dedicated Truckload Logistics');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState<string | null>(null);
+  const [orderPlaced, setOrderPlaced] = useState<CommerceOrder | null>(null);
 
   const handleQtyChange = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const nextQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: nextQty };
-        }
-        return item;
-      })
-    );
+    const item = items.find((candidate) => candidate.id === id);
+    if (item) updateQuantity(id, item.quantity + delta);
   };
 
   const handleRemoveItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    removeProduct(id);
     toast.info('Item removed from cart');
   };
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce((acc, item) => acc + item.unit_price * item.quantity, 0);
-    const tax = Math.round(subtotal * 0.18);
-    const shipping = subtotal > 100000 ? 0 : 3500;
-    const total = subtotal + tax + shipping;
-
-    return { subtotal, tax, shipping, total };
-  }, [items]);
-
-  const handleCheckout = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCheckout = async () => {
     if (items.length === 0) {
       toast.error('Cart is empty');
       return;
     }
+    if (!poNumber.trim() || !shippingAddress.trim()) {
+      toast.error('Add a buyer PO reference and delivery address');
+      return;
+    }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    await new Promise((resolve) => window.setTimeout(resolve, 600));
+    try {
+      const order = placeOrder({ poNumber, shippingAddress, shippingMethod });
+      setOrderPlaced(order);
+      toast.success(`Purchase order submitted as web order ${order.orderNumber}!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to submit order');
+    } finally {
       setIsSubmitting(false);
-      const generatedOrderNo = `SO-2026-${Math.floor(100 + Math.random() * 900)}`;
-      setOrderPlaced(generatedOrderNo);
-      setItems([]);
-      toast.success(`Purchase Order confirmed as Sales Order ${generatedOrderNo}!`);
-    }, 800);
+    }
   };
 
   if (orderPlaced) {
@@ -118,16 +81,16 @@ export default function Cart() {
         </motion.div>
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Order Successfully Placed!</h2>
+          <h2 className="text-2xl font-bold text-foreground">Order Request Submitted!</h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Your wholesale procurement order <strong className="text-foreground">{orderPlaced}</strong> has been transmitted to Mumbai Central Warehouse for fulfillment.
+            Your wholesale procurement order <strong className="text-foreground">{orderPlaced.orderNumber}</strong> is now visible in the connected sales intake and awaits warehouse review.
           </p>
         </div>
 
         <Card className="p-6 rounded-3xl border-border bg-card text-left max-w-md mx-auto space-y-3">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Order Reference:</span>
-            <span className="font-mono font-bold text-foreground">{orderPlaced}</span>
+            <span className="font-mono font-bold text-foreground">{orderPlaced.orderNumber}</span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Buyer PO:</span>
@@ -139,13 +102,13 @@ export default function Cart() {
           </div>
           <div className="flex justify-between text-xs border-t border-border pt-2 font-bold text-sm">
             <span>Total Invoiced:</span>
-            <span className="text-primary">₹{totals.total.toLocaleString('en-IN')}</span>
+            <span className="text-primary">₹{orderPlaced.total.toLocaleString('en-IN')}</span>
           </div>
         </Card>
 
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <Button asChild className="bg-primary text-primary-foreground rounded-xl">
-            <Link to={`/portal/tracking?order=${orderPlaced}`}>Track Consignment Live</Link>
+            <Link to={`/portal/tracking?order=${orderPlaced.orderNumber}`}>Track Consignment Live</Link>
           </Button>
           <Button variant="outline" asChild className="rounded-xl">
             <Link to="/portal/orders">View All Orders</Link>
@@ -188,7 +151,10 @@ export default function Cart() {
                       </div>
                       <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>
                       <p className="text-xs text-muted-foreground">
-                        Rate: <strong className="text-foreground">₹{item.unit_price.toLocaleString('en-IN')}</strong> / unit
+                        Rate: <strong className="text-foreground">₹{item.unitPrice.toLocaleString('en-IN')}</strong> / unit
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Minimum {item.minOrderQty} units{item.stockQuantity !== undefined ? ` · ${item.stockQuantity} available` : ''}
                       </p>
                     </div>
 
@@ -217,7 +183,7 @@ export default function Cart() {
 
                       <div className="text-right min-w-[100px]">
                         <span className="font-bold text-foreground block">
-                          ₹{(item.unit_price * item.quantity).toLocaleString('en-IN')}
+                          ₹{(item.unitPrice * item.quantity).toLocaleString('en-IN')}
                         </span>
                       </div>
 

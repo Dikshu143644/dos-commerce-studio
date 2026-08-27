@@ -28,6 +28,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useCommerce } from '@/contexts/CommerceContext';
 
 export interface CatalogProduct {
   id: string;
@@ -139,12 +140,12 @@ export const catalogProducts: CatalogProduct[] = [
 ];
 
 export default function ProductCatalog() {
-  useDocumentTitle('Wholesale B2B E-Commerce Catalog | DOS-CRM-ERP');
+  useDocumentTitle('Wholesale B2B E-Commerce Catalog | DOS ONE');
+  const { addProduct, cartItemCount } = useCommerce();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [cartCount, setCartCount] = useState(2);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
@@ -171,30 +172,16 @@ export default function ProductCatalog() {
 
   const handleAddToCart = (product: CatalogProduct) => {
     const qty = quantities[product.id] || product.min_order_qty;
-    setCartCount((prev) => prev + 1);
-
-    // Save cart state to localStorage for Abandoned Cart WhatsApp Agent Triggering!
-    try {
-      const existingCart = JSON.parse(localStorage.getItem('dos_client_cart') || '[]');
-      const itemIndex = existingCart.findIndex((item: any) => item.id === product.id);
-      if (itemIndex > -1) {
-        existingCart[itemIndex].quantity += qty;
-      } else {
-        existingCart.push({
-          id: product.id,
-          name: product.name,
-          sku: product.sku,
-          price: product.base_price_inr,
-          quantity: qty,
-          image: product.image,
-          addedAt: new Date().toISOString(),
-        });
-      }
-      localStorage.setItem('dos_client_cart', JSON.stringify(existingCart));
-      localStorage.setItem('dos_cart_last_activity', new Date().toISOString());
-    } catch {
-      // ignore
-    }
+    addProduct({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      unitPrice: product.base_price_inr,
+      minOrderQty: product.min_order_qty,
+      stockQuantity: product.stock_quantity,
+      image: product.image,
+    }, qty);
 
     toast.success(`Added ${qty}x ${product.name} to wholesale cart!`, {
       description: `Line Total: ₹${(qty * product.base_price_inr).toLocaleString('en-IN')}`,
@@ -214,7 +201,7 @@ export default function ProductCatalog() {
             className="rounded-2xl h-11 px-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-purple-600/25 flex items-center gap-2 transition-all hover:scale-105"
           >
             <Link to="/portal/cart">
-              <ShoppingCart className="h-4 w-4" /> View Cart ({cartCount} items)
+              <ShoppingCart className="h-4 w-4" /> View Cart ({cartItemCount} units)
             </Link>
           </Button>
         }

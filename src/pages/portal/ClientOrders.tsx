@@ -31,6 +31,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useCommerce } from '@/contexts/CommerceContext';
 
 export type ClientOrderStatus = 'processing' | 'dispatched' | 'delivered' | 'cancelled';
 
@@ -110,9 +111,31 @@ const statusBadgeStyles: Record<ClientOrderStatus, { label: string; bg: string; 
 };
 
 export default function ClientOrders() {
-  useDocumentTitle('My Purchase Orders | StockFlow');
+  useDocumentTitle('My Purchase Orders | DOS ONE');
+  const { orders: commerceOrders } = useCommerce();
 
-  const [orders] = useState<ClientOrder[]>(mockOrders);
+  const orders = useMemo<ClientOrder[]>(() => [
+    ...commerceOrders.map((order) => ({
+      id: order.id,
+      order_number: order.orderNumber,
+      po_number: order.poNumber,
+      date: order.createdAt.slice(0, 10),
+      status: order.status,
+      items_count: order.items.length,
+      total_amount: order.total,
+      courier: order.status === 'processing' ? 'Warehouse allocation pending' : order.shippingMethod,
+      awb_number: order.status === 'processing' ? 'Pending' : `DOS-${order.id.slice(-8)}`,
+      delivery_eta: order.status === 'processing' ? 'Dispatch estimate pending' : 'Track for live estimate',
+      destination: order.shippingAddress,
+      items: order.items.map((item) => ({
+        name: item.name,
+        sku: item.sku,
+        qty: item.quantity,
+        price: item.unitPrice,
+      })),
+    })),
+    ...mockOrders,
+  ], [commerceOrders]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<ClientOrder | null>(null);

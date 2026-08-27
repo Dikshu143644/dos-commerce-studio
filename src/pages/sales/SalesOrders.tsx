@@ -37,6 +37,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useWarehouses } from '@/hooks/useWarehouses';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useCommerce } from '@/contexts/CommerceContext';
 import type { OrderStatus, PaymentMethod } from '@/types/database';
 import type { SalesOrderWithItems } from '@/hooks/useSalesOrders';
 
@@ -63,6 +64,7 @@ interface OrderLineItem {
 export default function SalesOrdersPage() {
   useDocumentTitle('Sales Orders & Commercial Fulfillment | DOS-CRM-ERP');
   const { user } = useAuth();
+  const { orders: commerceOrders } = useCommerce();
   const userId = user?.id ?? '';
   const [activeTab, setActiveTab] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -411,6 +413,33 @@ export default function SalesOrdersPage() {
           </div>
         }
       />
+
+      {commerceOrders.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900">Storefront order intake</h3>
+                  <Badge className="bg-blue-600 text-white">{commerceOrders.length} web</Badge>
+                </div>
+                <p className="text-xs text-slate-500">New DOS-SHOP checkouts in the shared prototype intake, awaiting ERP synchronization.</p>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {commerceOrders.slice(0, 3).map((order) => (
+                <div key={order.id} className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div><p className="font-mono text-sm font-bold text-slate-900">{order.orderNumber}</p><p className="text-xs text-slate-500">{order.customerName}</p></div>
+                    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">{order.status}</Badge>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between"><p className="text-xs text-slate-500">{order.items.length} product lines</p><p className="font-black text-slate-900">₹{order.total.toLocaleString('en-IN')}</p></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-slate-100 p-1 rounded-2xl">

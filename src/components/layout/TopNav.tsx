@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from './Breadcrumbs';
 import { BranchSwitcher } from './BranchSwitcher';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -80,12 +81,14 @@ export function TopNav() {
 
       {/* Mobile: show app title */}
       <span className="md:hidden text-sm font-bold text-foreground truncate">
-        DOS<span className="text-purple-600">CRM</span>
+        DOS<span className="text-purple-600">ONE</span>
       </span>
 
       <div className="hidden md:block">
         <Breadcrumbs />
       </div>
+
+      <WorkspaceSwitcher />
 
       <div className="ml-auto flex items-center gap-2">
         {/* Mobile: search icon that opens overlay */}

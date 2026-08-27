@@ -53,8 +53,13 @@ import type { UserRole } from '@/contexts/AuthContext';
 
 const navSections: NavSection[] = [
   {
-    title: 'Main',
-    items: [{ title: 'Dashboard', href: '/', icon: LayoutDashboard }],
+    title: 'Workspaces',
+    items: [
+      { title: 'Platform Hub', href: '/', icon: LayoutDashboard },
+      { title: 'Commerce', href: '/store', icon: ShoppingBag },
+      { title: 'CRM Workspace', href: '/crm', icon: Users },
+      { title: 'ERP Workspace', href: '/erp', icon: Building2 },
+    ],
   },
   {
     title: 'Inventory',
@@ -110,7 +115,7 @@ const navSections: NavSection[] = [
     title: 'E-Commerce & Client Portal',
     items: [
       { title: 'DOS-SHOP Storefront ↗', href: '/store', icon: ShoppingBag },
-      { title: 'B2B Wholesale Catalog', href: '/portal/catalog', icon: Package },
+      { title: 'B2B Wholesale Catalog', href: '/portal/b2b-catalog', icon: Package },
       { title: 'Order Cart & Checkout', href: '/portal/cart', icon: ShoppingCart },
       { title: 'Client Order Tracking', href: '/portal/orders', icon: ClipboardList },
       { title: 'GST Tax Invoices', href: '/portal/invoices', icon: FileText },
@@ -145,16 +150,29 @@ const navSections: NavSection[] = [
 
 // Sections visible by role:
 const sectionsByRole: Record<UserRole, string[]> = {
-  viewer: ['Main', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'AI'],
-  client: ['E-Commerce & Client Portal', 'AI'],
-  staff: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
-  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
-  admin: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI', 'Settings'],
+  viewer: ['Workspaces', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'AI'],
+  client: ['Workspaces', 'E-Commerce & Client Portal', 'AI'],
+  staff: ['Workspaces', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
+  manager: ['Workspaces', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
+  admin: ['Workspaces', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI', 'Settings'],
 };
 
 function getFilteredSections(role: UserRole): NavSection[] {
   const allowedTitles = sectionsByRole[role] || sectionsByRole.viewer;
-  return navSections.filter((section) => allowedTitles.includes(section.title));
+  return navSections
+    .filter((section) => allowedTitles.includes(section.title))
+    .map((section) => {
+      if (section.title !== 'Workspaces') return section;
+      const allowedWorkspacePaths = role === 'client'
+        ? ['/', '/store']
+        : role === 'viewer'
+          ? ['/', '/store', '/erp']
+          : ['/', '/store', '/crm', '/erp'];
+      return {
+        ...section,
+        items: section.items.filter((item) => allowedWorkspacePaths.includes(item.href)),
+      };
+    });
 }
 
 function SidebarContent() {
@@ -165,7 +183,7 @@ function SidebarContent() {
   const filteredSections = useMemo(() => getFilteredSections(userRole), [userRole]);
 
   const isActive = (href: string) => {
-    if (href === '/') return location.pathname === '/';
+    if (['/', '/crm', '/erp', '/store'].includes(href)) return location.pathname === href;
     return location.pathname.startsWith(href);
   };
 
@@ -194,9 +212,9 @@ function SidebarContent() {
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
-                  DOS<span className="text-purple-600">CRM</span>
+                  DOS<span className="text-purple-600">ONE</span>
                 </span>
-                <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">ERP Enterprise</span>
+                <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">Commerce · CRM · ERP</span>
               </div>
             </div>
           )}
