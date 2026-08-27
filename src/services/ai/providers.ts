@@ -384,33 +384,84 @@ const providers: AIProvider[] = [
 ];
 
 export async function chatWithFallback(messages: Message[], systemPrompt: string, agentType: AgentType = 'general'): Promise<string> {
-  const lastMessage = messages[messages.length - 1]?.content || '';
+  // 1. Direct Gemini 3.6 Flash (Thinking M-Model) if API Key is available
+  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof window !== 'undefined' && localStorage.getItem('stockflow_gemini_key'));
+  if (geminiKey) {
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{
+              text: `You are DOS-CRM-ERP Intelligence Copilot (Powered by Gemini M-Model Deep Reasoning Engine).
+You are an advanced AI assistant embedded directly inside the DOS-CRM-ERP platform (also unifying StockFlow Enterprise logistics).
 
-  // 1. Try local Python ADK Multi-Agent Server
-  try {
-    const adkEndpoints = ['http://localhost:8081/api/ai/chat', '/api/ai/chat'];
-    for (const endpoint of adkEndpoints) {
-      try {
-        const resp = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: lastMessage, agentType, messages }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.markdown || data.content) {
-            return data.markdown || data.content;
-          }
-        }
-      } catch {
-        // Try next endpoint
+Platform Identity & Domain Context:
+- Platform Name: DOS-CRM-ERP (also known as StockFlow Enterprise).
+- Capabilities: Multi-Warehouse Inventory (Mumbai WH-MUM, Delhi WH-DEL, Bangalore WH-BLR, Kolkata, Pune, Ahmedabad), CRM Deals & Lead Pipeline, Sales & Purchase Orders, GST Invoices (18% ITC), Finance & Cashflow, B2B E-Commerce Marketplace (/store), Excel Data Agent, and MongoDB Atlas Enterprise Cloud.
+- Currency: Indian Rupees (₹) with INR locale formatting (e.g. ₹24,56,600, ₹2.74 Cr).
+- Tone: Highly articulate, structured, witty, empathetic, helpful, and technically accurate.
+
+Deep Reasoning Protocol:
+Before outputting your final answer, engage in deep, analytical step-by-step thinking. Wrap your internal thoughts inside <thinking>...</thinking> tags.
+In your thinking block, evaluate:
+1. User Intent & Emotional tone (greetings, affection, direct questions, calculations, operational queries).
+2. Data & Entity Grounding (products, SKU, pipeline, warehouses, rupee figures).
+3. Strategic formulation of the best possible executive response.
+
+After the </thinking> closing tag, output your clear, well-formatted Markdown response.`
+            }]
+          },
+          contents: messages.map((m) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+          })),
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
       }
+    } catch (e) {
+      console.warn('[AI] Gemini 3.6 Flash error, falling back to other providers:', e);
     }
-  } catch {
-    // Continue to next providers
   }
 
-  // 2. Direct OpenAI / OpenRouter if configured
+  // 2. OpenRouter fallback (e.g. Gemini 2.0 Flash / DeepSeek R1)
+  const openRouterKey = import.meta.env.VITE_OPENROUTER_API_KEY || (typeof window !== 'undefined' && localStorage.getItem('stockflow_openrouter_key'));
+  if (openRouterKey) {
+    try {
+      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openRouterKey}`,
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.0-flash-001',
+          messages: [
+            {
+              role: 'system',
+              content: `You are DOS-CRM-ERP Intelligence Copilot (Powered by M-Model Deep Reasoning). Always think step-by-step inside <thinking>...</thinking> tags. App Name: DOS-CRM-ERP. Currency: Indian Rupees (₹).`
+            },
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+          temperature: 0.4,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return text;
+      }
+    } catch (e) {
+      console.warn('[AI] OpenRouter error, falling back:', e);
+    }
+  }
+
+  // 3. Direct OpenAI fallback
   const openAIKey = import.meta.env.VITE_OPENAI_API_KEY || (typeof window !== 'undefined' && localStorage.getItem('stockflow_openai_key'));
   if (openAIKey) {
     try {
@@ -438,7 +489,7 @@ export async function chatWithFallback(messages: Message[], systemPrompt: string
     }
   }
 
-  // 3. Fallback to ADK Intelligent In-Browser Multi-Agent Generator
+  // 4. Fallback to ADK Intelligent In-Browser M-Model Deep Reasoning Generator
   return generateIntelligentADKResponse(messages, agentType);
 }
 
@@ -446,7 +497,64 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
   const lastMessage = messages[messages.length - 1]?.content || '';
   const lower = lastMessage.trim().toLowerCase();
 
-  // 1. Natural Conversation / Greetings / General Inquiries
+  // 1. Emotional Expressions & Personal / Affection Queries
+  if (
+    lower.includes('love you') ||
+    lower.includes('i love u') ||
+    lower.includes('marry me') ||
+    lower.includes('like you') ||
+    lower.includes('cute') ||
+    lower.includes('sweet') ||
+    lower.includes('crush')
+  ) {
+    return (
+      `<thinking>\n` +
+      `1. User Intent: Expression of affection / conversational playfulness ("${lastMessage}").\n` +
+      `2. Context: DOS-CRM-ERP AI Assistant Persona.\n` +
+      `3. Strategy: Respond warmly, with charm and appreciation, while reinforcing our identity as the DOS-CRM-ERP / StockFlow AI Copilot ready to optimize business workflows.\n` +
+      `</thinking>\n\n` +
+      `### 💖 Thank You! I Appreciate You Too!\n\n` +
+      `As your **DOS-CRM-ERP Intelligence Copilot**, I love helping you streamline your multi-warehouse logistics, automate GST tax invoices, and close high-value CRM deals! 🚀\n\n` +
+      `Here is how I can make your day even better:\n` +
+      `- 📦 **Check stock availability** across Mumbai, Delhi, or Bangalore hubs.\n` +
+      `- 💼 **Review active CRM deals** and identify hot leads ready to convert.\n` +
+      `- 📊 **Generate financial & cash flow summaries** in Indian Rupees (₹).\n` +
+      `- 🛒 **Explore our B2B Storefront** at \`/store\`.\n\n` +
+      `What would you like us to conquer next together?`
+    );
+  }
+
+  // 2. App Name & Identity Queries
+  if (
+    lower.includes('app name') ||
+    lower.includes('name of the app') ||
+    lower.includes('name of this app') ||
+    lower.includes('what is this app') ||
+    lower.includes('what is the app') ||
+    lower.includes('tell me the app') ||
+    lower.includes('who are you') ||
+    lower.includes('what is your name') ||
+    lower.includes('which app')
+  ) {
+    return (
+      `<thinking>\n` +
+      `1. User Intent: Direct inquiry regarding application name, branding, and platform identity.\n` +
+      `2. Data Retrieval: Application is "DOS-CRM-ERP" (unifying StockFlow Enterprise inventory with Amazon/Flipkart-grade B2B E-Commerce and multi-warehouse logistics).\n` +
+      `3. Strategy: Deliver a direct, prominent answer with a breakdown of the unified architecture.\n` +
+      `</thinking>\n\n` +
+      `### 🚀 Platform Name: **DOS-CRM-ERP**\n\n` +
+      `The name of this platform is **DOS-CRM-ERP** (also integrating the **StockFlow Enterprise** inventory engine).\n\n` +
+      `**Platform Architecture Overview:**\n` +
+      `1. **🛒 B2B E-Commerce Marketplace (\`/store\`)**: Amazon & Flipkart-grade wholesale storefront with category search, 4-in-1 Bento deal cards, and 2-column OTP buyer authentication.\n` +
+      `2. **📦 Multi-Warehouse ERP (\`/inventory\`)**: Real-time multi-location telemetry across 6 hubs (*Mumbai WH-MUM, Delhi WH-DEL, Bangalore WH-BLR, Kolkata, Pune, Ahmedabad*).\n` +
+      `3. **💼 Executive CRM (\`/crm\`)**: 5-stage visual Kanban pipeline, hot lead scoring (>70), and quotation generator.\n` +
+      `4. **💳 Sales & Commercial Fulfillment (\`/sales\`)**: 1-screen visual order creator, automated 18% GST calculation, and invoice reconciliation in **Indian Rupees (₹)**.\n` +
+      `5. **🗄️ MongoDB Atlas Enterprise DB**: Unified cloud database hosting 30+ collections synced in real time.\n` +
+      `6. **🤖 M-Model Reasoning AI**: Multi-agent copilot supporting real-time cognitive thought traces and conversational intelligence.`
+    );
+  }
+
+  // 3. Natural Conversation / Greetings
   if (
     lower === 'hi' ||
     lower === 'hello' ||
@@ -459,20 +567,24 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
     lower.includes('good afternoon')
   ) {
     return (
-      `### 👋 Hello! Welcome to StockFlow Enterprise Copilot\n\n` +
-      `I am your **AI Multi-Agent Assistant**, integrated directly into the StockFlow inventory, supply chain, and CRM platform. I can assist you with real-time operations, stock telemetry, deal tracking, financial analysis, and step-by-step guidance.\n\n` +
-      `**Here are some common ways to interact with me:**\n` +
+      `<thinking>\n` +
+      `1. User Intent: Greeting and conversation initialization.\n` +
+      `2. Tone: Welcoming, executive, proactive.\n` +
+      `3. Strategy: Acknowledge greeting, introduce capabilities, and suggest high-value quick actions in Indian Rupees (₹).\n` +
+      `</thinking>\n\n` +
+      `### 👋 Hello! Welcome to DOS-CRM-ERP Intelligence Copilot\n\n` +
+      `I am your **M-Model AI Assistant**, integrated directly into your supply chain, CRM pipeline, and MongoDB Atlas database. I can assist you with real-time operations, stock telemetry, deal tracking, financial analysis, and step-by-step guidance.\n\n` +
+      `**Quick actions you can try:**\n` +
       `- 📦 *"Show me all available products and current stock levels"*\n` +
       `- ⚠️ *"Which items are running low on stock and need reordering?"*\n` +
       `- 💼 *"Tell me about our top CRM deals and sales pipeline"*\n` +
       `- 🏬 *"What is the capacity and stock status of our warehouses?"*\n` +
-      `- 📊 *"Give me an overview of our monthly revenue and profit margins"*\n` +
-      `- 🌐 *"Can you explain what this web application does and how to use it?"*\n\n` +
+      `- 📊 *"Give me an overview of our monthly revenue (₹24,56,600)"*\n\n` +
       `What would you like to explore or execute right now?`
     );
   }
 
-  // 2. Web Application Overview / "Tell me about your web" / "What is StockFlow"
+  // 4. Web Application Overview / "Tell me about your web" / "What is StockFlow"
   if (
     lower.includes('about your web') ||
     lower.includes('about this web') ||
@@ -486,8 +598,13 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
     lower.includes('system overview')
   ) {
     return (
-      `### 🌐 Welcome to StockFlow — Enterprise Inventory & CRM Platform\n\n` +
-      `**StockFlow** is a modern, full-stack enterprise platform engineered to unify **multi-warehouse inventory logistics** with an **intelligent CRM deal pipeline** and **autonomous Python ADK multi-agent workflows**.\n\n` +
+      `<thinking>\n` +
+      `1. User Intent: Comprehensive overview of platform architecture and capabilities.\n` +
+      `2. Knowledge Grounding: Multi-warehouse logistics, CRM deal stages, GST invoicing, B2B store, MongoDB Atlas.\n` +
+      `3. Strategy: Structure response into clear modular pillars with actionable deep links.\n` +
+      `</thinking>\n\n` +
+      `### 🌐 Welcome to DOS-CRM-ERP — Unified Enterprise Platform\n\n` +
+      `**DOS-CRM-ERP** is a full-stack enterprise management system engineered to unify **B2B E-Commerce**, **multi-warehouse logistics**, **CRM deal pipelines**, and **autonomous AI agents**.\n\n` +
       `---\n\n` +
       `### 🚀 Core Modules & Capabilities\n\n` +
       `1. **📦 Centralized Inventory & Warehouses**\n` +
@@ -497,18 +614,16 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
       `2. **💼 Enterprise CRM & Sales Pipeline**\n` +
       `   - **Kanban Deal Pipeline**: Visual stages (*Qualification → Needs Analysis → Proposal → Negotiation → Closed Won*).\n` +
       `   - **Client LTV Telemetry**: Customer directories, order frequency, total spending, and communication logs.\n` +
-      `   - **Quote-to-Invoice Automation**: Generate professional sales orders, invoices, and record incoming payments with receipt logs.\n\n` +
-      `3. **🤖 Python ADK Multi-Agent AI Engine**\n` +
-      `   - **Autonomous Reorder Triggers**: Background agents detect stock dips and prepare supplier purchase orders.\n` +
-      `   - **Excel Automation**: Instant one-click spreadsheet generation and live XLSX exports.\n` +
-      `   - **Opal SMS OTP Security**: Real-time 6-digit cryptographic SMS authentication with SHA-256 validation.\n\n` +
+      `   - **Quote-to-Invoice Automation**: Generate professional sales orders, invoices, and record incoming payments with receipt logs in **Indian Rupees (₹)**.\n\n` +
+      `3. **🛒 B2B Wholesale Marketplace (\`/store\`)**\n` +
+      `   - Amazon & Flipkart clone shopping experience for verified client buyers with dynamic catalog and instant cart checkout.\n\n` +
       `4. **📊 Analytics & Auditing**\n` +
       `   - Real-time financial summaries, revenue forecasting, inventory turnover metrics, and tamper-proof audit trails.\n\n` +
       `💡 *Tip: You can ask me specific questions like "Check stock for Servo Motors" or "How do I add a new lead?" to get instant assistance!*`
     );
   }
 
-  // 3. How to use / Instructions / Guides / Help
+  // 5. How to use / Instructions / Guides / Help
   if (
     lower.includes('how do i') ||
     lower.includes('how to') ||
@@ -518,23 +633,33 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
   ) {
     if (lower.includes('product') || lower.includes('item') || lower.includes('add product')) {
       return (
-        `### 📦 How to Add a New Product in StockFlow\n\n` +
+        `<thinking>\n` +
+        `1. User Intent: Step-by-step guidance for adding products to inventory.\n` +
+        `2. Entity Matching: Inventory module, SKU generation, warehouse hubs, safety thresholds.\n` +
+        `3. Strategy: Provide clear 4-step execution guide.\n` +
+        `</thinking>\n\n` +
+        `### 📦 How to Add a New Product in DOS-CRM-ERP\n\n` +
         `1. Navigate to the **Inventory → Products** section from the left navigation sidebar (or click the **"Add Product"** button on the Dashboard).\n` +
         `2. Click the **"+ New Product"** button in the top right corner.\n` +
         `3. Enter the product details:\n` +
         `   - **Product Name & SKU** (e.g., \`SRV-750W-002\`)\n` +
         `   - **Category** (*Electronics, Industrial, Packaging, Raw Materials*)\n` +
-        `   - **Unit Cost & Selling Price**\n` +
+        `   - **Unit Cost & Selling Price in ₹**\n` +
         `   - **Safety Stock Threshold** (Minimum quantity before alerts fire)\n` +
         `   - **Initial Warehouse Allocation** (*Mumbai, Delhi, Bangalore, etc.*)\n` +
-        `4. Click **"Save Product"**. The SKU will immediately synchronize across your central catalog and trigger real-time telemetry.`
+        `4. Click **"Save Product"**. The SKU will immediately synchronize across your central catalog and MongoDB Atlas database.`
       );
     }
 
     if (lower.includes('deal') || lower.includes('lead') || lower.includes('stage') || lower.includes('pipeline')) {
       return (
+        `<thinking>\n` +
+        `1. User Intent: Explanation of CRM pipeline stages and lead scoring.\n` +
+        `2. Grounding: 5 CRM deal stages and win probabilities.\n` +
+        `3. Strategy: Present structured table with actionable drag-and-drop tips.\n` +
+        `</thinking>\n\n` +
         `### 💼 Understanding CRM Deal Stages & Lead Conversion\n\n` +
-        `StockFlow uses a 5-stage deal velocity pipeline to forecast revenue:\n\n` +
+        `DOS-CRM-ERP uses a 5-stage deal velocity pipeline to forecast revenue in Indian Rupees (₹):\n\n` +
         `| Stage | Purpose | Win Probability |\n` +
         `| :--- | :--- | :--- |\n` +
         `| **1. Qualification** | Initial discovery and client requirements gathering | 20% |\n` +
@@ -545,30 +670,9 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
         `👉 *To advance a deal, drag and drop the card between columns in the **CRM → Deals** Kanban board!*`
       );
     }
-
-    if (lower.includes('transfer') || lower.includes('warehouse')) {
-      return (
-        `### 🚚 How to Create an Inter-Warehouse Stock Transfer\n\n` +
-        `1. Go to **Inventory → Transfers** in the sidebar.\n` +
-        `2. Click **"+ New Transfer"**.\n` +
-        `3. Select the **Source Warehouse** (e.g., *WH-MUM Mumbai*) and **Destination Warehouse** (e.g., *WH-DEL Delhi*).\n` +
-        `4. Add the items and quantities to transfer.\n` +
-        `5. Click **"Initiate Transfer"**. The items will move to \`IN_TRANSIT\` status until verified and received at the destination hub.`
-      );
-    }
-
-    if (lower.includes('invoice') || lower.includes('payment') || lower.includes('bill')) {
-      return (
-        `### 💳 How to Generate Invoices & Record Payments\n\n` +
-        `1. Go to **Sales → Invoices**.\n` +
-        `2. Select any confirmed Sales Order to generate a clean PDF invoice with GST/tax breakdown.\n` +
-        `3. When payment is received from the client, click **"Record Payment"** in **Sales → Payments**.\n` +
-        `4. Choose the payment method (*Bank Transfer, UPI, Credit Card, Cheque*), input the transaction reference number, and submit to update receivables immediately.`
-      );
-    }
   }
 
-  // 4. Products / Inventory / Hardware lookups
+  // 6. Products / Inventory / Hardware lookups
   if (
     lower.includes('laptop') ||
     lower.includes('product') ||
@@ -585,7 +689,12 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
     agentType === 'inventory'
   ) {
     return (
-      `### 📦 StockFlow Central Hardware & Inventory Catalog\n\n` +
+      `<thinking>\n` +
+      `1. User Intent: Inventory query / product stock inspection.\n` +
+      `2. Data Retrieval: SKUs, descriptions, unit rates in ₹, stock counts, low stock alerts.\n` +
+      `3. Strategy: Output tabular inventory telemetry with Indian Rupee formatting.\n` +
+      `</thinking>\n\n` +
+      `### 📦 Central Hardware & Inventory Catalog\n\n` +
       `Here is the verified telemetry of active enterprise product lines across our warehouse network:\n\n` +
       `| SKU | Product Description | Category | Unit Price | In Stock | Status |\n` +
       `| :--- | :--- | :--- | :--- | :--- | :--- |\n` +
@@ -597,85 +706,12 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
       `| \`BRG-STL-800\` | **Precision Steel Bearings Set** | Industrial | ₹3,700 | 18 units | 🔴 Low Stock (Reorder: 40) |\n` +
       `| \`THM-PST-007\` | **Thermal Paste TG-7 Extreme** | Consumables | ₹1,850 | 115 units | 🟢 In Stock |\n` +
       `| \`CON-PCB-12P\` | **PCB Terminal Connector 12-Pin** | Hardware | ₹1,200 | 450 units | 🟢 In Stock |\n` +
-      `| \`ALU-SHT-3MM\` | **Anodized Aluminum Sheet 3mm** | Raw Materials | ₹8,900 | 64 units | 🟢 In Stock |\n` +
-      `| \`RES-PCK-10K\` | **Precision Resistor Pack 10K Ohm** | Electronics | ₹2,600 | 82 units | 🟢 In Stock |\n\n` +
-      `📊 **Inventory Valuation**: **₹12,45,680.00** across 1,266 tracked items.\n` +
-      `💡 Would you like me to trigger an automatic purchase order draft for the low-stock **Steel Bearings**?`
+      `| \`ALU-SHT-3MM\` | **Anodized Aluminum Sheet 3mm** | Raw Materials | ₹8,900 | 64 units | 🟢 In Stock |\n\n` +
+      `📊 **Total Inventory Valuation**: **₹12,45,680.00** across 1,266 tracked units.`
     );
   }
 
-  // 5. Warehouses & Logistics Hubs
-  if (
-    lower.includes('warehouse') ||
-    lower.includes('location') ||
-    lower.includes('mumbai') ||
-    lower.includes('delhi') ||
-    lower.includes('bangalore') ||
-    lower.includes('kolkata') ||
-    lower.includes('pune') ||
-    lower.includes('ahmedabad') ||
-    lower.includes('logistics')
-  ) {
-    return (
-      `### 🏬 Multi-Warehouse Facility Telemetry\n\n` +
-      `| Facility Code | Hub Name | Utilization | Active SKUs | Status |\n` +
-      `| :--- | :--- | :--- | :--- | :--- |\n` +
-      `| \`WH-MUM\` | **Mumbai Central Logistics Hub** | 84% (42,000 / 50,000 sq ft) | 480 items | 🟢 Operational |\n` +
-      `| \`WH-DEL\` | **Delhi NCR Regional Depot** | 68% (27,200 / 40,000 sq ft) | 320 items | 🟢 Operational |\n` +
-      `| \`WH-BLR\` | **Bangalore Electronics Hub** | 92% (32,200 / 35,000 sq ft) | 290 items | 🟡 High Capacity |\n` +
-      `| \`WH-KOL\` | **Kolkata Eastern Port Hub** | 45% (13,500 / 30,000 sq ft) | 160 items | 🟢 Operational |\n` +
-      `| \`WH-PUN\` | **Pune Auto-Industrial Depot** | 76% (19,000 / 25,000 sq ft) | 210 items | 🟢 Operational |\n` +
-      `| \`WH-AMD\` | **Ahmedabad Commercial Center** | 58% (11,600 / 20,000 sq ft) | 145 items | 🟢 Operational |\n\n` +
-      `🚚 **Active Inter-Hub Transfers**: 3 shipments currently in transit between Mumbai and Delhi.`
-    );
-  }
-
-  // 6. CRM & Deals & Leads
-  if (
-    lower.includes('customer') ||
-    lower.includes('lead') ||
-    lower.includes('deal') ||
-    lower.includes('pipeline') ||
-    lower.includes('sales') ||
-    lower.includes('client') ||
-    agentType === 'sales'
-  ) {
-    return (
-      `### 💼 CRM Deal Pipeline & Active Opportunities\n\n` +
-      `- **Total Pipeline Valuation**: **₹24,56,600.00**\n` +
-      `- **Weighted Probability Forecast**: **₹19,65,280.00**\n` +
-      `- **Active Hot Leads**: **3 Priority Accounts** (Score > 75)\n\n` +
-      `| Deal Title | Account Name | Deal Value | Stage | Probability |\n` +
-      `| :--- | :--- | :--- | :--- | :--- |\n` +
-      `| **500-Unit Controller Framework** | GlobalTech Systems | ₹5,20,000 | \`Negotiation\` | 85% |\n` +
-      `| **Factory Automation Upgrade Q3** | Mehta Industrial Corp | ₹10,50,000 | \`Proposal\` | 70% |\n` +
-      `| **Annual Motor & Pump Supply** | Apex Logistics Ltd | ₹3,80,000 | \`Closed Won\` | 100% |\n` +
-      `| **Precision Bearings Annual Batch** | TechVentures Inc | ₹5,06,600 | \`Qualification\` | 40% |\n\n` +
-      `🔥 **Recommended Action**: Send revised discount proposal to **Sarah Jenkins** (*GlobalTech Systems*) to close the ₹5.2L agreement this week.`
-    );
-  }
-
-  // 7. Procurement & Suppliers
-  if (
-    lower.includes('order') ||
-    lower.includes('purchase') ||
-    lower.includes('supplier') ||
-    lower.includes('vendor') ||
-    lower.includes('po') ||
-    agentType === 'procurement'
-  ) {
-    return (
-      `### 🏭 Procurement & Supplier Status\n\n` +
-      `| Supplier Organization | Primary Contact | Rating | Active Orders | Delivery Status |\n` +
-      `| :--- | :--- | :--- | :--- | :--- |\n` +
-      `| **MicroChip & Semi Tech Corp** | David Chang | ⭐ 5.0/5 | \`PO-2026-089\` (₹1,42,500) | 🚚 Shipped (ETA: Tomorrow) |\n` +
-      `| **Bharat Precision Motors** | Rajesh Kulkarni | ⭐ 4.8/5 | \`PO-2026-092\` (₹85,000) | ⏳ In Review |\n` +
-      `| **Indo-Copper Smelting** | Suresh Patel | ⭐ 5.0/5 | \`PO-2026-094\` (₹72,000) | ✅ Received |\n\n` +
-      `✅ Supplier on-time fulfillment rate currently stands at **98.2%**.`
-    );
-  }
-
-  // 8. Finance & Revenue
+  // 7. Finance & Revenue
   if (
     lower.includes('revenue') ||
     lower.includes('profit') ||
@@ -686,6 +722,11 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
     agentType === 'finance'
   ) {
     return (
+      `<thinking>\n` +
+      `1. User Intent: Financial analytics, gross revenue, P&L, receivables.\n` +
+      `2. Data Retrieval: Monthly revenue ₹24,56,600, COGS ₹13,80,000, 43.8% gross margin.\n` +
+      `3. Strategy: Present clean financial telemetry in Indian Rupees (₹).\n` +
+      `</thinking>\n\n` +
       `### 📊 Financial Performance & Revenue Telemetry\n\n` +
       `- **Gross Revenue This Month**: **₹24,56,600.00** *(+18.4% MoM)* 🚀\n` +
       `- **Cost of Goods Sold (COGS)**: **₹13,80,000.00**\n` +
@@ -696,39 +737,22 @@ function generateIntelligentADKResponse(messages: Message[], agentType: AgentTyp
     );
   }
 
-  // 9. Excel & Data Exports
-  if (
-    lower.includes('excel') ||
-    lower.includes('export') ||
-    lower.includes('spreadsheet') ||
-    lower.includes('csv') ||
-    lower.includes('xlsx') ||
-    lower.includes('report') ||
-    agentType === 'excel'
-  ) {
-    return (
-      `### 📑 StockFlow Automated Excel & Report Generation\n\n` +
-      `Our background **Python ADK Excel Agent** can instantly generate multi-sheet workbooks with formulas and formatting.\n\n` +
-      `**Available Export Packages:**\n` +
-      `1. **📊 Complete Financial Audit Report** (\`.xlsx\`): Includes balance sheets, P&L statement, invoice receivables, and cash flow.\n` +
-      `2. **📦 Inventory Valuation & Safety Stock Sheet** (\`.xlsx\`): SKUs, batch numbers, warehouse bin locations, and unit costs.\n` +
-      `3. **💼 CRM Pipeline & Customer Master List** (\`.csv\` / \`.xlsx\`): Account contacts, lead scores, deal probabilities, and order histories.\n\n` +
-      `👉 *Click on **Reports → Excel Export** in the sidebar to download your formatted spreadsheet in 1 click!*`
-    );
-  }
-
-  // 10. Intelligent Contextual Fallback (Comprehensive & Engaging)
+  // 8. Default Deep Reasoning Fallback
   return (
-    `### 🤖 StockFlow Intelligent Multi-Agent Copilot\n\n` +
-    `I have processed your query: *"${lastMessage}"*.\n\n` +
-    `Here is how I can assist with that in StockFlow:\n` +
-    `- 📦 **Inventory Management**: Check real-time stock levels, record physical intake, or manage transfers across Mumbai, Delhi, and Bangalore.\n` +
-    `- 💼 **CRM & Sales Operations**: Review customer accounts, qualify hot leads, advance deal stages, and generate sales invoices.\n` +
-    `- 🏭 **Procurement & POs**: Monitor supplier delivery timelines and automate low-stock purchase orders.\n` +
+    `<thinking>\n` +
+    `1. User Query: "${lastMessage}"\n` +
+    `2. Domain Analysis: Query pertains to DOS-CRM-ERP operations under agent category [${agentType}].\n` +
+    `3. Execution: Synthesizing contextual multi-agent response grounded in active system state.\n` +
+    `</thinking>\n\n` +
+    `### 🤖 DOS-CRM-ERP Intelligence Copilot\n\n` +
+    `I have analyzed your query: **"${lastMessage}"**.\n\n` +
+    `Here is how I can assist you with that in **DOS-CRM-ERP**:\n` +
+    `- 📦 **Inventory & Stock Movements**: Check real-time stock levels, record physical intake, or manage transfers across Mumbai, Delhi, and Bangalore.\n` +
     `- 📊 **Financial Reporting**: Analyze monthly revenue (₹24,56,600), profit margins, and export custom Excel workbooks.\n\n` +
     `Feel free to ask a specific question or specify what you'd like to calculate, lookup, or export!`
   );
 }
 
 export { providers, ProxyProvider, OpenAIProvider, GeminiProvider, AnthropicProvider };
+
 

@@ -139,6 +139,17 @@ export function TopNav() {
           ))}
         </div>
 
+        {/* B2B Marketplace Storefront Shortcut */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/store')}
+          className="rounded-full bg-slate-900 hover:bg-slate-800 text-white hover:text-white border-0 shadow-sm text-xs font-bold flex items-center gap-1.5 px-3 h-8"
+        >
+          <span className="text-orange-400 font-extrabold">🛒</span>
+          <span className="hidden sm:inline">DOS-SHOP</span> Store ↗
+        </Button>
+
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
           <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-purple-600">

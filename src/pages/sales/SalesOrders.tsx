@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import {
   Plus, ShoppingCart, Package, Check, X, Truck, CheckCircle2,
-  CircleDot, Search, Trash2, ScanLine,
+  Search, Trash2, ScanLine, CreditCard, Building2, User
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -31,7 +31,7 @@ import type { ScanResult } from '@/services/barcode/types';
 import { useSalesOrders, useSalesOrder, useCreateSalesOrder } from '@/hooks/useSalesOrders';
 import { useConfirmOrder, useProcessOrder, useShipOrder, useDeliverOrder, useCancelOrder } from '@/hooks/useSalesWorkflow';
 import { useInvoice } from '@/hooks/useInvoices';
-import { usePayments, useRecordPayment } from '@/hooks/usePayments';
+import { useRecordPayment } from '@/hooks/usePayments';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
 import { useWarehouses } from '@/hooks/useWarehouses';
@@ -61,12 +61,11 @@ interface OrderLineItem {
 }
 
 export default function SalesOrdersPage() {
-  useDocumentTitle('Sales Orders');
+  useDocumentTitle('Sales Orders & Commercial Fulfillment | DOS-CRM-ERP');
   const { user } = useAuth();
   const userId = user?.id ?? '';
   const [activeTab, setActiveTab] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [step, setStep] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -83,8 +82,8 @@ export default function SalesOrdersPage() {
 
   const handleBarcodeScan = (result: ScanResult) => {
     setScannerOpen(false);
-    toast.success(`Product scanned: ${result.value}`, {
-      description: 'Product added to order',
+    toast.success(`Product barcode scanned: ${result.value}`, {
+      description: 'Added to current sales order item list',
     });
   };
 
@@ -94,7 +93,6 @@ export default function SalesOrdersPage() {
   const { data: allOrdersResult } = useSalesOrders({});
   const { data: selectedOrder, isLoading: orderLoading } = useSalesOrder(selectedOrderId);
   const { data: invoice } = useInvoice(selectedOrderId);
-  const { data: payments } = usePayments(selectedOrderId);
   const { data: customersResult } = useCustomers({ pageSize: 100 });
   const { data: productsResult } = useProducts({ pageSize: 100, is_active: true });
   const { data: warehousesResult } = useWarehouses({ is_active: true });
@@ -138,6 +136,16 @@ export default function SalesOrdersPage() {
     return [];
   }, [warehousesResult]);
 
+  // Set default customer and warehouse if empty
+  useMemo(() => {
+    if (!selectedCustomerId && customers.length > 0) {
+      setSelectedCustomerId(customers[0].id);
+    }
+    if (!selectedWarehouseId && warehouses.length > 0) {
+      setSelectedWarehouseId(warehouses[0].id);
+    }
+  }, [customers, warehouses, selectedCustomerId, selectedWarehouseId]);
+
   // Count per status
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allOrders.length };
@@ -149,14 +157,14 @@ export default function SalesOrdersPage() {
 
   // Filtered products for search
   const filteredProducts = useMemo(() => {
-    if (!productSearch) return products.slice(0, 10);
+    if (!productSearch) return products.slice(0, 8);
     const lower = productSearch.toLowerCase();
     return products.filter(
       (p: any) => (p.name || '').toLowerCase().includes(lower) || (p.sku || '').toLowerCase().includes(lower)
-    ).slice(0, 10);
+    ).slice(0, 8);
   }, [products, productSearch]);
 
-  // Order totals calculation
+  // Order totals calculation (INR ₹)
   const orderTotals = useMemo(() => {
     const subtotal = orderItems.reduce(
       (sum, item) => sum + item.quantity * item.unit_price * (1 - item.discount_percent / 100),
@@ -170,15 +178,12 @@ export default function SalesOrdersPage() {
     return { subtotal, tax, discount, total: subtotal + tax };
   }, [orderItems]);
 
-  const addProductToOrder = (productId: string) => {
-    const product = products.find((p: any) => p.id === productId);
-    if (!product) return;
-
-    const existing = orderItems.find((item) => item.product_id === productId);
+  const addProductToOrder = (product: any) => {
+    const existing = orderItems.find((item) => item.product_id === product.id);
     if (existing) {
       setOrderItems(
         orderItems.map((item) =>
-          item.product_id === productId ? { ...item, quantity: item.quantity + 1 } : item
+          item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         )
       );
     } else {
@@ -188,12 +193,12 @@ export default function SalesOrdersPage() {
           product_id: product.id,
           product_name: product.name,
           quantity: 1,
-          unit_price: product.unit_price,
+          unit_price: product.unit_price || 1000,
           discount_percent: 0,
         },
       ]);
     }
-    setProductSearch('');
+    toast.info(`Added ${product.name} to order`);
   };
 
   const removeOrderItem = (index: number) => {
@@ -208,7 +213,7 @@ export default function SalesOrdersPage() {
 
   const handleCreateOrder = () => {
     if (!selectedCustomerId || !selectedWarehouseId || orderItems.length === 0) {
-      toast.error('Please fill all required fields');
+      toast.error('Please select customer, warehouse, and add at least one product');
       return;
     }
 
@@ -234,7 +239,7 @@ export default function SalesOrdersPage() {
       },
       {
         onSuccess: () => {
-          toast.success('Sales order created successfully');
+          toast.success('Sales order confirmed and generated successfully!');
           setDialogOpen(false);
           resetForm();
         },
@@ -246,9 +251,6 @@ export default function SalesOrdersPage() {
   };
 
   const resetForm = () => {
-    setStep(1);
-    setSelectedCustomerId('');
-    setSelectedWarehouseId('');
     setOrderItems([]);
     setProductSearch('');
   };
@@ -277,7 +279,7 @@ export default function SalesOrdersPage() {
     shipOrder.mutate(
       { order_id: selectedOrderId, shipped_by: userId },
       {
-        onSuccess: () => toast.success('Order shipped, invoice generated'),
+        onSuccess: () => toast.success('Order shipped, tax invoice generated'),
         onError: (e) => toast.error(`Failed: ${e.message}`),
       }
     );
@@ -312,30 +314,42 @@ export default function SalesOrdersPage() {
         invoice_id: invoice.id,
         amount: parseFloat(paymentAmount),
         payment_method: paymentMethod,
+        payment_date: new Date().toISOString(),
         reference_number: paymentRef || undefined,
         received_by: userId,
       },
       {
         onSuccess: () => {
-          toast.success('Payment recorded');
+          toast.success('Payment recorded successfully');
           setPaymentDialogOpen(false);
           setPaymentAmount('');
           setPaymentRef('');
         },
-        onError: (e) => toast.error(`Failed: ${e.message}`),
+        onError: (e) => toast.error(`Payment failed: ${e.message}`),
       }
     );
   };
 
   const columns = [
-    { key: 'order_number', title: 'Order #', sortable: true },
+    {
+      key: 'order_number',
+      title: 'Order #',
+      sortable: true,
+      render: (row: Record<string, unknown>) => (
+        <span className="font-mono text-xs font-bold text-slate-900">{row.order_number as string}</span>
+      ),
+    },
     {
       key: 'customer',
       title: 'Customer',
-      sortable: true,
       render: (row: Record<string, unknown>) => {
-        const cust = row.customers as { name: string } | null;
-        return cust?.name ?? 'Unknown';
+        const c = (row as any).customers;
+        return (
+          <div className="flex items-center gap-2">
+            <User className="h-3.5 w-3.5 text-purple-600" />
+            <span className="font-semibold text-slate-800">{c?.name || c?.contact_person || (row.customer_id as string)?.slice(0, 10) || 'Verified Client'}</span>
+          </div>
+        );
       },
     },
     {
@@ -344,18 +358,21 @@ export default function SalesOrdersPage() {
       render: (row: Record<string, unknown>) => {
         const status = row.status as string;
         return (
-          <Badge variant={statusVariants[status] || 'secondary'}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+          <Badge variant={statusVariants[status] || 'secondary'} className="font-bold text-[11px] capitalize">
+            {status}
           </Badge>
         );
       },
     },
     {
       key: 'total_amount',
-      title: 'Total',
+      title: 'Total (INR)',
       sortable: true,
-      render: (row: Record<string, unknown>) =>
-        `$${((row.total_amount as number) ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+      render: (row: Record<string, unknown>) => (
+        <span className="font-black text-slate-900">
+          ₹{((row.total_amount as number) ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        </span>
+      ),
     },
     {
       key: 'created_at',
@@ -372,48 +389,51 @@ export default function SalesOrdersPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
       className="space-y-6"
     >
       <PageHeader
+        badge="Commercial Orders"
         title="Sales Orders"
-        description="Manage customer orders and track fulfillment"
+        description="Manage customer sales contracts, warehouse dispatch allocation, and order fulfillment in Indian Rupees (₹)."
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setScannerOpen(true)}>
-              <ScanLine className="mr-2 h-4 w-4" /> Scan Product
+            <Button variant="outline" onClick={() => setScannerOpen(true)} className="rounded-xl border-slate-200 text-xs font-semibold">
+              <ScanLine className="mr-2 h-4 w-4 text-purple-600" /> Barcode Scan
             </Button>
-            <Button onClick={() => { setDialogOpen(true); resetForm(); }}>
-              <Plus className="mr-2 h-4 w-4" /> New Order
+            <Button
+              onClick={() => { setDialogOpen(true); resetForm(); }}
+              className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Create Sales Order
             </Button>
           </div>
         }
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All ({statusCounts.all || 0})</TabsTrigger>
-          <TabsTrigger value="draft">Draft ({statusCounts.draft || 0})</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmed ({statusCounts.confirmed || 0})</TabsTrigger>
-          <TabsTrigger value="processing">Processing ({statusCounts.processing || 0})</TabsTrigger>
-          <TabsTrigger value="shipped">Shipped ({statusCounts.shipped || 0})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({statusCounts.delivered || 0})</TabsTrigger>
+        <TabsList className="bg-slate-100 p-1 rounded-2xl">
+          <TabsTrigger value="all" className="rounded-xl text-xs font-bold">All ({statusCounts.all || 0})</TabsTrigger>
+          <TabsTrigger value="draft" className="rounded-xl text-xs font-bold">Draft ({statusCounts.draft || 0})</TabsTrigger>
+          <TabsTrigger value="confirmed" className="rounded-xl text-xs font-bold">Confirmed ({statusCounts.confirmed || 0})</TabsTrigger>
+          <TabsTrigger value="processing" className="rounded-xl text-xs font-bold">Processing ({statusCounts.processing || 0})</TabsTrigger>
+          <TabsTrigger value="shipped" className="rounded-xl text-xs font-bold">Shipped ({statusCounts.shipped || 0})</TabsTrigger>
+          <TabsTrigger value="delivered" className="rounded-xl text-xs font-bold">Delivered ({statusCounts.delivered || 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-[12px]" />
+                <Skeleton key={i} className="h-12 w-full rounded-2xl" />
               ))}
             </div>
           ) : (
             <DataTable
               columns={columns}
               data={orders as unknown as Record<string, unknown>[]}
-              searchPlaceholder="Search orders..."
+              searchPlaceholder="Search orders by number or client..."
               onRowClick={(row) => {
                 setSelectedOrderId(row.id as string);
                 setSheetOpen(true);
@@ -425,114 +445,74 @@ export default function SalesOrdersPage() {
 
       {/* Order Detail Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="sm:max-w-2xl overflow-y-auto bg-white">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" />
-              {selectedOrder?.order_number ?? 'Loading...'}
+            <SheetTitle className="flex items-center gap-2 text-xl font-extrabold">
+              <ShoppingCart className="h-5 w-5 text-purple-600" />
+              {selectedOrder?.order_number ?? 'Order Detail'}
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription className="text-xs text-slate-500">
               {selectedOrder
-                ? `Created ${format(new Date(selectedOrder.created_at), 'MMM d, yyyy')}`
+                ? `Created on ${format(new Date(selectedOrder.created_at), 'MMMM d, yyyy')}`
                 : ''}
             </SheetDescription>
           </SheetHeader>
 
           {orderLoading ? (
             <div className="space-y-4 mt-6">
-              <Skeleton className="h-20 w-full rounded-[12px]" />
-              <Skeleton className="h-40 w-full rounded-[12px]" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
+              <Skeleton className="h-40 w-full rounded-2xl" />
             </div>
           ) : selectedOrder ? (
             <div className="space-y-6 mt-6">
               {/* Status Stepper */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                 {statusSteps.map((s, i) => {
-                  const isComplete = i <= currentStepIndex;
+                  const isCompleted = i <= currentStepIndex;
                   const isCurrent = i === currentStepIndex;
                   return (
-                    <div key={s} className="flex items-center gap-1 flex-1">
+                    <div key={s} className="flex-1 flex items-center gap-1">
                       <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all ${
-                          isComplete
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-muted-foreground'
-                        } ${isCurrent ? 'ring-2 ring-primary/30' : ''}`}
+                        className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+                          isCompleted
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-slate-200 text-slate-500'
+                        } ${isCurrent ? 'ring-2 ring-purple-600 ring-offset-2' : ''}`}
                       >
-                        {isComplete ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                        {isCompleted ? <Check className="h-3.5 w-3.5" /> : i + 1}
                       </div>
-                      {i < statusSteps.length - 1 && (
-                        <div
-                          className={`flex-1 h-0.5 ${
-                            i < currentStepIndex ? 'bg-primary' : 'bg-secondary'
-                          }`}
-                        />
-                      )}
+                      <span className="text-[10px] font-bold capitalize hidden sm:inline text-slate-700">
+                        {s}
+                      </span>
                     </div>
                   );
                 })}
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                {statusSteps.map((s) => (
-                  <span key={s} className="capitalize">{s}</span>
-                ))}
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
                 {selectedOrder.status === 'draft' && (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={handleConfirmOrder}
-                      disabled={confirmOrder.isPending}
-                    >
-                      <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirm Order
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={handleCancelOrder}
-                      disabled={cancelOrder.isPending}
-                    >
-                      <X className="mr-1 h-3.5 w-3.5" /> Cancel
-                    </Button>
-                  </>
+                  <Button size="sm" onClick={handleConfirmOrder} disabled={confirmOrder.isPending} className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Check className="mr-1 h-3.5 w-3.5" /> Confirm Order
+                  </Button>
                 )}
                 {selectedOrder.status === 'confirmed' && (
                   <>
-                    <Button
-                      size="sm"
-                      onClick={handleProcessOrder}
-                      disabled={processOrder.isPending}
-                    >
-                      <Package className="mr-1 h-3.5 w-3.5" /> Process
+                    <Button size="sm" onClick={handleProcessOrder} disabled={processOrder.isPending} className="bg-amber-600 hover:bg-amber-700 text-white">
+                      <Package className="mr-1 h-3.5 w-3.5" /> Move to Packing
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={handleCancelOrder}
-                      disabled={cancelOrder.isPending}
-                    >
-                      <X className="mr-1 h-3.5 w-3.5" /> Cancel
+                    <Button size="sm" variant="destructive" onClick={handleCancelOrder} disabled={cancelOrder.isPending}>
+                      <X className="mr-1 h-3.5 w-3.5" /> Cancel Order
                     </Button>
                   </>
                 )}
                 {selectedOrder.status === 'processing' && (
-                  <Button
-                    size="sm"
-                    onClick={handleShipOrder}
-                    disabled={shipOrder.isPending}
-                  >
-                    <Truck className="mr-1 h-3.5 w-3.5" /> Ship Order
+                  <Button size="sm" onClick={handleShipOrder} disabled={shipOrder.isPending} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Truck className="mr-1 h-3.5 w-3.5" /> Dispatch &amp; Generate Invoice
                   </Button>
                 )}
                 {selectedOrder.status === 'shipped' && (
-                  <Button
-                    size="sm"
-                    onClick={handleDeliverOrder}
-                    disabled={deliverOrder.isPending}
-                  >
+                  <Button size="sm" onClick={handleDeliverOrder} disabled={deliverOrder.isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Mark Delivered
                   </Button>
                 )}
@@ -540,61 +520,61 @@ export default function SalesOrdersPage() {
 
               <Separator />
 
-              {/* Order Info */}
-              <Card>
+              {/* Order Info Card */}
+              <Card className="rounded-2xl border-slate-200 bg-slate-50/50">
                 <CardContent className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-muted-foreground">Customer</span>
-                      <p className="font-medium text-foreground">
-                        {(selectedOrder as SalesOrderWithItems & { customers?: { name: string } | null }).customers?.name ?? 'Unknown'}
+                      <span className="text-slate-400 font-medium">Customer</span>
+                      <p className="font-bold text-slate-900 text-sm mt-0.5">
+                        {(selectedOrder as SalesOrderWithItems & { customers?: { name: string } | null }).customers?.name ?? 'Verified Buyer'}
                       </p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Status</span>
-                      <p>
-                        <Badge variant={statusVariants[selectedOrder.status] || 'secondary'}>
-                          {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                      <span className="text-slate-400 font-medium">Order Status</span>
+                      <p className="mt-0.5">
+                        <Badge variant={statusVariants[selectedOrder.status] || 'secondary'} className="capitalize font-bold">
+                          {selectedOrder.status}
                         </Badge>
                       </p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Total Amount</span>
-                      <p className="font-medium text-primary">
-                        ${selectedOrder.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <span className="text-slate-400 font-medium">Total Amount (INR)</span>
+                      <p className="font-black text-purple-700 text-base mt-0.5">
+                        ₹{selectedOrder.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Tax</span>
-                      <p className="font-medium text-foreground">
-                        ${selectedOrder.tax_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <span className="text-slate-400 font-medium">GST Tax (18%)</span>
+                      <p className="font-bold text-slate-800 text-sm mt-0.5">
+                        ₹{selectedOrder.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Line Items */}
+              {/* Line Items Table */}
               {selectedOrder.items && selectedOrder.items.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2">Line Items</h4>
-                  <div className="rounded-[12px] border border-border overflow-hidden">
-                    <table className="w-full text-sm">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Ordered Products</h4>
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                    <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-secondary/50">
-                          <th className="px-3 py-2 text-left text-xs text-muted-foreground">Product</th>
-                          <th className="px-3 py-2 text-right text-xs text-muted-foreground">Qty</th>
-                          <th className="px-3 py-2 text-right text-xs text-muted-foreground">Price</th>
-                          <th className="px-3 py-2 text-right text-xs text-muted-foreground">Total</th>
+                        <tr className="bg-slate-100 text-slate-600">
+                          <th className="px-3 py-2.5 text-left font-bold">Product Name</th>
+                          <th className="px-3 py-2.5 text-right font-bold">Qty</th>
+                          <th className="px-3 py-2.5 text-right font-bold">Unit Price</th>
+                          <th className="px-3 py-2.5 text-right font-bold">Total (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedOrder.items.map((item) => (
-                          <tr key={item.id} className="border-t border-border">
-                            <td className="px-3 py-2 text-foreground">{item.product_id.slice(0, 8)}...</td>
-                            <td className="px-3 py-2 text-right">{item.quantity}</td>
-                            <td className="px-3 py-2 text-right">${item.unit_price.toFixed(2)}</td>
-                            <td className="px-3 py-2 text-right">${item.total_price.toFixed(2)}</td>
+                          <tr key={item.id} className="border-t border-slate-100">
+                            <td className="px-3 py-2.5 font-semibold text-slate-900">{item.product_id.slice(0, 8)}...</td>
+                            <td className="px-3 py-2.5 text-right font-bold">{item.quantity}</td>
+                            <td className="px-3 py-2.5 text-right">₹{item.unit_price.toLocaleString('en-IN')}</td>
+                            <td className="px-3 py-2.5 text-right font-bold text-purple-700">₹{item.total_price.toLocaleString('en-IN')}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -607,116 +587,50 @@ export default function SalesOrdersPage() {
               {invoice && (
                 <>
                   <Separator />
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">Invoice</h4>
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium">{invoice.invoice_number}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Total: ${invoice.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </p>
-                          </div>
-                          <Badge
-                            variant={
-                              invoice.payment_status === 'paid'
-                                ? 'default'
-                                : invoice.payment_status === 'partial'
-                                  ? 'warning'
-                                  : 'destructive'
-                            }
-                          >
-                            {invoice.payment_status}
-                          </Badge>
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Statutory Tax Invoice</h4>
+                    <Card className="rounded-2xl border-slate-200">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-extrabold text-slate-900">{invoice.invoice_number}</p>
+                          <p className="text-xs text-slate-500">
+                            Invoice Total: <strong className="text-purple-700">₹{invoice.total_amount.toLocaleString('en-IN')}</strong>
+                          </p>
                         </div>
-                        <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPaymentDialogOpen(true)}
-                          >
-                            Record Payment
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="outline" onClick={() => setPaymentDialogOpen(true)} className="rounded-xl text-xs font-bold">
+                          <CreditCard className="mr-1.5 h-3.5 w-3.5" /> Record Payment
+                        </Button>
                       </CardContent>
                     </Card>
                   </div>
                 </>
-              )}
-
-              {/* Payment History */}
-              {payments && payments.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-2">Payment History</h4>
-                  <div className="space-y-2">
-                    {payments.map((payment) => (
-                      <div
-                        key={payment.id}
-                        className="flex items-center justify-between rounded-[12px] bg-secondary/30 p-3"
-                      >
-                        <div>
-                          <p className="text-sm text-foreground">
-                            ${payment.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {payment.payment_method} - {format(new Date(payment.payment_date), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        {payment.reference_number && (
-                          <span className="text-xs text-muted-foreground">
-                            Ref: {payment.reference_number}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
             </div>
           ) : null}
         </SheetContent>
       </Sheet>
 
-      {/* New Order Dialog */}
+      {/* NEW: VISUAL 1-SCREEN SALES ORDER CREATOR MODAL */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl rounded-3xl p-6 sm:p-8 bg-white border border-slate-200 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" /> New Sales Order
+            <DialogTitle className="flex items-center gap-2 text-2xl font-black text-slate-900">
+              <ShoppingCart className="h-6 w-6 text-purple-600" /> Create New Sales Order
             </DialogTitle>
-            <DialogDescription>
-              Step {step} of 5:{' '}
-              {step === 1
-                ? 'Select Customer'
-                : step === 2
-                  ? 'Select Warehouse'
-                  : step === 3
-                    ? 'Add Products'
-                    : step === 4
-                      ? 'Review'
-                      : 'Confirm'}
+            <DialogDescription className="text-xs text-slate-500">
+              Select customer, fulfillment warehouse, and pick products with real-time stock and INR (₹) pricing.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center justify-center gap-2 py-2">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <div
-                key={s}
-                className={`h-2 w-10 rounded-full transition-all ${
-                  s <= step ? 'bg-primary' : 'bg-secondary'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Step 1: Select Customer */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Customer</Label>
+          <div className="space-y-6 pt-2">
+            {/* Top Config Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-purple-600" /> Customer Account *
+                </Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white rounded-xl text-xs h-10 border-slate-300">
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
@@ -728,16 +642,13 @@ export default function SalesOrdersPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          )}
 
-          {/* Step 2: Select Warehouse */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Warehouse</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-purple-600" /> Dispatch Warehouse Hub *
+                </Label>
                 <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white rounded-xl text-xs h-10 border-slate-300">
                     <SelectValue placeholder="Select warehouse" />
                   </SelectTrigger>
                   <SelectContent>
@@ -750,260 +661,208 @@ export default function SalesOrdersPage() {
                 </Select>
               </div>
             </div>
-          )}
 
-          {/* Step 3: Add Products */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              {productSearch && (
-                <div className="max-h-32 overflow-y-auto rounded-[12px] border border-border">
-                  {filteredProducts.map((p: any) => (
-                    <button
-                      key={p.id}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-secondary/50 text-left"
-                      onClick={() => addProductToOrder(p.id)}
-                    >
-                      <span className="text-foreground">{p.name}</span>
-                      <span className="text-muted-foreground">${(p.unit_price || 0).toFixed(2)}</span>
-                    </button>
-                  ))}
+            {/* Product Picker Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  Select Products from Catalog
+                </Label>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Input
+                    placeholder="Search SKU or name..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs bg-slate-50 border-slate-200 rounded-xl"
+                  />
                 </div>
-              )}
+              </div>
 
-              {orderItems.length > 0 && (
-                <div className="space-y-2">
+              {/* Visual Product Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1">
+                {filteredProducts.map((p: any) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 hover:shadow-xs transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl overflow-hidden bg-slate-900 shrink-0">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-purple-400">
+                            <Package className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-900 truncate max-w-[140px]">{p.name}</p>
+                        <p className="text-[10px] text-purple-700 font-extrabold">₹{(p.unit_price || 1000).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      onClick={() => addProductToOrder(p)}
+                      className="h-7 px-2.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white text-xs font-bold"
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Selected Items & Order Summary */}
+            {orderItems.length > 0 && (
+              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  Current Order Items ({orderItems.length})
+                </Label>
+                <div className="space-y-2 max-h-44 overflow-y-auto">
                   {orderItems.map((item, index) => (
                     <div
                       key={item.product_id}
-                      className="rounded-[12px] border border-border p-3"
+                      className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 gap-3 text-xs"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-foreground">
-                          {item.product_name}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-slate-900 truncate">{item.product_name}</p>
+                        <p className="text-[11px] text-slate-500">Rate: ₹{item.unit_price.toLocaleString('en-IN')}</p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => updateOrderItem(index, 'quantity', Math.max(1, item.quantity - 1))}
+                            className="h-6 w-6 rounded bg-white font-bold text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="font-extrabold text-xs px-2">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateOrderItem(index, 'quantity', item.quantity + 1)}
+                            className="h-6 w-6 rounded bg-white font-bold text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <span className="font-black text-slate-900 w-24 text-right">
+                          ₹{(item.quantity * item.unit_price).toLocaleString('en-IN')}
                         </span>
+
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
+                          className="h-6 w-6 text-slate-400 hover:text-red-600"
                           onClick={() => removeOrderItem(index)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Qty</Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateOrderItem(index, 'quantity', parseInt(e.target.value) || 1)
-                            }
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Price</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={item.unit_price}
-                            onChange={(e) =>
-                              updateOrderItem(index, 'unit_price', parseFloat(e.target.value) || 0)
-                            }
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Disc %</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={item.discount_percent}
-                            onChange={(e) =>
-                              updateOrderItem(
-                                index,
-                                'discount_percent',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            className="h-8 text-xs"
-                          />
-                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Step 4: Review */}
-          {step === 4 && (
-            <div className="rounded-[12px] bg-secondary/30 p-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Customer</span>
-                <span className="text-foreground">
-                  {customers.find((c: any) => c.id === selectedCustomerId)?.name ?? '-'}
-                </span>
+                {/* Subtotal / GST Calculation */}
+                <div className="pt-3 border-t border-slate-200 space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-500">
+                    <span>Subtotal:</span>
+                    <span>₹{orderTotals.subtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>GST (18% Input Tax Credit):</span>
+                    <span>₹{orderTotals.tax.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-base font-black text-purple-700 pt-1 border-t border-slate-200">
+                    <span>Grand Total:</span>
+                    <span>₹{orderTotals.total.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Warehouse</span>
-                <span className="text-foreground">
-                  {warehouses.find((w: any) => w.id === selectedWarehouseId)?.name ?? '-'}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Items</span>
-                <span className="text-foreground">{orderItems.length} items</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="text-foreground">${orderTotals.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (18%)</span>
-                <span className="text-foreground">${orderTotals.tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Discount</span>
-                <span className="text-foreground">-${orderTotals.discount.toFixed(2)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-foreground">Grand Total</span>
-                <span className="text-primary">${orderTotals.total.toFixed(2)}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Confirm */}
-          {step === 5 && (
-            <div className="text-center space-y-4 py-4">
-              <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-primary/10">
-                <CircleDot className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <p className="text-foreground font-medium">Ready to Create</p>
-                <p className="text-sm text-muted-foreground">
-                  This will create a draft sales order for ${orderTotals.total.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
-                Back
-              </Button>
             )}
-            {step < 5 ? (
-              <Button
-                onClick={() => setStep(step + 1)}
-                disabled={
-                  (step === 1 && !selectedCustomerId) ||
-                  (step === 2 && !selectedWarehouseId) ||
-                  (step === 3 && orderItems.length === 0)
-                }
-              >
-                Next
-              </Button>
-            ) : (
-              <Button onClick={handleCreateOrder} disabled={createOrder.isPending}>
-                {createOrder.isPending ? 'Creating...' : 'Create Order'}
-              </Button>
-            )}
+          </div>
+
+          <DialogFooter className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="rounded-xl text-xs font-semibold">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateOrder}
+              disabled={createOrder.isPending || orderItems.length === 0}
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs px-6 shadow-md shadow-purple-600/25"
+            >
+              {createOrder.isPending ? 'Generating Order...' : `Confirm Order (₹${orderTotals.total.toLocaleString('en-IN')})`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Record Payment Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md rounded-3xl p-6 bg-white border border-slate-200">
           <DialogHeader>
-            <DialogTitle>Record Payment</DialogTitle>
-            <DialogDescription>
-              Record a payment for invoice {invoice?.invoice_number}
+            <DialogTitle className="text-xl font-bold">Record Customer Payment</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Record receipt for invoice {invoice?.invoice_number}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Amount</Label>
+          <div className="space-y-4 pt-2 text-xs">
+            <div className="space-y-1.5">
+              <Label className="font-bold text-slate-700">Amount (INR ₹) *</Label>
               <Input
                 type="number"
                 min={0}
-                step={0.01}
-                placeholder="0.00"
+                placeholder="₹ Amount received"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
+                className="h-10 rounded-xl"
               />
-              {invoice && (
-                <p className="text-xs text-muted-foreground">
-                  Outstanding: ${(invoice.total_amount - invoice.amount_paid).toFixed(2)}
-                </p>
-              )}
             </div>
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-              >
-                <SelectTrigger>
+            <div className="space-y-1.5">
+              <Label className="font-bold text-slate-700">Payment Mode</Label>
+              <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as PaymentMethod)}>
+                <SelectTrigger className="h-10 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="upi">UPI</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                  <SelectItem value="credit">Credit</SelectItem>
-                  <SelectItem value="razorpay">Razorpay</SelectItem>
+                  <SelectItem value="bank_transfer">NEFT / RTGS Bank Transfer</SelectItem>
+                  <SelectItem value="upi">UPI / QR Payment</SelectItem>
+                  <SelectItem value="credit_card">Corporate Credit Card</SelectItem>
+                  <SelectItem value="cheque">Cheque / Demand Draft</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Reference Number</Label>
+            <div className="space-y-1.5">
+              <Label className="font-bold text-slate-700">Bank Reference / UTR Number</Label>
               <Input
-                placeholder="Optional"
+                placeholder="e.g. UTR-9982018892"
                 value={paymentRef}
                 onChange={(e) => setPaymentRef(e.target.value)}
+                className="h-10 rounded-xl"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRecordPayment} disabled={recordPayment.isPending}>
-              {recordPayment.isPending ? 'Recording...' : 'Record Payment'}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)} className="rounded-xl text-xs">Cancel</Button>
+            <Button onClick={handleRecordPayment} disabled={recordPayment.isPending || !paymentAmount} className="rounded-xl bg-purple-600 text-white font-bold text-xs">
+              Confirm Receipt
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Barcode Scanner */}
-      <BarcodeScanner
-        open={scannerOpen}
-        onOpenChange={setScannerOpen}
-        onScan={handleBarcodeScan}
-        title="Scan Product for Order"
-        description="Scan a barcode to quickly add a product to the sales order"
-      />
+      {/* Barcode Scanner Modal */}
+      {scannerOpen && (
+        <BarcodeScanner
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onScan={handleBarcodeScan}
+        />
+      )}
     </motion.div>
   );
 }

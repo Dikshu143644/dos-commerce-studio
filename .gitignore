@@ -52,3 +52,7 @@ server/php/.phpunit.cache/
 .vercel
 supabase/.temp/
 mise.toml
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

@@ -6,7 +6,7 @@ import {
   Send, Mic, MicOff, Plus, Package, Users, Truck, Download,
   TrendingUp, FileSpreadsheet, HelpCircle, Bot, User,
   MessageSquare, Trash2, MoreVertical, Loader2, PanelRightOpen,
-  PanelRightClose, BookOpen, Wrench,
+  PanelRightClose, BookOpen, Wrench, BrainCircuit, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,6 +61,53 @@ const toolDisplayNames: Record<string, string> = {
   generate_report: 'Generating report...',
   get_financial_summary: 'Analyzing finances...',
 };
+
+function ThoughtProcessBlock({ thinking }: { thinking: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!thinking.trim()) return null;
+
+  return (
+    <div className="mb-3 rounded-2xl border border-purple-500/25 bg-gradient-to-r from-purple-950/30 via-indigo-950/20 to-purple-950/30 backdrop-blur-md overflow-hidden transition-all duration-300">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-purple-300 hover:text-purple-200 hover:bg-purple-500/10 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <BrainCircuit className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+          <span className="bg-gradient-to-r from-purple-300 via-indigo-200 to-pink-300 bg-clip-text text-transparent font-bold">
+            Thought Process (M-Model Deep Reasoning)
+          </span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 font-medium">
+            Cognitive Trace
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-[11px] text-purple-400">
+          <span>{isExpanded ? 'Hide' : 'Show thought steps'}</span>
+          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="px-4 py-3 border-t border-purple-500/20 bg-black/30 text-xs text-purple-200/90 font-mono leading-relaxed whitespace-pre-wrap">
+          {thinking}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function parseThinkingAndContent(rawText: string) {
+  if (!rawText) return { thinking: '', content: '' };
+  const thinkingMatch = rawText.match(/<thinking>([\s\S]*?)<\/thinking>/i) || rawText.match(/<thought>([\s\S]*?)<\/thought>/i);
+  if (thinkingMatch) {
+    const thinking = thinkingMatch[1].trim();
+    const content = rawText.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim();
+    return { thinking, content };
+  }
+  return { thinking: '', content: rawText };
+}
 
 interface ChatMessage extends Message {
   sources?: string[];
@@ -498,11 +545,19 @@ export default function AIAssistantPage() {
                     )}
                   >
                     {msg.role === 'assistant' ? (
-                      <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:rounded prose-code:px-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
+                      (() => {
+                        const { thinking, content } = parseThinkingAndContent(msg.content);
+                        return (
+                          <div>
+                            {thinking && <ThoughtProcessBlock thinking={thinking} />}
+                            <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:rounded prose-code:px-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {content}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     )}
@@ -571,11 +626,21 @@ export default function AIAssistantPage() {
                 {/* Streamed Content */}
                 {stream.streamedContent && (
                   <div className="glass rounded-[16px] px-4 py-3 text-sm">
-                    <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:rounded prose-code:px-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {stream.streamedContent}
-                      </ReactMarkdown>
-                    </div>
+                    {(() => {
+                      const { thinking, content } = parseThinkingAndContent(stream.streamedContent);
+                      return (
+                        <div>
+                          {thinking && <ThoughtProcessBlock thinking={thinking} />}
+                          {content && (
+                            <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:rounded prose-code:px-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {content}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 {/* Typing indicator when no content yet */}

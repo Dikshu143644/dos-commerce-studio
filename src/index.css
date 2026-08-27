@@ -15,12 +15,12 @@
   --color-accent-foreground: #FFFFFF;
   --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
-  --color-border: #E4E4E7;
+  --color-border: #E2E8F0;
   --color-input: #FFFFFF;
   --color-ring: #7C3AED;
   --color-sidebar-background: #FFFFFF;
   --color-sidebar-foreground: #0F172A;
-  --color-sidebar-border: #E4E4E7;
+  --color-sidebar-border: #E2E8F0;
   --color-chart-1: #7C3AED;
   --color-chart-2: #F97316;
   --color-chart-3: #EC4899;
@@ -44,13 +44,13 @@
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E4E4E7;
+  --border: #E2E8F0;
   --input: #FFFFFF;
   --ring: #7C3AED;
   --radius: 1rem;
   --sidebar-background: #FFFFFF;
   --sidebar-foreground: #0F172A;
-  --sidebar-border: #E4E4E7;
+  --sidebar-border: #E2E8F0;
   --chart-1: #7C3AED;
   --chart-2: #F97316;
   --chart-3: #EC4899;
@@ -84,8 +84,8 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -93,42 +93,93 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(148, 163, 184, 0.55);
 }
 
-/* Utility classes */
-.glass {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+/* Modern Card & Glass Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
-.gradient-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.08;
-  background: radial-gradient(circle, #F97316, #F59E0B);
-  pointer-events: none;
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 16px 36px -6px rgba(124, 58, 237, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+.gradient-badge-purple {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(168, 85, 247, 0.06));
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  color: #7C3AED;
+}
+
+.gradient-badge-orange {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(251, 146, 60, 0.06));
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: #EA580C;
+}
+
+.gradient-badge-emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(52, 211, 153, 0.06));
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #059669;
+}
+
+.gradient-badge-blue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(96, 165, 250, 0.06));
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #2563EB;
+}
+
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-gradient-primary:hover {
+  background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
+  box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-gradient-orange {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-gradient-orange:hover {
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+  box-shadow: 0 6px 20px 0 rgba(249, 115, 22, 0.45);
+  transform: translateY(-1px);
 }
 
 /* Responsive bento grid */
 .bento-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 @media (min-width: 640px) {
   .bento-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
   }
 }
 
@@ -136,22 +187,4 @@ body {
   .bento-grid {
     grid-template-columns: repeat(4, 1fr);
   }
-}
-
-/* Safe area padding for phones with gesture bars */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.safe-area-inset {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
-/* Minimum tap target size for touch interfaces */
-.tap-target {
-  min-height: 44px;
-  min-width: 44px;
 }

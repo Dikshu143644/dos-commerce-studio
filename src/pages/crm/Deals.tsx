@@ -358,10 +358,10 @@ export default function DealsPage() {
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-foreground">
-                ${pipelineValue.total_value.toLocaleString()}
+                ₹{pipelineValue.total_value.toLocaleString('en-IN')}
               </p>
               <p className="text-xs text-muted-foreground">
-                Weighted: ${pipelineValue.weighted_value.toLocaleString()}
+                Weighted: ₹{pipelineValue.weighted_value.toLocaleString('en-IN')}
               </p>
             </div>
           </div>
@@ -371,11 +371,11 @@ export default function DealsPage() {
               .map((stage) => (
                 <div
                   key={stage.stage}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 opacity-80 hover:opacity-100 transition-opacity relative group"
+                  className="bg-gradient-to-r from-purple-500 to-indigo-500 opacity-80 hover:opacity-100 transition-opacity relative group"
                   style={{
                     width: `${(stage.total_value / pipelineValue.total_value) * 100}%`,
                   }}
-                  title={`${stageLabels[stage.stage]}: $${stage.total_value.toLocaleString()}`}
+                  title={`${stageLabels[stage.stage]}: ₹${stage.total_value.toLocaleString('en-IN')}`}
                 />
               ))}
           </div>
@@ -384,7 +384,7 @@ export default function DealsPage() {
               .filter((s) => s.count > 0)
               .map((stage) => (
                 <span key={stage.stage} className="text-[10px] text-muted-foreground">
-                  {stageLabels[stage.stage]}: {stage.count} (${(stage.total_value / 1000).toFixed(0)}K)
+                  {stageLabels[stage.stage]}: {stage.count} (₹{(stage.total_value / 100000).toFixed(1)}L)
                 </span>
               ))}
           </div>
@@ -462,9 +462,8 @@ export default function DealsPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1">
-                                <DollarSign className="h-3.5 w-3.5 text-primary" />
-                                <span className="text-sm font-semibold text-foreground">
-                                  ${deal.value.toLocaleString()}
+                                <span className="text-sm font-semibold text-purple-700">
+                                  ₹{deal.value.toLocaleString('en-IN')}
                                 </span>
                               </div>
                               <Badge variant="secondary" className="text-xs">
@@ -510,7 +509,7 @@ export default function DealsPage() {
               <thead>
                 <tr className="border-b border-border bg-secondary/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Title</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Value</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Value (INR)</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Probability</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Stage</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Close Date</th>
@@ -525,7 +524,7 @@ export default function DealsPage() {
                     onClick={() => setSelectedDeal(deal)}
                   >
                     <td className="px-4 py-3 text-foreground font-medium">{deal.title}</td>
-                    <td className="px-4 py-3 text-foreground">${deal.value.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-purple-700 font-bold">₹{deal.value.toLocaleString('en-IN')}</td>
                     <td className="px-4 py-3 text-foreground">{deal.probability}%</td>
                     <td className="px-4 py-3">
                       <Badge variant="secondary" className="capitalize">

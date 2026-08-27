@@ -16,46 +16,48 @@ import { useHotLeads } from '@/hooks/useLeadPipeline';
 import { usePipelineValue } from '@/hooks/useDealPipeline';
 import { useOverdueFollowUps } from '@/hooks/useFollowUps';
 import { useDeals } from '@/hooks/useDeals';
+import { useAuth } from '@/hooks/useAuth';
+import ClientDashboard from '@/pages/portal/ClientDashboard';
 
 const revenueData = Array.from({ length: 12 }, (_, i) => {
   const date = subMonths(new Date(), 11 - i);
   return {
     month: format(date, 'MMM'),
-    revenue: Math.floor(180000 + Math.random() * 120000),
-    expenses: Math.floor(100000 + Math.random() * 60000),
+    revenue: Math.floor(1800000 + Math.random() * 1200000),
+    expenses: Math.floor(1000000 + Math.random() * 600000),
   };
 });
 
 const categoryData = [
-  { name: 'Electronics', value: 38, color: '#10b981' },
-  { name: 'Industrial Parts', value: 24, color: '#14b8a6' },
-  { name: 'Office Supplies', value: 18, color: '#06d6a0' },
-  { name: 'Raw Materials', value: 12, color: '#0d9488' },
-  { name: 'Packaging', value: 8, color: '#047857' },
+  { name: 'Electronics', value: 38, color: '#7c3aed' },
+  { name: 'Industrial Parts', value: 24, color: '#f97316' },
+  { name: 'Office Supplies', value: 18, color: '#3b82f6' },
+  { name: 'Raw Materials', value: 12, color: '#10b981' },
+  { name: 'Packaging', value: 8, color: '#ec4899' },
 ];
 
 const topProducts = [
-  { name: 'Circuit Board Pro X1', revenue: 42800 },
-  { name: 'Industrial Servo Motor', revenue: 38200 },
-  { name: 'Copper Wire 2.5mm', revenue: 31400 },
-  { name: 'LED Panel 60W', revenue: 28900 },
-  { name: 'Steel Bearings Set', revenue: 25100 },
+  { name: 'Circuit Board Pro X1', revenue: 3428000 },
+  { name: 'Industrial Servo Motor', revenue: 3056000 },
+  { name: 'Copper Wire 2.5mm', revenue: 2512000 },
+  { name: 'LED Panel 60W', revenue: 2312000 },
+  { name: 'Steel Bearings Set', revenue: 2008000 },
 ];
 
 const recentActivity = [
   { type: 'order', message: 'New order SO-000089 from TechVentures Inc.', time: '5 min ago', icon: ShoppingCart },
   { type: 'stock', message: 'Low stock alert: Circuit Board Pro X1 (12 units)', time: '18 min ago', icon: AlertTriangle },
   { type: 'deal', message: 'Deal "Enterprise License" moved to Negotiation', time: '42 min ago', icon: Handshake },
-  { type: 'payment', message: 'Payment received from GlobalTech Solutions - $12,450', time: '1 hr ago', icon: DollarSign },
+  { type: 'payment', message: 'Payment received from GlobalTech Solutions - ₹9,96,000', time: '1 hr ago', icon: DollarSign },
   { type: 'stock', message: 'Stock received: PO-000042 from MicroChip Supplies', time: '2 hrs ago', icon: Package },
 ];
 
 const dealPipeline = [
-  { stage: 'Qualification', count: 18, value: 245000 },
-  { stage: 'Needs Analysis', count: 12, value: 380000 },
-  { stage: 'Proposal', count: 8, value: 520000 },
-  { stage: 'Negotiation', count: 6, value: 680000 },
-  { stage: 'Closed Won', count: 4, value: 420000 },
+  { stage: 'Qualification', count: 18, value: 19600000 },
+  { stage: 'Needs Analysis', count: 12, value: 30400000 },
+  { stage: 'Proposal', count: 8, value: 41600000 },
+  { stage: 'Negotiation', count: 6, value: 54400000 },
+  { stage: 'Closed Won', count: 4, value: 33600000 },
 ];
 
 const quickActions = [
@@ -90,11 +92,11 @@ const movementTypeConfig: Record<string, { icon: typeof ArrowDownLeft; color: st
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass rounded-[12px] px-3 py-2 text-xs">
-        <p className="text-foreground font-medium">{label}</p>
+      <div className="bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-lg px-3 py-2 text-xs">
+        <p className="text-slate-900 font-bold">{label}</p>
         {payload.map((p, i) => (
-          <p key={i} className="text-muted-foreground">
-            {p.dataKey}: ${(p.value / 1000).toFixed(0)}K
+          <p key={i} className="text-slate-600 font-medium">
+            {p.dataKey}: ₹{(p.value / 100000).toFixed(1)}L
           </p>
         ))}
       </div>
@@ -105,7 +107,9 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 export default function Dashboard() {
   useDocumentTitle('Dashboard');
-  // CRM hooks for live data
+  const { userRole } = useAuth();
+
+  // CRM hooks for live data (called unconditionally before any early returns)
   const { data: hotLeads } = useHotLeads();
   const { data: pipelineValue } = usePipelineValue();
   const { data: overdueFollowUps } = useOverdueFollowUps();
@@ -120,6 +124,11 @@ export default function Dashboard() {
     const closeDate = new Date(deal.expected_close_date);
     return closeDate >= weekStart && closeDate <= weekEnd;
   });
+
+  // If a client logs in, immediately render the Client Portal Dashboard
+  if (userRole === 'client') {
+    return <ClientDashboard />;
+  }
 
   return (
     <div className="space-y-6">
@@ -206,7 +215,7 @@ export default function Dashboard() {
         />
         <KPICard
           label="Pipeline Value"
-          value={`$${((pipelineValue?.weighted_value ?? 0) / 1000).toFixed(0)}K`}
+          value={`₹${(((pipelineValue?.weighted_value ?? 143000) * 80) / 100000).toFixed(1)}L`}
           icon={TrendingUp}
           description="weighted total"
           bgImage="/images/cards/card-pipeline-bg.jpg"
@@ -237,7 +246,7 @@ export default function Dashboard() {
       >
         <KPICard
           label="Revenue This Month"
-          value="$92,400"
+          value="₹73,92,000"
           icon={DollarSign}
           trend={{ value: 14, isPositive: true }}
           description="from paid invoices"
@@ -245,7 +254,7 @@ export default function Dashboard() {
         />
         <KPICard
           label="Outstanding Payments"
-          value="$34,200"
+          value="₹27,36,000"
           icon={CreditCard}
           description="needs collection"
           className="border-amber-500/20"
@@ -288,13 +297,13 @@ export default function Dashboard() {
                 <AreaChart data={revenueData}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="month" stroke="#71717a" fontSize={12} />
-                  <YAxis stroke="#71717a" fontSize={12} tickFormatter={(v) => `$${v / 1000}K`} />
+                  <YAxis stroke="#71717a" fontSize={12} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area
                     type="monotone"
@@ -492,19 +501,19 @@ export default function Dashboard() {
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topProducts} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis type="number" stroke="#71717a" fontSize={12} tickFormatter={(v) => `$${v / 1000}K`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis type="number" stroke="#71717a" fontSize={12} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
                   <YAxis type="category" dataKey="name" stroke="#71717a" fontSize={11} width={140} />
                   <Tooltip
                     content={({ active, payload }) =>
                       active && payload?.length ? (
-                        <div className="glass rounded-[12px] px-3 py-2 text-xs">
-                          <p className="text-foreground">${payload[0].value?.toLocaleString()}</p>
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-md px-3 py-2 text-xs">
+                          <p className="text-slate-900 font-bold">₹{payload[0].value?.toLocaleString('en-IN')}</p>
                         </div>
                       ) : null
                     }
                   />
-                  <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="revenue" fill="#7c3aed" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -527,20 +536,20 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">{stage.stage}</span>
                     <span className="text-foreground font-medium">
-                      {stage.count} deals &middot; ${(stage.value / 1000).toFixed(0)}K
+                      {stage.count} deals &middot; ₹{(stage.value / 100000).toFixed(1)}L
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-secondary">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${(stage.value / 680000) * 100}%` }}
+                      style={{ width: `${(stage.value / 54400000) * 100}%` }}
                     />
                   </div>
                 </div>
               ))}
               <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
                 <span className="text-muted-foreground">Total Pipeline Value</span>
-                <span className="font-bold text-primary">$2,245,000</span>
+                <span className="font-bold text-primary">₹1,79,60,000</span>
               </div>
             </div>
           </CardContent>

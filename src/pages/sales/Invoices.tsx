@@ -114,17 +114,17 @@ export default function InvoicesPage() {
     },
     {
       key: 'total_amount',
-      title: 'Amount',
+      title: 'Amount (INR)',
       sortable: true,
       render: (row: Record<string, unknown>) =>
-        `$${((row.total_amount as number) ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+        `₹${((row.total_amount as number) ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
     },
     {
       key: 'amount_paid',
       title: 'Paid',
       sortable: true,
       render: (row: Record<string, unknown>) =>
-        `$${((row.amount_paid as number) ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+        `₹${((row.amount_paid as number) ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
     },
     {
       key: 'balance',
@@ -132,8 +132,8 @@ export default function InvoicesPage() {
       render: (row: Record<string, unknown>) => {
         const balance = (row.total_amount as number) - (row.amount_paid as number);
         return (
-          <span className={balance > 0 ? 'text-destructive' : 'text-primary'}>
-            ${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          <span className={balance > 0 ? 'text-destructive font-bold' : 'text-primary font-bold'}>
+            ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </span>
         );
       },
@@ -190,7 +190,7 @@ export default function InvoicesPage() {
               <FileText className="h-4 w-4 text-primary" />
             </div>
             <p className="text-2xl font-bold text-primary">
-              ${stats.totalInvoiced.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ₹{stats.totalInvoiced.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground">Total Invoiced</p>
           </CardContent>
@@ -201,7 +201,7 @@ export default function InvoicesPage() {
               <DollarSign className="h-4 w-4 text-foreground" />
             </div>
             <p className="text-2xl font-bold text-foreground">
-              ${stats.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ₹{stats.totalCollected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground">Total Collected</p>
           </CardContent>
@@ -212,7 +212,7 @@ export default function InvoicesPage() {
               <AlertCircle className="h-4 w-4 text-destructive" />
             </div>
             <p className="text-2xl font-bold text-destructive">
-              ${stats.totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ₹{stats.totalOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-xs text-muted-foreground">Total Outstanding</p>
           </CardContent>
@@ -320,38 +320,38 @@ export default function InvoicesPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="text-foreground">
-                        ${selectedInvoice.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{selectedInvoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tax (18%)</span>
                       <span className="text-foreground">
-                        ${selectedInvoice.tax_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{selectedInvoice.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Discount</span>
                       <span className="text-foreground">
-                        -${selectedInvoice.discount_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        -₹{selectedInvoice.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold">
                       <span className="text-foreground">Total</span>
                       <span className="text-primary">
-                        ${selectedInvoice.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{selectedInvoice.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Amount Paid</span>
                       <span className="text-foreground">
-                        ${selectedInvoice.amount_paid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{selectedInvoice.amount_paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between font-bold">
                       <span className="text-foreground">Outstanding</span>
                       <span className="text-destructive">
-                        ${(selectedInvoice.total_amount - selectedInvoice.amount_paid).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₹{(selectedInvoice.total_amount - selectedInvoice.amount_paid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -425,8 +425,8 @@ export default function InvoicesPage() {
                                 {p.payment_method}
                               </Badge>
                             </td>
-                            <td className="px-3 py-2 text-right text-foreground">
-                              ${p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <td className="px-3 py-2 text-right text-foreground font-bold">
+                              ₹{p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-3 py-2 text-muted-foreground">
                               {p.reference_number || '-'}

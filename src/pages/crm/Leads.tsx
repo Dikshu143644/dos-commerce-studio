@@ -4,7 +4,6 @@ import {
   Plus,
   LayoutGrid,
   List,
-  DollarSign,
   UserPlus,
   Filter,
   Users,
@@ -163,7 +162,7 @@ function LeadDetailPanel({ lead, onClose }: { lead: Lead; onClose: () => void })
           {lead.email && <p>Email: {lead.email}</p>}
           {lead.phone && <p>Phone: {lead.phone}</p>}
           {lead.estimated_value && (
-            <p>Estimated Value: <span className="text-primary font-medium">${lead.estimated_value.toLocaleString()}</span></p>
+            <p>Estimated Value: <span className="text-purple-700 font-bold">₹{lead.estimated_value.toLocaleString('en-IN')}</span></p>
           )}
           {lead.assigned_to && <p>Assigned to: {lead.assigned_to}</p>}
         </div>
@@ -435,10 +434,9 @@ export default function LeadsPage() {
                             </div>
                             <p className="text-xs text-muted-foreground">{lead.name}</p>
                             {lead.estimated_value && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <DollarSign className="h-3 w-3" />
-                                <span className="text-foreground font-medium">
-                                  ${lead.estimated_value.toLocaleString()}
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <span className="text-purple-700 font-bold">
+                                  ₹{lead.estimated_value.toLocaleString('en-IN')}
                                 </span>
                               </div>
                             )}
@@ -482,7 +480,7 @@ export default function LeadsPage() {
                 <tr className="border-b border-border bg-secondary/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Company</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Value</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estimated Value</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Source</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Score</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
@@ -498,8 +496,8 @@ export default function LeadsPage() {
                   >
                     <td className="px-4 py-3 text-foreground font-medium">{lead.name}</td>
                     <td className="px-4 py-3 text-foreground">{lead.company || '-'}</td>
-                    <td className="px-4 py-3 text-foreground">
-                      {lead.estimated_value ? `$${lead.estimated_value.toLocaleString()}` : '-'}
+                    <td className="px-4 py-3 text-purple-700 font-bold">
+                      {lead.estimated_value ? `₹${lead.estimated_value.toLocaleString('en-IN')}` : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <Badge className={`text-xs border-0 ${sourceColors[lead.source]}`}>

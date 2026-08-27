@@ -362,8 +362,8 @@ export default function ConversionFunnelPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {lead.estimated_value && (
-                          <span className="text-xs text-primary font-medium">
-                            ${lead.estimated_value.toLocaleString()}
+                          <span className="text-xs text-purple-700 font-bold">
+                            ₹{lead.estimated_value.toLocaleString('en-IN')}
                           </span>
                         )}
                         <Button

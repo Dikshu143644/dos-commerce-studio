@@ -32,6 +32,12 @@ import {
   RotateCcw,
   CreditCard,
   Building2,
+  FileCheck2,
+  Receipt,
+  Wallet,
+  Scale,
+  Landmark,
+  ShoppingBag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -69,9 +75,19 @@ const navSections: NavSection[] = [
       { title: 'Customers', href: '/crm/customers', icon: Users },
       { title: 'Leads', href: '/crm/leads', icon: UserPlus },
       { title: 'Deals', href: '/crm/deals', icon: Handshake },
+      { title: 'Quotations', href: '/crm/quotations', icon: FileCheck2 },
       { title: 'Activities', href: '/crm/activities', icon: Activity },
       { title: 'Follow-ups', href: '/crm/follow-ups', icon: CalendarClock },
       { title: 'Funnel', href: '/crm/funnel', icon: Filter },
+    ],
+  },
+  {
+    title: 'Sales',
+    items: [
+      { title: 'Sales Orders', href: '/sales/orders', icon: ShoppingCart },
+      { title: 'Invoices', href: '/sales/invoices', icon: FileText },
+      { title: 'Returns', href: '/sales/returns', icon: RotateCcw },
+      { title: 'Payments', href: '/sales/payments', icon: CreditCard },
     ],
   },
   {
@@ -82,12 +98,23 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Sales',
+    title: 'Finance',
     items: [
-      { title: 'Sales Orders', href: '/sales/orders', icon: ShoppingCart },
-      { title: 'Invoices', href: '/sales/invoices', icon: FileText },
-      { title: 'Returns', href: '/sales/returns', icon: RotateCcw },
-      { title: 'Payments', href: '/sales/payments', icon: CreditCard },
+      { title: 'Expenses & OPEX', href: '/finance/expenses', icon: Receipt },
+      { title: 'Profit & Loss', href: '/finance/pnl', icon: Scale },
+      { title: 'GST Compliance', href: '/finance/gst', icon: Landmark },
+      { title: 'Cash Flow', href: '/finance/cash-flow', icon: Wallet },
+    ],
+  },
+  {
+    title: 'E-Commerce & Client Portal',
+    items: [
+      { title: 'DOS-SHOP Storefront ↗', href: '/store', icon: ShoppingBag },
+      { title: 'B2B Wholesale Catalog', href: '/portal/catalog', icon: Package },
+      { title: 'Order Cart & Checkout', href: '/portal/cart', icon: ShoppingCart },
+      { title: 'Client Order Tracking', href: '/portal/orders', icon: ClipboardList },
+      { title: 'GST Tax Invoices', href: '/portal/invoices', icon: FileText },
+      { title: 'Live Courier Dispatch', href: '/portal/tracking', icon: Truck },
     ],
   },
   {
@@ -117,16 +144,12 @@ const navSections: NavSection[] = [
 ];
 
 // Sections visible by role:
-// viewer/client: Main, Sales, AI
-// staff: Main, Inventory, CRM, Procurement, Sales, Reports, AI
-// manager: Main, Inventory, CRM, Procurement, Sales, Reports, AI
-// admin: All sections (including Settings)
 const sectionsByRole: Record<UserRole, string[]> = {
-  viewer: ['Main', 'Sales', 'AI'],
-  client: ['Main', 'Sales', 'AI'],
-  staff: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI'],
-  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI'],
-  admin: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Reports', 'AI', 'Settings'],
+  viewer: ['Main', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'AI'],
+  client: ['E-Commerce & Client Portal', 'AI'],
+  staff: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
+  manager: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI'],
+  admin: ['Main', 'Inventory', 'CRM', 'Procurement', 'Sales', 'Finance', 'E-Commerce & Client Portal', 'Reports', 'AI', 'Settings'],
 };
 
 function getFilteredSections(role: UserRole): NavSection[] {
