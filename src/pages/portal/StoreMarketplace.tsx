@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useAuth } from '@/hooks/useAuth';
+import { useCommerce } from '@/contexts/CommerceContext';
 
 export interface StoreProduct {
   id: string;
@@ -166,10 +167,10 @@ export const marketplaceProducts: StoreProduct[] = [
 export default function StoreMarketplace() {
   useDocumentTitle('DOS-SHOP — Enterprise Wholesale Marketplace & B2B Store');
   const { profile } = useAuth();
+  const { addProduct, cartItemCount } = useCommerce();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [cartCount, setCartCount] = useState(2);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -189,34 +190,20 @@ export default function StoreMarketplace() {
     });
   }, [searchQuery, selectedCategory]);
 
-  const handleAddToCart = (p: StoreProduct) => {
-    setCartCount((prev) => prev + 1);
+  const handleAddToCart = (product: StoreProduct) => {
+    addProduct({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      unitPrice: product.price_inr,
+      minOrderQty: product.min_order_qty,
+      stockQuantity: product.stock_quantity,
+      image: product.image,
+    }, product.min_order_qty);
 
-    // Save to localStorage for Abandoned Cart WhatsApp AI Agent
-    try {
-      const cart = JSON.parse(localStorage.getItem('dos_client_cart') || '[]');
-      const itemIdx = cart.findIndex((i: any) => i.id === p.id);
-      if (itemIdx > -1) {
-        cart[itemIdx].quantity += p.min_order_qty;
-      } else {
-        cart.push({
-          id: p.id,
-          name: p.name,
-          sku: p.sku,
-          price: p.price_inr,
-          quantity: p.min_order_qty,
-          image: p.image,
-          addedAt: new Date().toISOString(),
-        });
-      }
-      localStorage.setItem('dos_client_cart', JSON.stringify(cart));
-      localStorage.setItem('dos_cart_last_activity', new Date().toISOString());
-    } catch {
-      // ignore
-    }
-
-    toast.success(`Added to Cart: ${p.name}`, {
-      description: `Price: ₹${p.price_inr.toLocaleString('en-IN')} (Min Qty: ${p.min_order_qty})`,
+    toast.success(`Added to Cart: ${product.name}`, {
+      description: `Price: ₹${product.price_inr.toLocaleString('en-IN')} (Min Qty: ${product.min_order_qty})`,
     });
   };
 
@@ -238,7 +225,7 @@ export default function StoreMarketplace() {
         <div className="max-w-[1500px] mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           {/* Logo & Pin Code */}
           <div className="flex items-center gap-6 shrink-0">
-            <Link to="/portal/catalog" className="flex items-center gap-2 hover:outline hover:outline-1 hover:outline-white p-1 rounded">
+            <Link to="/store" className="flex items-center gap-2 hover:outline hover:outline-1 hover:outline-white p-1 rounded">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-lg">
                 D
               </div>
@@ -348,7 +335,7 @@ export default function StoreMarketplace() {
                         <Link to="/portal/orders" className="block text-slate-600 hover:text-orange-600">Your Orders</Link>
                         <Link to="/portal/invoices" className="block text-slate-600 hover:text-orange-600">GST Invoices</Link>
                         <Link to="/portal/tracking" className="block text-slate-600 hover:text-orange-600">Track Shipment</Link>
-                        <Link to="/" className="block text-purple-600 font-bold hover:underline">Switch to ERP Dashboard</Link>
+                        <Link to="/erp" className="block text-purple-600 font-bold hover:underline">Switch to ERP Workspace</Link>
                       </div>
                     </div>
                   </motion.div>
@@ -373,7 +360,7 @@ export default function StoreMarketplace() {
               <div className="relative">
                 <ShoppingCart className="h-7 w-7 text-white" />
                 <span className="absolute -top-1 right-1 bg-[#F08804] text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center">
-                  {cartCount}
+                  {cartItemCount}
                 </span>
               </div>
               <span className="font-black text-sm hidden sm:inline">Cart</span>
@@ -431,12 +418,11 @@ export default function StoreMarketplace() {
             >
               Track Consignment
             </Link>
-            <Link
-              to="/"
-              className="ml-auto bg-purple-600/80 hover:bg-purple-600 px-3 py-1 rounded-full text-white font-bold text-[11px] whitespace-nowrap"
-            >
-              Admin / Staff ERP Panel ↗
-            </Link>
+            <div className="ml-auto flex items-center gap-1 whitespace-nowrap">
+              <Link to="/" className="rounded-full px-2.5 py-1 font-bold text-white hover:bg-white/10">Platform Hub</Link>
+              <Link to="/crm" className="rounded-full px-2.5 py-1 font-bold text-white hover:bg-purple-600">CRM</Link>
+              <Link to="/erp" className="rounded-full bg-purple-600/80 px-3 py-1 font-bold text-white hover:bg-purple-600">ERP ↗</Link>
+            </div>
           </div>
         </div>
       </header>

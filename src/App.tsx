@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 // AuthGuard disabled during development — login bypassed
 // import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -7,6 +7,9 @@ import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 // Lazy-loaded pages
+const PlatformHome = lazy(() => import('@/pages/PlatformHome'));
+const ERPWorkspace = lazy(() => import('@/pages/ERPWorkspace'));
+const CRMWorkspace = lazy(() => import('@/pages/crm/CRMWorkspace'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Products = lazy(() => import('@/pages/inventory/Products'));
 const ProductDetail = lazy(() => import('@/pages/inventory/ProductDetail'));
@@ -68,9 +71,17 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/staff-login" element={<StaffLogin />} />
 
-        {/* All routes accessible without auth during development */}
+        {/* Unified platform workspaces and detailed application routes */}
         <Route element={<AppShell />}>
-          <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route index element={<ErrorBoundary><PlatformHome /></ErrorBoundary>} />
+          <Route path="crm" element={<ErrorBoundary><CRMWorkspace /></ErrorBoundary>} />
+          <Route path="erp" element={<ErrorBoundary><ERPWorkspace /></ErrorBoundary>} />
+          <Route path="erp/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="inventory" element={<Navigate to="/inventory/products" replace />} />
+          <Route path="sales" element={<Navigate to="/sales/orders" replace />} />
+          <Route path="procurement" element={<Navigate to="/procurement/orders" replace />} />
+          <Route path="finance" element={<Navigate to="/finance/pnl" replace />} />
+          <Route path="reports" element={<Navigate to="/reports/analytics" replace />} />
           <Route path="inventory/products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
           <Route path="inventory/products/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />
           <Route path="inventory/warehouses" element={<ErrorBoundary><Warehouses /></ErrorBoundary>} />
@@ -101,8 +112,8 @@ function App() {
           <Route path="finance/cash-flow" element={<ErrorBoundary><CashFlow /></ErrorBoundary>} />
 
           {/* Client Portal Routes */}
-          <Route path="portal" element={<ErrorBoundary><StoreMarketplace /></ErrorBoundary>} />
-          <Route path="portal/catalog" element={<ErrorBoundary><StoreMarketplace /></ErrorBoundary>} />
+          <Route path="portal" element={<Navigate to="/portal/orders" replace />} />
+          <Route path="portal/catalog" element={<Navigate to="/store" replace />} />
           <Route path="portal/b2b-catalog" element={<ErrorBoundary><ProductCatalog /></ErrorBoundary>} />
           <Route path="portal/cart" element={<ErrorBoundary><Cart /></ErrorBoundary>} />
           <Route path="portal/orders" element={<ErrorBoundary><ClientOrders /></ErrorBoundary>} />
