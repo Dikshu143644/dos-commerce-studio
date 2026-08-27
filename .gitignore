@@ -2,6 +2,7 @@ node_modules/
 dist/
 .kiro/
 *.log
+*.tsbuildinfo
 .env
 .env.*
 !.env.example
