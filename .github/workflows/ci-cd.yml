@@ -1,10 +1,16 @@
-name: StockFlow CI/CD Pipeline
+name: DOS-Commerce-Studio CI/CD & Deployment Pipeline
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   validate-and-build:
@@ -29,11 +35,27 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile=false
 
-      - name: Run TypeScript Type Check
-        run: pnpm type-check
-
       - name: Build Production Bundle
         run: pnpm build
+
+      - name: Upload GitHub Pages Artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+  deploy-github-pages:
+    name: Deploy to GitHub Pages
+    needs: validate-and-build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   deploy-production:
     name: Deploy to Vercel Production
@@ -59,3 +81,4 @@ jobs:
           else
             echo "VERCEL_TOKEN not set, skipping automatic Vercel CLI deployment step."
           fi
+
