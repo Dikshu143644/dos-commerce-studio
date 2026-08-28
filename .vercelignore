@@ -1,5 +1,12 @@
 node_modules
 .git
 .gemini
+.agents
+.codex
 dist
-server/python_adk/__pycache__
+docs
+server
+supabase
+workers
+scripts
+

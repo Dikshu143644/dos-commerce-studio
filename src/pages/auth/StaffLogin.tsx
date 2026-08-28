@@ -1,224 +1,205 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock, ShieldCheck, Briefcase, Package, Shield, Zap } from 'lucide-react';
+import { ShieldCheck, Lock, User, Briefcase, Shield, Zap, ArrowRight, Layers, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useLoginForm } from '@/hooks/useLoginForm';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/contexts/AuthContext';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
 export default function StaffLoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const { isLoading, rateLimitCountdown, buttonDisabled, onSubmit } = useLoginForm();
-  const { user, loginDemo } = useAuth();
+  const [username, setUsername] = useState('staff_electronics');
+  const [password, setPassword] = useState('password123');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { user, userRole, loginStaff, loginDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
 
   useEffect(() => {
-    if (user) {
+    if (user && userRole !== 'client' && userRole !== 'viewer') {
       navigate(from, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, userRole, navigate, from]);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'staff@stockflow.com',
-      password: 'password123',
-    },
-  });
+  const handleStaffLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username) {
+      toast.error('Please enter your staff username');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await loginStaff(username, password);
+      if (res.success) {
+        const catMsg = res.category ? ` (Assigned Category: ${res.category})` : '';
+        toast.success(`Access Granted: ${res.role?.toUpperCase()}${catMsg}`);
+        navigate(from, { replace: true });
+      } else {
+        toast.error(res.error || 'Invalid credentials');
+      }
+    } catch {
+      toast.error('Authentication failed, please verify your credentials');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const handleQuickDemo = (role: UserRole) => {
-    loginDemo(role);
-    toast.success(`Logged in as Staff (${role.toUpperCase()})`);
+  const handleQuickRole = (role: UserRole, category?: string, userLabel?: string) => {
+    loginDemo(role, category);
+    const catMsg = category ? ` (Locked to: ${category})` : '';
+    toast.success(`Logged in as ${userLabel || role.toUpperCase()}${catMsg}`);
     navigate(from, { replace: true });
   };
 
-  const setFillCredentials = (email: string, pass: string) => {
-    setValue('email', email, { shouldValidate: true });
-    setValue('password', pass, { shouldValidate: true });
-  };
-
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8">
-      {/* Background gradient orbs */}
-      <div className="gradient-orb absolute -top-40 -right-40 h-[500px] w-[500px] opacity-20" />
-      <div className="gradient-orb absolute -bottom-40 -left-40 h-[400px] w-[400px] opacity-15" />
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F8F7FC] via-[#F1EBFA] to-[#FFFFFF] px-4 py-10 font-sans">
+      {/* Floating Spatial Purple & Orange Ambient Orbs */}
+      <div className="absolute -top-36 -right-36 w-96 h-96 rounded-full bg-purple-600/20 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute -bottom-36 -left-36 w-96 h-96 rounded-full bg-orange-500/20 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute top-1/2 left-10 w-64 h-64 rounded-full bg-indigo-500/15 blur-2xl pointer-events-none" />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="glass w-full max-w-lg rounded-[24px] p-6 sm:p-8"
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-white/85 backdrop-blur-2xl p-8 sm:p-10 border border-purple-100/90 shadow-[0_25px_70px_rgba(124,58,237,0.14)] text-[#1A1A2E]"
       >
-        {/* Staff portal branding */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="mb-6 text-center"
-        >
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary/20 border border-primary/30 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-            <ShieldCheck className="h-7 w-7 text-primary" />
+        {/* Brand & Portal Header */}
+        <div className="text-center mb-6">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[18px] bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/30 text-white font-black text-2xl">
+            <ShieldCheck className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Staff & Operations Portal</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            StockFlow internal operations & management access
+          <h1 className="text-2xl font-black tracking-tight text-[#1A1A2E]">
+            DOS <span className="text-purple-600">ERP</span> & <span className="text-orange-500">CRM</span> Staff Portal
+          </h1>
+          <p className="mt-1 text-xs text-[#6B7280]">
+            Secure operations door for Staff, Managers, and Enterprise Administrators
           </p>
-        </motion.div>
+        </div>
 
-        {/* 1-Click Fast Roles */}
-        <div className="mb-6 rounded-[16px] border border-primary/20 bg-primary/5 p-4">
+        {/* 1-Click Role Switcher Bento Grid */}
+        <div className="mb-6 rounded-[20px] border border-purple-200/80 bg-purple-50/50 p-4">
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-xs font-semibold text-primary">1-CLICK STAFF ACCESS</span>
-            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
-              Instant
+            <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> SELECT INSTANT DEMO ROLE
+            </span>
+            <span className="rounded-full bg-purple-200/80 px-2 py-0.5 text-[10px] font-bold text-purple-800">
+              Role Matrix
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* 1. Admin */}
             <button
               type="button"
-              onClick={() => handleQuickDemo('admin')}
-              className="flex flex-col items-center justify-center rounded-[10px] border border-primary/30 bg-primary/10 hover:bg-primary/20 py-2.5 px-2 text-center transition-all cursor-pointer hover:scale-102"
+              onClick={() => handleQuickRole('admin', undefined, 'Super Admin')}
+              className="flex flex-col items-center justify-center rounded-[14px] border border-purple-300/80 bg-white hover:bg-purple-100/70 p-2.5 text-center transition-all cursor-pointer hover:scale-102 shadow-sm"
             >
-              <Shield className="h-4 w-4 text-emerald-400 mb-1" />
-              <span className="text-xs font-semibold text-foreground">Admin</span>
-              <span className="text-[10px] text-muted-foreground">Master</span>
+              <Shield className="h-4 w-4 text-purple-600 mb-1" />
+              <span className="text-xs font-bold text-slate-900">Admin</span>
+              <span className="text-[10px] font-semibold text-purple-600">Full Master</span>
             </button>
+
+            {/* 2. Manager */}
             <button
               type="button"
-              onClick={() => handleQuickDemo('manager')}
-              className="flex flex-col items-center justify-center rounded-[10px] border border-border bg-secondary/40 hover:bg-secondary py-2.5 px-2 text-center transition-all cursor-pointer hover:scale-102"
+              onClick={() => handleQuickRole('manager', undefined, 'Operations Manager')}
+              className="flex flex-col items-center justify-center rounded-[14px] border border-slate-200 bg-white hover:bg-slate-50 p-2.5 text-center transition-all cursor-pointer hover:scale-102 shadow-sm"
             >
-              <Briefcase className="h-4 w-4 text-teal-400 mb-1" />
-              <span className="text-xs font-semibold text-foreground">Manager</span>
-              <span className="text-[10px] text-muted-foreground">CRM & Stock</span>
+              <Briefcase className="h-4 w-4 text-indigo-600 mb-1" />
+              <span className="text-xs font-bold text-slate-900">Manager</span>
+              <span className="text-[10px] font-semibold text-indigo-600">CRM + ERP</span>
             </button>
+
+            {/* 3. Staff Electronics */}
             <button
               type="button"
-              onClick={() => handleQuickDemo('staff')}
-              className="flex flex-col items-center justify-center rounded-[10px] border border-border bg-secondary/40 hover:bg-secondary py-2.5 px-2 text-center transition-all cursor-pointer hover:scale-102"
+              onClick={() => handleQuickRole('staff', 'Electronics', 'Priya (Electronics Staff)')}
+              className="flex flex-col items-center justify-center rounded-[14px] border border-orange-200 bg-white hover:bg-orange-50 p-2.5 text-center transition-all cursor-pointer hover:scale-102 shadow-sm"
             >
-              <Package className="h-4 w-4 text-cyan-400 mb-1" />
-              <span className="text-xs font-semibold text-foreground">Staff</span>
-              <span className="text-[10px] text-muted-foreground">Inventory</span>
+              <Zap className="h-4 w-4 text-orange-500 mb-1" />
+              <span className="text-xs font-bold text-slate-900">Staff #1</span>
+              <span className="text-[10px] font-bold text-orange-600">Electronics</span>
+            </button>
+
+            {/* 4. Staff Industrial */}
+            <button
+              type="button"
+              onClick={() => handleQuickRole('staff', 'Industrial Parts', 'Amit (Industrial Staff)')}
+              className="flex flex-col items-center justify-center rounded-[14px] border border-cyan-200 bg-white hover:bg-cyan-50 p-2.5 text-center transition-all cursor-pointer hover:scale-102 shadow-sm"
+            >
+              <Layers className="h-4 w-4 text-cyan-600 mb-1" />
+              <span className="text-xs font-bold text-slate-900">Staff #2</span>
+              <span className="text-[10px] font-bold text-cyan-700">Industrial</span>
             </button>
           </div>
         </div>
 
-        {/* Login form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="staff-email">Staff Email</Label>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setFillCredentials('staff@stockflow.com', 'password123')}
-                  className="text-[11px] text-primary/80 hover:text-primary underline cursor-pointer"
-                >
-                  Fill Staff
-                </button>
-                <span className="text-muted-foreground text-[11px]">&middot;</span>
-                <button
-                  type="button"
-                  onClick={() => setFillCredentials('manager@stockflow.com', 'password123')}
-                  className="text-[11px] text-primary/80 hover:text-primary underline cursor-pointer"
-                >
-                  Fill Manager
-                </button>
-              </div>
+        {/* Staff credentials form */}
+        <form onSubmit={handleStaffLogin} className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label className="text-xs font-bold text-slate-700">Staff Username or Email</Label>
+              <span className="text-[11px] text-slate-400 font-mono">e.g. staff_electronics</span>
             </div>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <Input
-                id="staff-email"
-                type="email"
-                placeholder="you@stockflow.com"
-                className="pl-10 bg-secondary/40"
-                {...register('email')}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="staff_electronics / manager_rahul"
+                className="pl-10 h-11 rounded-[12px] bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500 text-sm font-medium"
+                required
               />
             </div>
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="staff-password">Password</Label>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label className="text-xs font-bold text-slate-700">Password</Label>
+              <Link to="/forgot-password" className="text-xs font-semibold text-purple-600 hover:underline">
+                Forgot?
+              </Link>
+            </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <Input
-                id="staff-password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
-                className="pl-10 pr-10 bg-secondary/40"
-                {...register('password')}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="pl-10 h-11 rounded-[12px] bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500 text-sm font-medium"
+                required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
-            )}
           </div>
-
-          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={buttonDisabled}>
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                Signing in...
-              </span>
-            ) : rateLimitCountdown > 0 ? (
-              `Wait ${rateLimitCountdown}s`
-            ) : (
-              'Sign in to Staff Portal'
-            )}
-          </Button>
 
           <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleQuickDemo('staff')}
-            className="w-full border-primary/30 text-primary hover:bg-primary/10 gap-2"
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-11 rounded-[14px] bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold text-sm shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
-            <Zap className="h-4 w-4" /> Quick Staff Direct Access
+            {isSubmitting ? 'Authenticating...' : 'Sign In to Operations Console'} <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
 
-        {/* Back to customer login */}
-        <p className="mt-5 text-center text-xs text-muted-foreground">
-          <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
-            &larr; Back to customer login
+        {/* Customer Door Switch Link */}
+        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span className="text-slate-500">Are you a public shopper or customer?</span>
+          <Link
+            to="/login"
+            className="font-bold text-purple-600 hover:text-purple-700 hover:underline flex items-center gap-1"
+          >
+            Customer Store Door &rarr;
           </Link>
-        </p>
+        </div>
       </motion.div>
     </div>
   );
 }
-

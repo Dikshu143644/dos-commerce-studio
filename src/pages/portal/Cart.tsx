@@ -24,6 +24,14 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface CartItem {
   id: string;
@@ -54,14 +62,19 @@ const initialCartItems: CartItem[] = [
 ];
 
 export default function Cart() {
-  useDocumentTitle('Procurement Order Cart | StockFlow');
+  useDocumentTitle('Procurement Order Cart | DOS Commerce');
+  const { user, userRole, loginDemo } = useAuth();
 
   const [items, setItems] = useState<CartItem[]>(initialCartItems);
   const [poNumber, setPoNumber] = useState('PO-APEX-2026-0891');
   const [shippingAddress, setShippingAddress] = useState('Plot 42, Sector 8, Whitefield Tech Park, Bangalore 560066');
   const [shippingMethod, setShippingMethod] = useState('Dedicated Truckload Logistics');
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay_upi' | 'credit_card' | 'corporate_net30' | 'cod'>('razorpay_upi');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState<string | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const isLoggedInCustomer = !!user && userRole !== 'viewer';
 
   const handleQtyChange = (id: string, delta: number) => {
     setItems((prev) =>
@@ -96,14 +109,31 @@ export default function Cart() {
       return;
     }
 
+    // Enforce Rule: To BUY -> Login is COMPULSORY
+    if (!isLoggedInCustomer) {
+      toast.warning('Customer Login Required', {
+        description: 'You can browse products freely, but login is compulsory to reserve inventory and place orders.',
+      });
+      setLoginModalOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      const generatedOrderNo = `SO-2026-${Math.floor(100 + Math.random() * 900)}`;
+      const generatedOrderNo = `DOS-ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setOrderPlaced(generatedOrderNo);
       setItems([]);
-      toast.success(`Purchase Order confirmed as Sales Order ${generatedOrderNo}!`);
+      toast.success(`Order Placed & Stock Reserved: ${generatedOrderNo}!`, {
+        description: 'Inventory units have been reserved in Mumbai WH. Department staff will confirm fulfillment.',
+      });
     }, 800);
+  };
+
+  const handleQuickLoginAndProceed = () => {
+    loginDemo('client');
+    setLoginModalOpen(false);
+    toast.success('Signed in as Rohan Mehra! You can now place your order.');
   };
 
   if (orderPlaced) {
@@ -304,30 +334,120 @@ export default function Cart() {
                 </div>
               </div>
 
-              {/* Payment Method */}
-              <div className="bg-background p-3.5 rounded-2xl border border-border space-y-2">
-                <span className="text-xs font-semibold block text-foreground">Payment Terms:</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10">
-                    Net 30 Corporate Credit Active
+              {/* Payment Method Selector (Razorpay / UPI / Card / Net30 / COD) */}
+              <div className="bg-background p-4 rounded-2xl border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground">Select Payment Method</span>
+                  <Badge variant="outline" className="border-purple-300 bg-purple-50 text-purple-700 text-[10px]">
+                    Razorpay Gateway
                   </Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Invoice will be generated and added to your corporate credit account with 30-day payment maturity.
-                </p>
+
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card cursor-pointer hover:border-purple-400 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'razorpay_upi'}
+                        onChange={() => setPaymentMethod('razorpay_upi')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-xs font-semibold text-foreground">Instant UPI / QR / Google Pay</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">0% Fee</span>
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card cursor-pointer hover:border-purple-400 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'credit_card'}
+                        onChange={() => setPaymentMethod('credit_card')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-xs font-semibold text-foreground">Corporate Credit / Debit Card</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">Visa / MC / RuPay</span>
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card cursor-pointer hover:border-purple-400 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'corporate_net30'}
+                        onChange={() => setPaymentMethod('corporate_net30')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-xs font-semibold text-foreground">Net 30 Corporate Credit Line</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">Pre-Approved</span>
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card cursor-pointer hover:border-purple-400 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-xs font-semibold text-foreground">Cash On Delivery (COD)</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">Upon Hub Delivery</span>
+                  </label>
+                </div>
               </div>
 
               <Button
                 onClick={handleCheckout}
                 disabled={isSubmitting}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 h-11"
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-600/25 h-12 text-sm cursor-pointer"
               >
-                {isSubmitting ? 'Transmitting Order...' : 'Confirm & Place Purchase Order'}
+                {isSubmitting ? 'Reserving Stock & Processing...' : `Pay ₹${totals.total.toLocaleString('en-IN')} & Place Order`}
               </Button>
             </Card>
           </div>
         </div>
       )}
+
+      {/* Compulsory Login Required Modal for Guests */}
+      <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
+        <DialogContent className="max-w-md rounded-[24px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span className="text-xl">🛍️</span> Customer Login Compulsory to Buy
+            </DialogTitle>
+            <DialogDescription>
+              You can browse and compare products freely without signing in. To reserve warehouse stock and place an order, customer authentication is required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200/80 space-y-2">
+              <span className="text-xs font-bold text-purple-900 block">1-CLICK BUYER AUTHENTICATION</span>
+              <p className="text-xs text-purple-700">
+                Continue instantly with our verified customer demo profile (Rohan Mehra) or sign in with your email account.
+              </p>
+              <Button
+                onClick={handleQuickLoginAndProceed}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs h-10 rounded-xl"
+              >
+                Continue as Rohan Mehra (Buyer)
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+              <span>Have an existing account?</span>
+              <Link to="/login" className="font-bold text-purple-600 hover:underline">
+                Go to Customer Login Door &rarr;
+              </Link>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

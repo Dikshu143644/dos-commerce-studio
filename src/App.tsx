@@ -60,9 +60,12 @@ function App() {
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <Routes>
-        {/* Public routes */}
+        {/* Public Store & Authentication Routes */}
         <Route path="/landing" element={<Landing />} />
         <Route path="/store" element={<StoreMarketplace />} />
+        <Route path="/shop" element={<StoreMarketplace />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/tracking" element={<OrderTracking />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

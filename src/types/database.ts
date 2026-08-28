@@ -23,10 +23,12 @@ export type ReturnReason = 'damaged' | 'wrong_item' | 'quality_issue' | 'custome
 export interface Profile {
   id: string;
   email: string;
+  username?: string | null;
   full_name: string;
   avatar_url: string | null;
   role_id: string | null;
   branch_id: string | null;
+  assigned_category?: string | null;
   phone: string | null;
   is_active: boolean;
   created_at: string;

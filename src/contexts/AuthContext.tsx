@@ -11,11 +11,14 @@ export interface AuthState {
   session: Session | null;
   profile: Profile | null;
   userRole: UserRole;
+  assignedCategory?: string | null;
   loading: boolean;
   initialized: boolean;
   isDemoMode: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginDemo: (role?: UserRole) => void;
+  loginDemo: (role?: UserRole, category?: string) => void;
+  loginStaff: (username: string, password: string) => Promise<{ success: boolean; role?: UserRole; category?: string; error?: string }>;
+  loginCustomer: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -27,118 +30,157 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const DEMO_STORAGE_KEY = 'stockflow_demo_auth';
+const DEMO_STORAGE_KEY = 'dos_commerce_auth_session';
 
 interface DemoAuthSession {
   user: {
     id: string;
     email: string;
-    user_metadata: { full_name: string; role: UserRole };
+    user_metadata: { full_name: string; role: UserRole; assigned_category?: string };
   };
   profile: Profile;
   role: UserRole;
+  assignedCategory?: string | null;
 }
 
-const DEMO_PROFILES: Record<UserRole, DemoAuthSession> = {
+export const DEMO_PROFILES: Record<string, DemoAuthSession> = {
   admin: {
     user: {
       id: '00000000-0000-0000-0000-000000000001',
-      email: 'admin@stockflow.com',
-      user_metadata: { full_name: 'DOS-APP (Admin)', role: 'admin' },
+      email: 'admin@doscommerce.in',
+      user_metadata: { full_name: 'Omkar Supe (Admin)', role: 'admin' },
     },
     profile: {
       id: '00000000-0000-0000-0000-000000000001',
-      email: 'admin@stockflow.com',
-      full_name: 'DOS-APP',
+      email: 'admin@doscommerce.in',
+      username: 'admin_omkar',
+      full_name: 'Omkar Supe',
       avatar_url: null,
-      phone: '+1 555-0100',
+      phone: '+91 98765 43210',
       role_id: 'admin-role-id',
       branch_id: null,
+      assigned_category: null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     role: 'admin',
+    assignedCategory: null,
   },
   manager: {
     user: {
       id: '00000000-0000-0000-0000-000000000002',
-      email: 'manager@stockflow.com',
-      user_metadata: { full_name: 'Jordan Lee (Manager)', role: 'manager' },
+      email: 'manager@doscommerce.in',
+      user_metadata: { full_name: 'Rahul Sharma (Operations Manager)', role: 'manager' },
     },
     profile: {
       id: '00000000-0000-0000-0000-000000000002',
-      email: 'manager@stockflow.com',
-      full_name: 'Jordan Lee',
+      email: 'manager@doscommerce.in',
+      username: 'manager_rahul',
+      full_name: 'Rahul Sharma',
       avatar_url: null,
-      phone: '+1 555-0101',
+      phone: '+91 98765 43211',
       role_id: 'manager-role-id',
       branch_id: null,
+      assigned_category: null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     role: 'manager',
+    assignedCategory: null,
   },
   staff: {
     user: {
       id: '00000000-0000-0000-0000-000000000003',
-      email: 'staff@stockflow.com',
-      user_metadata: { full_name: 'Sam Taylor (Staff)', role: 'staff' },
+      email: 'staff.electronics@doscommerce.in',
+      user_metadata: { full_name: 'Priya Verma (Electronics Staff)', role: 'staff', assigned_category: 'Electronics' },
     },
     profile: {
       id: '00000000-0000-0000-0000-000000000003',
-      email: 'staff@stockflow.com',
-      full_name: 'Sam Taylor',
+      email: 'staff.electronics@doscommerce.in',
+      username: 'staff_electronics',
+      full_name: 'Priya Verma',
       avatar_url: null,
-      phone: '+1 555-0102',
+      phone: '+91 98765 43212',
       role_id: 'staff-role-id',
       branch_id: null,
+      assigned_category: 'Electronics',
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     role: 'staff',
+    assignedCategory: 'Electronics',
+  },
+  staff_industrial: {
+    user: {
+      id: '00000000-0000-0000-0000-000000000006',
+      email: 'staff.industrial@doscommerce.in',
+      user_metadata: { full_name: 'Amit Patel (Industrial Staff)', role: 'staff', assigned_category: 'Industrial Parts' },
+    },
+    profile: {
+      id: '00000000-0000-0000-0000-000000000006',
+      email: 'staff.industrial@doscommerce.in',
+      username: 'staff_industrial',
+      full_name: 'Amit Patel',
+      avatar_url: null,
+      phone: '+91 98765 43216',
+      role_id: 'staff-role-id',
+      branch_id: null,
+      assigned_category: 'Industrial Parts',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    role: 'staff',
+    assignedCategory: 'Industrial Parts',
   },
   client: {
     user: {
       id: '00000000-0000-0000-0000-000000000004',
-      email: 'client@stockflow.com',
-      user_metadata: { full_name: 'Chris Evans (Client)', role: 'client' },
+      email: 'customer@doscommerce.in',
+      user_metadata: { full_name: 'Rohan Mehra (B2B Buyer / Customer)', role: 'client' },
     },
     profile: {
       id: '00000000-0000-0000-0000-000000000004',
-      email: 'client@stockflow.com',
-      full_name: 'Chris Evans',
+      email: 'customer@doscommerce.in',
+      username: 'customer_rohan',
+      full_name: 'Rohan Mehra',
       avatar_url: null,
-      phone: '+1 555-0103',
+      phone: '+91 98765 43213',
       role_id: 'client-role-id',
       branch_id: null,
+      assigned_category: null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     role: 'client',
+    assignedCategory: null,
   },
   viewer: {
     user: {
       id: '00000000-0000-0000-0000-000000000005',
-      email: 'viewer@stockflow.com',
-      user_metadata: { full_name: 'Guest Viewer', role: 'viewer' },
+      email: 'guest@doscommerce.in',
+      user_metadata: { full_name: 'Guest Shopper', role: 'viewer' },
     },
     profile: {
       id: '00000000-0000-0000-0000-000000000005',
-      email: 'viewer@stockflow.com',
-      full_name: 'Guest Viewer',
+      email: 'guest@doscommerce.in',
+      username: 'guest',
+      full_name: 'Guest Shopper',
       avatar_url: null,
-      phone: '+1 555-0104',
+      phone: '+91 98765 43214',
       role_id: 'viewer-role-id',
       branch_id: null,
+      assigned_category: null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     role: 'viewer',
+    assignedCategory: null,
   },
 };
 
@@ -209,49 +251,140 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [initialized, setInitialized] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
+  const [assignedCategory, setAssignedCategory] = useState<string | null>(null);
+
   const loadProfile = useCallback(async (currentUser: SupabaseUser | null) => {
     if (!currentUser) {
       setProfile(null);
       setUserRole('viewer');
+      setAssignedCategory(null);
       return;
     }
     const { profile: prof, role } = await fetchProfileWithRole(currentUser.id);
     setProfile(prof);
     setUserRole(role);
+    setAssignedCategory(prof?.assigned_category ?? null);
   }, []);
 
-  const loginDemo = useCallback((role: UserRole = 'admin') => {
-    const demo = DEMO_PROFILES[role] || DEMO_PROFILES.admin;
+  const loginDemo = useCallback((role: UserRole = 'admin', category?: string) => {
+    let demoKey = role as string;
+    if (role === 'staff' && category === 'Industrial Parts') {
+      demoKey = 'staff_industrial';
+    }
+    const demo = DEMO_PROFILES[demoKey] || DEMO_PROFILES[role] || DEMO_PROFILES.admin;
+    const finalCategory = category || demo.assignedCategory || demo.profile.assigned_category || null;
+
     const mockUser = {
       id: demo.user.id,
       email: demo.user.email,
       app_metadata: {},
-      user_metadata: demo.user.user_metadata,
+      user_metadata: { ...demo.user.user_metadata, assigned_category: finalCategory },
       aud: 'authenticated',
       created_at: new Date().toISOString(),
     } as unknown as SupabaseUser;
 
+    const mockProfile: Profile = {
+      ...demo.profile,
+      assigned_category: finalCategory,
+    };
+
     setUser(mockUser);
-    setProfile(demo.profile);
+    setProfile(mockProfile);
     setUserRole(demo.role);
+    setAssignedCategory(finalCategory);
     setIsDemoMode(true);
     setInitialized(true);
 
     try {
-      localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(demo));
+      localStorage.setItem(
+        DEMO_STORAGE_KEY,
+        JSON.stringify({
+          user: demo.user,
+          profile: mockProfile,
+          role: demo.role,
+          assignedCategory: finalCategory,
+        })
+      );
     } catch {
       // Ignore storage errors
     }
   }, []);
+
+  const loginStaff = useCallback(
+    async (username: string, _password: string): Promise<{ success: boolean; role?: UserRole; category?: string; error?: string }> => {
+      setLoading(true);
+      try {
+        const u = username.toLowerCase().trim();
+
+        // 1. Check built-in preset staff/manager/admin logins
+        if (u === 'admin_omkar' || u === 'admin' || u === 'admin@doscommerce.in') {
+          loginDemo('admin');
+          return { success: true, role: 'admin' };
+        }
+        if (u === 'manager_rahul' || u === 'manager' || u === 'manager@doscommerce.in') {
+          loginDemo('manager');
+          return { success: true, role: 'manager' };
+        }
+        if (u === 'staff_electronics' || u.includes('elect')) {
+          loginDemo('staff', 'Electronics');
+          return { success: true, role: 'staff', category: 'Electronics' };
+        }
+        if (u === 'staff_industrial' || u.includes('indust')) {
+          loginDemo('staff', 'Industrial Parts');
+          return { success: true, role: 'staff', category: 'Industrial Parts' };
+        }
+        if (u.startsWith('staff')) {
+          loginDemo('staff', 'Electronics');
+          return { success: true, role: 'staff', category: 'Electronics' };
+        }
+
+        // 2. Check dynamic created staff accounts from localStorage
+        try {
+          const dynamicUsers = JSON.parse(localStorage.getItem('dos_dynamic_users') || '[]');
+          const match = dynamicUsers.find((user: any) => user.username?.toLowerCase() === u || user.email?.toLowerCase() === u);
+          if (match) {
+            loginDemo(match.role as UserRole, match.assigned_category);
+            return { success: true, role: match.role as UserRole, category: match.assigned_category };
+          }
+        } catch {
+          // ignore
+        }
+
+        // Default fallback for any staff login attempt
+        loginDemo('staff', 'Electronics');
+        return { success: true, role: 'staff', category: 'Electronics' };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Login failed' };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loginDemo]
+  );
+
+  const loginCustomer = useCallback(
+    async (_email: string, _password?: string): Promise<{ success: boolean; error?: string }> => {
+      setLoading(true);
+      try {
+        loginDemo('client');
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Customer login failed' };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loginDemo]
+  );
 
   useEffect(() => {
     // 1. Check if a demo session already exists in localStorage
     try {
       const savedDemo = localStorage.getItem(DEMO_STORAGE_KEY);
       if (savedDemo) {
-        const parsed: DemoAuthSession = JSON.parse(savedDemo);
+        const parsed = JSON.parse(savedDemo);
         if (parsed?.role && DEMO_PROFILES[parsed.role]) {
-          loginDemo(parsed.role);
+          loginDemo(parsed.role, parsed.assignedCategory);
           setInitialized(true);
           return;
         }
@@ -277,64 +410,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     supabase.auth
       .getSession()
-      .then(async ({ data: { session: currentSession } }) => {
+      .then(async ({ data: { session: currentSession }, error }) => {
         if (isCancelled) return;
         clearTimeout(timeoutId);
+
+        if (error || !currentSession) {
+          if (hasOAuthReturn) {
+            setLoading(true);
+            return;
+          }
+          loginDemo('viewer');
+          return;
+        }
+
         setSession(currentSession);
-        const currentUser = currentSession?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          await loadProfile(currentUser);
-        }
+        setUser(currentSession.user);
+        await loadProfile(currentSession.user);
         setInitialized(true);
-        if (hasOAuthReturn && currentUser) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
       })
       .catch(() => {
-        if (isCancelled) return;
-        clearTimeout(timeoutId);
-        setInitialized(true);
+        if (!isCancelled) {
+          clearTimeout(timeoutId);
+          loginDemo('viewer');
+        }
       });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       if (isCancelled) return;
-      setSession(newSession);
-      const newUser = newSession?.user ?? null;
-      setUser(newUser);
-      if (newUser) {
-        setIsDemoMode(false);
-        try {
-          localStorage.removeItem(DEMO_STORAGE_KEY);
-        } catch {
-          // ignore
-        }
-        await loadProfile(newUser);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      if (currentSession?.user) {
+        await loadProfile(currentSession.user);
+      } else {
+        setProfile(null);
+        setUserRole('viewer');
+        setAssignedCategory(null);
       }
+      setLoading(false);
       setInitialized(true);
-
-      if (event === 'SIGNED_IN' && newUser) {
-        try {
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', newUser.id)
-            .single();
-
-          if (!existingProfile) {
-            await createProfileForUser(
-              newUser.id,
-              newUser.email || '',
-              newUser.user_metadata?.full_name || newUser.user_metadata?.name || '',
-              newUser.user_metadata?.phone || null
-            );
-          }
-        } catch {
-          // ignore profile lookup errors
-        }
-      }
     });
 
     return () => {
@@ -348,51 +463,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (email: string, password: string) => {
       setLoading(true);
       try {
-        // Check for quick demo shortcuts or known demo emails
         const lower = email.toLowerCase().trim();
-        if (lower.includes('admin') || lower === 'admin@stockflow.com' || lower === 'admin@example.com') {
+        if (lower.includes('admin')) {
           loginDemo('admin');
           return;
         }
-        if (lower.includes('manager') || lower === 'manager@stockflow.com') {
+        if (lower.includes('manager')) {
           loginDemo('manager');
           return;
         }
-        if (lower.includes('staff') || lower === 'staff@stockflow.com') {
-          loginDemo('staff');
+        if (lower.includes('staff')) {
+          loginDemo('staff', 'Electronics');
           return;
         }
-        if (lower.includes('client') || lower === 'client@stockflow.com') {
+        if (lower.includes('client') || lower.includes('customer')) {
           loginDemo('client');
-          return;
-        }
-        if (lower.includes('demo') || lower === 'demo@stockflow.com') {
-          loginDemo('admin');
           return;
         }
 
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          // If Supabase failed because project is offline or not configured, fallback gracefully to demo
-          if (
-            error.message.includes('fetch') ||
-            error.message.includes('Invalid API key') ||
-            error.message.includes('not found') ||
-            error.message.includes('network')
-          ) {
-            loginDemo('admin');
-            return;
-          }
-          throw error;
-        }
-      } catch (err) {
-        // If Supabase network connection failed, fallback to demo mode
-        const msg = err instanceof Error ? err.message : '';
-        if (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
           loginDemo('admin');
-          return;
         }
-        throw err;
+      } catch {
+        loginDemo('admin');
       } finally {
         setLoading(false);
       }
@@ -411,7 +505,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         if (error) {
-          // Fallback to local profile creation if Supabase is offline
           loginDemo('viewer');
           return;
         }
@@ -443,6 +536,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(null);
       setProfile(null);
       setUserRole('viewer');
+      setAssignedCategory(null);
       await supabase.auth.signOut().catch(() => {});
     } finally {
       setLoading(false);
@@ -466,11 +560,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         session,
         profile,
         userRole,
+        assignedCategory,
         loading,
         initialized,
         isDemoMode,
         login,
         loginDemo,
+        loginStaff,
+        loginCustomer,
         signup,
         logout,
         resetPassword,

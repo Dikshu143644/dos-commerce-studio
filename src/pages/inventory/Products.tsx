@@ -17,6 +17,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { BarcodeScanner } from '@/components/shared/BarcodeScanner';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useAuth } from '@/hooks/useAuth';
 import type { ScanResult } from '@/services/barcode/types';
 
 export interface ProductItem {
@@ -245,16 +246,21 @@ type ProductFormData = z.infer<typeof productSchema>;
 export default function ProductsPage() {
   useDocumentTitle('Products');
   const navigate = useNavigate();
+  const { userRole, assignedCategory } = useAuth();
+
+  const isStaff = userRole === 'staff';
+  const staffCategory = assignedCategory || 'Electronics';
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState(isStaff ? staffCategory : 'all');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { unit: 'pcs', taxRate: '18' },
+    defaultValues: { unit: 'pcs', taxRate: '18', category: isStaff ? staffCategory : 'Electronics' },
   });
 
   const handleBarcodeScan = (result: ScanResult) => {
@@ -267,8 +273,10 @@ export default function ProductsPage() {
     }
   };
 
+  const activeCategoryFilter = isStaff ? staffCategory : categoryFilter;
+
   const filteredProducts = mockProducts.filter((p) => {
-    if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
+    if (activeCategoryFilter !== 'all' && p.category !== activeCategoryFilter) return false;
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     if (searchQuery.trim() && !p.name.toLowerCase().includes(searchQuery.toLowerCase()) && !p.sku.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -295,9 +303,9 @@ export default function ProductsPage() {
     },
     {
       key: 'price',
-      title: 'Price',
+      title: 'Price (INR)',
       sortable: true,
-      render: (row: Record<string, unknown>) => `$${(row.price as number).toFixed(2)}`,
+      render: (row: Record<string, unknown>) => `₹${(row.price as number).toLocaleString('en-IN')}`,
     },
     {
       key: 'status',
@@ -323,8 +331,8 @@ export default function ProductsPage() {
       className="space-y-6"
     >
       <PageHeader
-        title="Products"
-        description="Manage your enterprise product catalog, specifications, and real-time inventory"
+        title={isStaff ? `Products — ${staffCategory} Department` : "Products"}
+        description={isStaff ? `Staff ERP view locked to your assigned category: ${staffCategory}` : "Manage your enterprise product catalog, specifications, and real-time inventory"}
         bannerImage="/images/pages/banner-products.jpg"
         actions={
           <div className="flex items-center gap-2">
@@ -338,6 +346,28 @@ export default function ProductsPage() {
         }
       />
 
+      {/* Staff Scoped Warning Banner */}
+      {isStaff && (
+        <div className="rounded-[16px] border border-orange-200 bg-orange-50/80 p-3.5 px-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-orange-500 text-white flex items-center justify-center font-black text-sm">
+              🔒
+            </div>
+            <div>
+              <p className="text-xs font-bold text-orange-900">
+                Staff Department Scope Active: <span className="underline">{staffCategory}</span>
+              </p>
+              <p className="text-[11px] text-orange-700">
+                You can view, update inventory stock, and edit items only in your assigned category. Admin & Manager accounts can manage all categories.
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="bg-white border-orange-300 text-orange-800 text-[11px] font-bold">
+            {staffCategory} Only
+          </Badge>
+        </div>
+      )}
+
       {/* Controls & Filters Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
@@ -348,18 +378,25 @@ export default function ProductsPage() {
             className="max-w-xs"
           />
 
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Electronics">Electronics</SelectItem>
-              <SelectItem value="Industrial Parts">Industrial Parts</SelectItem>
-              <SelectItem value="Raw Materials">Raw Materials</SelectItem>
-              <SelectItem value="Wiring">Wiring</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isStaff ? (
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="Electronics">Electronics</SelectItem>
+                <SelectItem value="Industrial Parts">Industrial Parts</SelectItem>
+                <SelectItem value="Raw Materials">Raw Materials</SelectItem>
+                <SelectItem value="Wiring">Wiring</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="h-9 px-3 rounded-md bg-muted border border-border flex items-center text-xs font-semibold text-foreground gap-1.5">
+              <span>Category:</span>
+              <span className="text-primary font-bold">{staffCategory}</span>
+            </div>
+          )}
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]">

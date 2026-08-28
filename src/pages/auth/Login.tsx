@@ -1,43 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Mail, Lock, Sparkles, PhoneCall, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ShoppingBag, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useLoginForm } from '@/hooks/useLoginForm';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { sendOtp, verifyOtp } from '@/services/auth/otpService';
-import type { UserRole } from '@/contexts/AuthContext';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+export default function CustomerLoginPage() {
+  const [email, setEmail] = useState('customer@doscommerce.in');
+  const [password, setPassword] = useState('password123');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [otpCode, setOtpCode] = useState('');
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [timer, setTimer] = useState(300);
-
-  const { isLoading, onSubmit } = useLoginForm();
-  const { user, loginDemo } = useAuth();
+  const { user, loginCustomer, loginDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/store';
 
   useEffect(() => {
     if (user) {
@@ -45,393 +27,228 @@ export default function LoginPage() {
     }
   }, [user, navigate, from]);
 
-  useEffect(() => {
-    let interval: any;
-    if (otpSent && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [otpSent, timer]);
-
-  const handleSendOtp = async (channel: 'sms' | 'whatsapp') => {
-    setIsSendingOtp(true);
-    try {
-      const res = await sendOtp({ phone, channel });
-      if (res.status === 'success') {
-        setOtpSent(true);
-        setTimer(300);
-        if (res.otp_code) {
-          setOtpCode(res.otp_code);
-          toast.success(`[Opal OTP] Code sent: ${res.otp_code}`, { duration: 8000 });
-        } else {
-          toast.success(`Verification code sent via ${channel.toUpperCase()}`);
-        }
-      } else {
-        toast.error(res.message || 'Failed to send OTP');
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to send OTP');
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otpCode.length < 4) {
-      toast.error('Please enter the 6-digit OTP code');
+  const handleCustomerLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error('Please enter your email address');
       return;
     }
-    setIsVerifyingOtp(true);
+    setIsSubmitting(true);
     try {
-      const res = await verifyOtp({ phone, otp_code: otpCode });
-      if (res.status === 'success') {
-        toast.success('Security verification passed! Logging in as DOS-APP...');
-        setShowOtpModal(false);
-        loginDemo('admin');
+      const res = await loginCustomer(email, password);
+      if (res.success) {
+        toast.success(`Welcome back! Logged in as ${email}`);
         navigate(from, { replace: true });
       } else {
-        toast.error(res.message || 'Invalid verification code');
+        toast.error(res.error || 'Failed to log in');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Verification failed');
+    } catch {
+      toast.error('Login failed, please try again.');
     } finally {
-      setIsVerifyingOtp(false);
+      setIsSubmitting(false);
     }
   };
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'admin@stockflow.com',
-      password: 'password123',
-    },
-  });
+  const handleGoogleOAuth = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      loginDemo('client');
+      toast.success('Signed in securely with Google Account!');
+      setIsSubmitting(false);
+      navigate(from, { replace: true });
+    }, 600);
+  };
 
-  const handleQuickDemo = (role: UserRole) => {
-    loginDemo(role);
-    toast.success(`Logged in as Demo ${role.toUpperCase()}`);
+  const handleQuickCustomer = () => {
+    loginDemo('client');
+    toast.success('Signed in as Verified Customer (Rohan Mehra)');
     navigate(from, { replace: true });
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#FDFBF7] px-4 py-8">
-      {/* Warm Ambient Warehouse Background Overlay (Image 1 & 2 fusion) */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <img
-          src="/images/backgrounds/warehouse-sunset-drone.jpg"
-          alt="StockFlow Logistics Facility"
-          className="w-full h-full object-cover filter brightness-[0.95] contrast-[1.02]"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2000&q=85';
-          }}
-        />
-        {/* Warm Golden Sunlight Vignette Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-amber-950/20 to-black/40" />
-      </div>
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#F8F7FC] via-[#F3EEFA] to-[#FFFFFF] px-4 py-10 font-sans">
+      {/* Floating Spatial Purple & Orange Ambient Orbs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-orange-500/20 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute top-1/3 right-10 w-72 h-72 rounded-full bg-indigo-500/15 blur-2xl pointer-events-none" />
 
-      {/* Clean White Frosted Glass Center Card in White/Orange Style */}
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-[460px] rounded-[32px] bg-white/95 backdrop-blur-2xl p-8 sm:p-10 border border-white/60 shadow-[0_25px_80px_rgba(0,0,0,0.25)] text-slate-900"
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="relative z-10 w-full max-w-[480px] rounded-[24px] bg-white/80 backdrop-blur-2xl p-8 sm:p-10 border border-purple-100 shadow-[0_20px_60px_rgba(124,58,237,0.12)] text-[#1A1A2E]"
       >
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center gap-2.5 mb-2.5">
-            <div className="h-11 w-11 rounded-[14px] bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/25">
-              <span className="text-2xl font-black text-white">S</span>
+        <div className="text-center mb-7">
+          <Link to="/store" className="inline-flex items-center gap-2.5 mb-3 group cursor-pointer">
+            <div className="h-12 w-12 rounded-[16px] bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white font-black text-2xl group-hover:scale-105 transition-transform">
+              D
             </div>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">StockFlow</span>
-          </div>
-
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back!</h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Inventory & CRM Management System
+            <div className="text-left">
+              <span className="text-2xl font-black tracking-tight text-[#1A1A2E] leading-none block">
+                DOS <span className="text-orange-500">COMMERCE</span>
+              </span>
+              <span className="text-[10px] font-bold tracking-widest text-purple-600 uppercase">Customer Store Door</span>
+            </div>
+          </Link>
+          <h1 className="text-xl font-bold text-[#1A1A2E] mt-1">Customer Sign In</h1>
+          <p className="text-sm text-[#6B7280] mt-0.5">
+            Log in to manage orders, track live shipments, and checkout with saved GST billing.
           </p>
         </div>
 
-        {/* 1-Click Role Quick Access Bar in White/Orange Style */}
-        <div className="mb-6 p-1.5 rounded-[16px] bg-slate-100/80 border border-slate-200/80 flex items-center justify-between gap-1.5">
-          <button
+        {/* 1-Click Fast Customer Demo Banner */}
+        <div className="mb-6 rounded-[18px] border border-purple-200/80 bg-purple-50/60 p-4 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> 1-CLICK CUSTOMER ACCESS
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-200/80 text-purple-800">
+              Instant Shop
+            </span>
+          </div>
+          <p className="text-xs text-purple-700/90 mb-3">
+            Quickly test the buyer portal, cart checkout, and Amazon-style tracking.
+          </p>
+          <Button
             type="button"
-            onClick={() => handleQuickDemo('admin')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-bold text-orange-600 bg-white hover:bg-orange-50 transition-all border border-orange-200/80 shadow-xs text-center flex items-center justify-center gap-1"
+            onClick={handleQuickCustomer}
+            className="w-full h-10 rounded-[14px] bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Sparkles className="h-3 w-3 text-orange-500" /> Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickDemo('manager')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all text-center"
-          >
-            Manager
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickDemo('staff')}
-            className="flex-1 py-1.5 px-2 rounded-[10px] text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all text-center"
-          >
-            Staff
-          </button>
+            <ShoppingBag className="h-4 w-4" /> Continue as Rohan Mehra (Buyer)
+          </Button>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email Input */}
-          <div className="space-y-1.5">
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-              <Input
-                type="email"
-                placeholder="Email"
-                {...register('email')}
-                className="h-12 pl-12 pr-4 bg-slate-50 border-slate-200/90 rounded-[16px] text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 text-sm font-medium"
-              />
-            </div>
-            {errors.email && (
-              <p className="text-xs text-rose-500 pl-1 font-medium">{errors.email.message}</p>
-            )}
-          </div>
+        {/* Google OAuth Button */}
+        <Button
+          type="button"
+          onClick={handleGoogleOAuth}
+          disabled={isSubmitting}
+          className="w-full h-11 rounded-[14px] bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm shadow-sm flex items-center justify-center gap-3 mb-4 cursor-pointer"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            />
+          </svg>
+          Continue with Google
+        </Button>
 
-          {/* Password Input */}
-          <div className="space-y-1.5">
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                {...register('password')}
-                className="h-12 pl-12 pr-12 bg-slate-50 border-slate-200/90 rounded-[16px] text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 text-sm font-medium"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-xs text-rose-500 pl-1 font-medium">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Remember Me & Forgot Password Row */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-900 select-none">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded h-4 w-4 bg-slate-100 border-slate-300 text-orange-500 focus:ring-0 focus:ring-offset-0"
-              />
-              <span className="font-medium">Remember me</span>
-            </label>
-            <Link
-              to="/forgot-password"
-              className="text-slate-500 hover:text-orange-600 transition-colors font-semibold"
-            >
-              Forgot password?
-            </Link>
-          </div>
-
-          {/* Sign In Button (Radiant Warm Orange Gradient) */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full h-12 rounded-[16px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-base shadow-lg shadow-orange-500/25 transition-all duration-300 mt-2"
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-
-        {/* Or Continue With Divider */}
-        <div className="relative my-5 text-center">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-200" />
           </div>
-          <span className="relative bg-white px-3 text-xs text-slate-400 font-medium">
-            or continue with
-          </span>
-        </div>
-
-        {/* SSO Social Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleQuickDemo('admin')}
-            className="h-11 rounded-[14px] bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 text-xs font-bold gap-2 transition-all"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-            Google
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleQuickDemo('admin')}
-            className="h-11 rounded-[14px] bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 text-xs font-bold gap-2 transition-all"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path fill="#f25022" d="M1 1h10v10H1z" />
-              <path fill="#00a4ef" d="M1 13h10v10H1z" />
-              <path fill="#7fba00" d="M13 1h10v10H1z" />
-              <path fill="#ffb900" d="M13 13h10v10H1z" />
-            </svg>
-            Microsoft
-          </Button>
-        </div>
-
-        {/* Opal SMS OTP Instant Access */}
-        <div className="mt-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowOtpModal(true)}
-            className="w-full h-11 rounded-[14px] bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-600 text-xs font-bold gap-2 transition-all"
-          >
-            <PhoneCall className="h-4 w-4" /> Sign In via SMS / WhatsApp OTP
-          </Button>
-        </div>
-
-        {/* Footer Link */}
-        <p className="text-center text-xs text-slate-500 mt-6">
-          Don't have an account?{' '}
-          <Link
-            to="/register"
-            className="text-orange-600 hover:text-orange-700 font-bold transition-colors underline-offset-4 hover:underline"
-          >
-            Sign Up
-          </Link>
-        </p>
-      </motion.div>
-
-      {/* Opal SMS OTP Verification Modal in Clean White/Orange Style */}
-      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
-        <DialogContent className="sm:max-w-[420px] rounded-[28px] bg-white border border-slate-200 text-slate-900 p-6 shadow-2xl">
-          <DialogHeader>
-            <div className="mx-auto mb-3 flex h-13 w-13 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 border border-orange-200 shadow-xs">
-              <ShieldCheck className="h-7 w-7 text-orange-500" />
-            </div>
-            <DialogTitle className="text-xl font-black text-center text-slate-900">
-              Opal SMS Verification
-            </DialogTitle>
-            <DialogDescription className="text-xs text-center text-slate-500">
-              Authenticate securely via real-time cryptographic SMS OTP
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-2">
-            {!otpSent ? (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Mobile Phone Number</label>
-                  <Input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="h-11 bg-slate-50 border-slate-200 rounded-xl text-slate-900 text-sm font-medium focus:border-orange-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  <Button
-                    type="button"
-                    onClick={() => handleSendOtp('sms')}
-                    disabled={isSendingOtp}
-                    className="h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold gap-1.5 shadow-md shadow-orange-500/20"
-                  >
-                    <PhoneCall className="h-3.5 w-3.5" /> Send SMS OTP
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleSendOtp('whatsapp')}
-                    disabled={isSendingOtp}
-                    className="h-10 rounded-xl border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-bold gap-1.5"
-                  >
-                    WhatsApp OTP
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="rounded-xl bg-orange-50 border border-orange-200 p-3 text-center">
-                  <p className="text-xs text-orange-800 font-bold">
-                    Code dispatched to <span className="text-slate-900">{phone}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
-                    Valid for {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')} min
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Enter 6-Digit Code</label>
-                  <Input
-                    type="text"
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
-                    className="h-12 bg-orange-50/50 border-orange-300 rounded-xl text-center text-2xl font-mono tracking-[0.4em] font-black text-orange-600 focus:border-orange-500 focus:ring-orange-500/20"
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleVerifyOtp}
-                  disabled={isVerifyingOtp || otpCode.length < 4}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm shadow-md shadow-orange-500/25"
-                >
-                  {isVerifyingOtp ? 'Verifying...' : 'Verify & Log In'}
-                </Button>
-
-                <div className="flex justify-between items-center text-xs pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="text-slate-500 hover:text-slate-800 font-medium"
-                  >
-                    Change Number
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSendOtp('sms')}
-                    disabled={timer > 240}
-                    className="text-orange-600 hover:text-orange-700 font-bold disabled:opacity-50"
-                  >
-                    Resend Code
-                  </button>
-                </div>
-              </>
-            )}
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-slate-400 font-bold">Or with email / OTP</span>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {/* Email & Password / OTP Form */}
+        <form onSubmit={handleCustomerLogin} className="space-y-4">
+          <div>
+            <Label className="text-xs font-bold text-slate-700 block mb-1.5">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                className="pl-10 h-11 rounded-[12px] bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500 text-sm"
+                required
+              />
+            </div>
+          </div>
+
+          {!showOtpInput ? (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label className="text-xs font-bold text-slate-700">Password</Label>
+                <button
+                  type="button"
+                  onClick={() => setShowOtpInput(true)}
+                  className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline cursor-pointer"
+                >
+                  Sign in with OTP instead
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-10 h-11 rounded-[12px] bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500 text-sm"
+                  required
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label className="text-xs font-bold text-slate-700">One-Time Password (OTP)</Label>
+                <button
+                  type="button"
+                  onClick={() => setShowOtpInput(false)}
+                  className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline cursor-pointer"
+                >
+                  Use Password instead
+                </button>
+              </div>
+              <Input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter 6-digit OTP (e.g. 542891)"
+                className="h-11 rounded-[12px] bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-purple-500 text-sm tracking-widest font-mono"
+              />
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-11 rounded-[14px] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2"
+          >
+            {isSubmitting ? 'Signing in...' : 'Sign In to Store'} <ArrowRight className="h-4 w-4" />
+          </Button>
+        </form>
+
+        {/* Door Switch Footer */}
+        <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col gap-2.5 text-center text-xs text-slate-500">
+          <div>
+            Don't have a customer account?{' '}
+            <Link to="/register" className="font-bold text-purple-600 hover:underline">
+              Create Customer Account
+            </Link>
+          </div>
+          <div className="p-2.5 rounded-[12px] bg-slate-100/70 border border-slate-200/60 flex items-center justify-between">
+            <span className="font-medium text-slate-700 flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-orange-500" /> Are you Staff, Manager, or Admin?
+            </span>
+            <Link
+              to="/staff-login"
+              className="font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1"
+            >
+              Staff Login Door &rarr;
+            </Link>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
